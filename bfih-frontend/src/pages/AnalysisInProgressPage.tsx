@@ -5,7 +5,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useGameStore, useAnalysisStore } from '../stores';
-import { getAnalysisStatus, getAnalysis } from '../api';
+import { getAnalysisStatus, getAnalysis, storeScenario } from '../api';
 import { pageVariants } from '../utils';
 import type { BFIHAnalysisResult } from '../types';
 
@@ -105,6 +105,22 @@ export function AnalysisInProgressPage() {
 
           // Cache the result in the analysis store for other pages to access
           cacheResult(fullResult);
+
+          // Store scenario to backend for Library access
+          try {
+            const config = fullResult.scenario_config;
+            await storeScenario({
+              scenario_id: fullResult.scenario_id,
+              title: config?.proposition || config?.narrative || 'Untitled Analysis',
+              domain: config?.paradigms?.[0]?.name || 'General',
+              difficulty_level: 'intermediate',
+              scenario_config: config,
+            });
+            console.log('Scenario stored to library:', fullResult.scenario_id);
+          } catch (storeErr) {
+            // Non-fatal: log but don't block navigation
+            console.warn('Failed to store scenario to library:', storeErr);
+          }
 
           // Navigate immediately after setting result
           if (fullResult?.scenario_id) {
