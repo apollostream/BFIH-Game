@@ -28,19 +28,22 @@ export function PriorAssignmentPage() {
   }, [setPhase]);
 
   // Build priors data structure for visualization
+  // Support both 'priors' and 'priors_by_paradigm' field names
+  const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+
   const priorsData = useMemo((): PosteriorsByParadigm => {
-    if (!scenarioConfig?.priors) return {};
+    if (!priorsSource) return {};
 
     const result: PosteriorsByParadigm = {};
-    for (const paradigmId of Object.keys(scenarioConfig.priors)) {
+    for (const paradigmId of Object.keys(priorsSource)) {
       result[paradigmId] = {};
-      const paradigmPriors = scenarioConfig.priors[paradigmId];
+      const paradigmPriors = priorsSource[paradigmId];
       for (const [hypId, prior] of Object.entries(paradigmPriors)) {
         result[paradigmId][hypId] = typeof prior === 'number' ? prior : prior.probability;
       }
     }
     return result;
-  }, [scenarioConfig?.priors]);
+  }, [priorsSource]);
 
   if (!scenarioConfig) {
     return (
@@ -57,7 +60,7 @@ export function PriorAssignmentPage() {
     (p) => selectedParadigms.includes(p.id)
   ) || [];
 
-  const currentPriors = scenarioConfig.priors?.[activeParadigm] || {};
+  const currentPriors = priorsSource?.[activeParadigm] || {};
 
   return (
     <motion.div
@@ -185,7 +188,7 @@ export function PriorAssignmentPage() {
                 </h3>
                 <div className="space-y-3">
                   {paradigms.map((paradigm) => {
-                    const pPriors = scenarioConfig.priors?.[paradigm.id] || {};
+                    const pPriors = priorsSource?.[paradigm.id] || {};
                     const topHypothesis = Object.entries(pPriors)
                       .map(([id, p]) => ({
                         id,

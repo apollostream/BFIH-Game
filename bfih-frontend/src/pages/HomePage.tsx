@@ -8,6 +8,33 @@ import { Input } from '../components/ui/Input';
 import { useAnalysisStore } from '../stores';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../utils';
 
+// Icons as inline SVGs for cleaner design
+const IconAnalysis = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
+
+const IconBrain = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 2a3 3 0 0 0-3 3v.5a3 3 0 0 0-3 3v.5a3 3 0 0 0-3 3v1a3 3 0 0 0 3 3h.5a3 3 0 0 0 3 3h1a3 3 0 0 0 3-3h.5a3 3 0 0 0 3-3v-1a3 3 0 0 0-3-3v-.5a3 3 0 0 0-3-3V5a3 3 0 0 0-3-3Z" />
+  </svg>
+);
+
+const IconChart = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 3v18h18M7 16l4-4 4 4 5-6" />
+  </svg>
+);
+
+const IconTarget = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10" />
+    <circle cx="12" cy="12" r="6" />
+    <circle cx="12" cy="12" r="2" />
+  </svg>
+);
+
 export function HomePage() {
   const navigate = useNavigate();
   const [proposition, setProposition] = useState('');
@@ -36,71 +63,104 @@ export function HomePage() {
       initial="initial"
       animate="animate"
       exit="exit"
+      className="min-h-screen"
     >
-      <PageContainer className="max-w-4xl mx-auto">
+      <PageContainer className="max-w-5xl mx-auto">
         {/* Hero Section */}
         <motion.div
-          className="text-center py-12"
+          className="text-center py-16 md:py-24 relative"
           variants={staggerContainerVariants}
           initial="initial"
           animate="animate"
         >
+          {/* Decorative elements */}
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <motion.div
+              className="absolute top-20 left-10 w-72 h-72 bg-paradigm-k1/10 rounded-full blur-3xl"
+              animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 8, repeat: Infinity }}
+            />
+            <motion.div
+              className="absolute bottom-20 right-10 w-96 h-96 bg-paradigm-k2/10 rounded-full blur-3xl"
+              animate={{ scale: [1.2, 1, 1.2], opacity: [0.3, 0.5, 0.3] }}
+              transition={{ duration: 10, repeat: Infinity }}
+            />
+          </div>
+
+          <motion.div variants={cardVariants} className="relative">
+            <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium rounded-full glass border border-accent/30 text-accent">
+              Bayesian Framework for Intellectual Honesty
+            </span>
+          </motion.div>
+
           <motion.h1
             variants={cardVariants}
-            className="text-5xl font-bold mb-4 bg-gradient-to-r from-paradigm-k1 via-paradigm-k2 to-paradigm-k3 bg-clip-text text-transparent"
+            className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
           >
-            BFIH Hypothesis Tournament
+            <span className="gradient-text">Hypothesis Tournament</span>
           </motion.h1>
+
           <motion.p
             variants={cardVariants}
-            className="text-xl text-text-secondary max-w-2xl mx-auto"
+            className="text-lg md:text-xl text-text-secondary max-w-2xl mx-auto leading-relaxed"
           >
-            Rigorously test your beliefs using Bayesian reasoning. Submit a proposition
-            and watch as AI generates hypotheses, gathers evidence, and computes posteriors.
+            Rigorously test your beliefs using Bayesian reasoning. AI generates hypotheses,
+            gathers real-world evidence, and computes posteriors across multiple epistemic paradigms.
           </motion.p>
         </motion.div>
 
         {/* Submission Form */}
-        <motion.div variants={cardVariants}>
-          <Card variant="elevated" className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div>
-                <label className="block text-lg font-medium text-text-primary mb-2">
-                  Enter your proposition
-                </label>
-                <Input
-                  value={proposition}
-                  onChange={(e) => setProposition(e.target.value)}
-                  placeholder="e.g., 'Climate change will cause significant economic disruption by 2050'"
-                  className="text-lg py-4"
-                  disabled={isSubmitting}
-                />
-                <p className="mt-2 text-sm text-text-muted">
-                  A clear, testable claim that can be analyzed from multiple perspectives
-                </p>
-              </div>
+        <motion.div variants={cardVariants} className="relative z-10">
+          <div className="gradient-border p-[1px] rounded-2xl">
+            <Card variant="elevated" className="p-8 md:p-10 rounded-2xl bg-surface-1/95">
+              <form onSubmit={handleSubmit} className="space-y-6">
+                <div>
+                  <label className="block text-lg font-semibold text-text-primary mb-3">
+                    What do you want to investigate?
+                  </label>
+                  <div className="relative">
+                    <Input
+                      value={proposition}
+                      onChange={(e) => setProposition(e.target.value)}
+                      placeholder="Enter a testable proposition..."
+                      className="text-lg py-4 pl-5 pr-12 rounded-xl"
+                      disabled={isSubmitting}
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted">
+                      <IconAnalysis />
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm text-text-muted">
+                    Example: "Climate change will cause significant economic disruption by 2050"
+                  </p>
+                </div>
 
-              {error && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="p-4 rounded-lg bg-error/10 border border-error text-error"
+                {error && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-xl bg-error/10 border border-error/30 text-error flex items-center gap-3"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 8v4m0 4h.01" />
+                    </svg>
+                    {error}
+                  </motion.div>
+                )}
+
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full py-4 text-lg font-semibold rounded-xl btn-glow"
+                  loading={isSubmitting}
+                  disabled={!proposition.trim() || isSubmitting}
                 >
-                  {error}
-                </motion.div>
-              )}
-
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full"
-                loading={isSubmitting}
-                disabled={!proposition.trim() || isSubmitting}
-              >
-                {isSubmitting ? 'Submitting Analysis...' : 'Begin Analysis'}
-              </Button>
-            </form>
-          </Card>
+                  {isSubmitting ? 'Starting Analysis...' : 'Begin BFIH Analysis'}
+                </Button>
+              </form>
+            </Card>
+          </div>
         </motion.div>
 
         {/* Example Propositions */}
@@ -108,13 +168,13 @@ export function HomePage() {
           variants={staggerContainerVariants}
           initial="initial"
           animate="animate"
-          className="mt-12"
+          className="mt-16"
         >
           <motion.h2
             variants={cardVariants}
-            className="text-lg font-medium text-text-secondary mb-4"
+            className="text-sm font-medium text-text-muted uppercase tracking-wider mb-4"
           >
-            Try an example proposition:
+            Try an example
           </motion.h2>
           <div className="grid gap-3">
             {examplePropositions.map((example, index) => (
@@ -122,11 +182,19 @@ export function HomePage() {
                 key={index}
                 variants={cardVariants}
                 onClick={() => setProposition(example)}
-                className="text-left p-4 rounded-lg bg-surface-1 border border-border
-                         hover:border-accent hover:bg-surface-2 transition-all duration-200
-                         text-text-secondary hover:text-text-primary"
+                disabled={isSubmitting}
+                className="text-left p-5 rounded-xl glass
+                         border border-border hover:border-accent/50
+                         transition-all duration-300 group
+                         text-text-secondary hover:text-text-primary
+                         disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                "{example}"
+                <div className="flex items-start gap-4">
+                  <span className="flex-shrink-0 w-8 h-8 rounded-lg bg-surface-3 flex items-center justify-center text-text-muted group-hover:bg-accent/20 group-hover:text-accent transition-colors">
+                    {index + 1}
+                  </span>
+                  <span className="text-base leading-relaxed">{example}</span>
+                </div>
               </motion.button>
             ))}
           </div>
@@ -137,36 +205,77 @@ export function HomePage() {
           variants={staggerContainerVariants}
           initial="initial"
           animate="animate"
-          className="mt-16 grid md:grid-cols-4 gap-4"
+          className="mt-20 mb-16"
         >
-          {[
-            { phase: '1-3', title: 'Setup', desc: 'AI generates paradigms, hypotheses, and priors' },
-            { phase: '4', title: 'Bet', desc: 'Place your initial bets on hypotheses' },
-            { phase: '5', title: 'Evidence', desc: 'Review evidence and update beliefs' },
-            { phase: '6-8', title: 'Resolve', desc: 'See results and analyze your reasoning' },
-          ].map((step, index) => (
-            <motion.div
-              key={index}
-              variants={cardVariants}
-              className="p-4 rounded-lg bg-surface-1 border border-border text-center"
-            >
-              <div className="text-2xl font-bold text-accent mb-2">
-                Phase {step.phase}
-              </div>
-              <div className="font-medium text-text-primary">{step.title}</div>
-              <div className="text-sm text-text-muted mt-1">{step.desc}</div>
-            </motion.div>
-          ))}
+          <motion.h2
+            variants={cardVariants}
+            className="text-2xl font-bold text-text-primary text-center mb-10"
+          >
+            How It Works
+          </motion.h2>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            {[
+              {
+                icon: <IconBrain />,
+                phase: 'Phase 1-3',
+                title: 'AI Setup',
+                desc: 'Generates paradigms, hypotheses & priors',
+                color: 'paradigm-k1',
+              },
+              {
+                icon: <IconTarget />,
+                phase: 'Phase 4',
+                title: 'Place Bets',
+                desc: 'Wager on your predicted outcomes',
+                color: 'paradigm-k2',
+              },
+              {
+                icon: <IconAnalysis />,
+                phase: 'Phase 5',
+                title: 'Evidence',
+                desc: 'Review evidence & update beliefs',
+                color: 'paradigm-k3',
+              },
+              {
+                icon: <IconChart />,
+                phase: 'Phase 6-8',
+                title: 'Resolution',
+                desc: 'Final posteriors & analysis',
+                color: 'paradigm-k4',
+              },
+            ].map((step, index) => (
+              <motion.div
+                key={index}
+                variants={cardVariants}
+                className={`p-6 rounded-xl glass border border-${step.color}/30 hover:border-${step.color}/50 transition-all duration-300 group card-hover`}
+              >
+                <div className={`w-12 h-12 rounded-xl bg-${step.color}/20 flex items-center justify-center text-${step.color} mb-4 group-hover:glow-${step.color} transition-all`}>
+                  {step.icon}
+                </div>
+                <div className={`text-sm font-medium text-${step.color} mb-1`}>
+                  {step.phase}
+                </div>
+                <div className="text-lg font-semibold text-text-primary mb-2">
+                  {step.title}
+                </div>
+                <div className="text-sm text-text-muted leading-relaxed">
+                  {step.desc}
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
 
         {/* Quick Links */}
         <motion.div
           variants={cardVariants}
-          className="mt-12 flex justify-center gap-4"
+          className="flex justify-center gap-4 pb-16"
         >
           <Button
             variant="ghost"
             onClick={() => navigate('/library')}
+            className="text-text-secondary hover:text-text-primary"
           >
             Browse Scenario Library
           </Button>

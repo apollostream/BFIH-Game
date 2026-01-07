@@ -123,9 +123,21 @@ export const useAnalysisStore = create<AnalysisState>()(
               // Fetch the full result
               const result = await getAnalysis(currentId);
               get().cacheResult(result);
-              set({ currentAnalysis: result });
+              // Set both status and analysis atomically to ensure useEffect triggers
+              set({
+                currentAnalysis: result,
+                status: 'completed',
+                analysisStatus: 'completed',
+                progress: 100
+              });
               get().stopPolling();
-            } else if (statusResponse.status === 'failed') {
+            } else if (statusResponse.status?.startsWith('failed')) {
+              set({
+                status: 'failed',
+                analysisStatus: 'failed',
+                errorMessage: statusResponse.status,
+                error: statusResponse.status
+              });
               get().stopPolling();
             }
           } catch (error) {
@@ -182,6 +194,7 @@ export const useAnalysisStore = create<AnalysisState>()(
 
       cacheResult: (result) => {
         set((state) => ({
+          currentAnalysis: result,
           cachedResults: {
             ...state.cachedResults,
             [result.analysis_id]: result,

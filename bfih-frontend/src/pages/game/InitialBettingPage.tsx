@@ -37,18 +37,21 @@ export function InitialBettingPage() {
   }, [setPhase, scenarioConfig, initializeBets]);
 
   // Build priors data for visualization
+  // Support both 'priors' and 'priors_by_paradigm' field names
+  const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+
   const priorsData = useMemo((): PosteriorsByParadigm => {
-    if (!scenarioConfig?.priors) return {};
+    if (!priorsSource) return {};
     const result: PosteriorsByParadigm = {};
-    for (const paradigmId of Object.keys(scenarioConfig.priors)) {
+    for (const paradigmId of Object.keys(priorsSource)) {
       result[paradigmId] = {};
-      const paradigmPriors = scenarioConfig.priors[paradigmId];
+      const paradigmPriors = priorsSource[paradigmId];
       for (const [hypId, prior] of Object.entries(paradigmPriors)) {
         result[paradigmId][hypId] = typeof prior === 'number' ? prior : prior.probability;
       }
     }
     return result;
-  }, [scenarioConfig?.priors]);
+  }, [priorsSource]);
 
   if (!scenarioConfig) {
     return (
@@ -125,7 +128,7 @@ export function InitialBettingPage() {
               className="space-y-4"
             >
               {scenarioConfig.hypotheses?.map((hypothesis) => {
-                const currentPrior = scenarioConfig.priors?.[activeParadigm]?.[hypothesis.id];
+                const currentPrior = priorsSource?.[activeParadigm]?.[hypothesis.id];
                 const priorValue = typeof currentPrior === 'number'
                   ? currentPrior
                   : currentPrior?.probability || 0;

@@ -17,36 +17,41 @@ export interface ButtonProps extends Omit<HTMLMotionProps<'button'>, 'size'> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary: `
-    bg-accent text-white
-    hover:bg-accent-hover
-    active:bg-accent/90
-    shadow-md hover:shadow-lg
+    bg-gradient-to-r from-accent to-accent-hover text-white
+    hover:shadow-glow hover:brightness-110
+    active:brightness-95
+    border border-accent/50
   `,
   secondary: `
     bg-surface-2 text-text-primary
     border border-border
     hover:bg-surface-3 hover:border-border-hover
+    active:bg-surface-2
   `,
   ghost: `
     bg-transparent text-text-secondary
     hover:bg-surface-2 hover:text-text-primary
+    active:bg-surface-3
+    border border-transparent hover:border-border
   `,
   danger: `
     bg-error/10 text-error
-    border border-error/20
-    hover:bg-error/20 hover:border-error/30
+    border border-error/30
+    hover:bg-error/20 hover:border-error/50
+    active:bg-error/30
   `,
   success: `
     bg-success/10 text-success
-    border border-success/20
-    hover:bg-success/20 hover:border-success/30
+    border border-success/30
+    hover:bg-success/20 hover:border-success/50
+    active:bg-success/30
   `,
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: 'px-3 py-1.5 text-sm gap-1.5',
-  md: 'px-4 py-2 text-base gap-2',
-  lg: 'px-6 py-3 text-lg gap-2.5',
+  sm: 'px-3 py-1.5 text-sm gap-1.5 rounded-lg',
+  md: 'px-5 py-2.5 text-base gap-2 rounded-xl',
+  lg: 'px-7 py-3.5 text-lg gap-2.5 rounded-xl',
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -77,10 +82,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         className={cn(
           // Base styles
           'inline-flex items-center justify-center',
-          'font-medium rounded-lg',
-          'transition-colors duration-200',
+          'font-semibold',
+          'transition-all duration-200',
           'focus:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface-0',
-          'disabled:opacity-50 disabled:cursor-not-allowed',
+          'disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none',
           // Variant
           variantStyles[variant],
           // Size
@@ -93,7 +98,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       >
         {isLoading && (
           <svg
-            className="animate-spin h-4 w-4"
+            className="animate-spin h-5 w-5"
             viewBox="0 0 24 24"
             fill="none"
           >
@@ -103,7 +108,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
               cy="12"
               r="10"
               stroke="currentColor"
-              strokeWidth="4"
+              strokeWidth="3"
             />
             <path
               className="opacity-75"

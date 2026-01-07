@@ -89,6 +89,12 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
     (p) => selectedParadigms.includes(p.id)
   ) || [];
 
+  // Get evidence clusters from analysis metadata (where they actually live)
+  // Fall back to scenarioConfig for backwards compatibility
+  const evidenceClusters = currentAnalysis?.metadata?.evidence_clusters
+    || scenarioConfig.evidence_clusters
+    || [];
+
   return (
     <motion.div
       variants={pageVariants}
@@ -160,10 +166,12 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
                   <div className="flex justify-between">
                     <span className="text-text-secondary">Evidence</span>
                     <Badge variant="secondary">
-                      {scenarioConfig.evidence_clusters?.reduce(
-                        (sum, c) => sum + (c.items?.length || 0),
-                        0
-                      ) || 0}
+                      {currentAnalysis?.metadata?.evidence_items_count
+                        || evidenceClusters.reduce(
+                          (sum, c) => sum + (c.items?.length || c.evidence_ids?.length || 0),
+                          0
+                        )
+                        || 0}
                     </Badge>
                   </div>
                 </div>
@@ -219,7 +227,7 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
             <motion.div variants={cardVariants} className="mt-6">
               <EvidenceMatrixHeatmap
                 hypotheses={scenarioConfig.hypotheses || []}
-                clusters={scenarioConfig.evidence_clusters || []}
+                clusters={evidenceClusters}
                 paradigms={paradigms}
                 activeParadigm={activeParadigm}
               />

@@ -71,7 +71,8 @@ class BFIHAnalysisResult:
     posteriors: Dict[str, Dict[str, float]]  # {paradigm_id: {hypothesis_id: posterior}}
     metadata: Dict
     created_at: str
-    
+    scenario_config: Optional[Dict] = None  # Full scenario config for frontend
+
     def to_dict(self):
         return asdict(self)
 
@@ -154,7 +155,8 @@ class BFIHOrchestrator:
                     "evidence_items_count": len(evidence_items),
                     "evidence_clusters_count": len(evidence_clusters)
                 },
-                created_at=analysis_end.isoformat()
+                created_at=analysis_end.isoformat(),
+                scenario_config=request.scenario_config
             )
 
             # Store structured evidence in metadata for access

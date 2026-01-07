@@ -15,17 +15,17 @@ interface CardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
 
 const variantStyles: Record<CardVariant, string> = {
   default: 'bg-surface-1 border border-border',
-  elevated: 'bg-surface-2 border border-border shadow-elevated',
+  elevated: 'bg-surface-1/95 border border-border shadow-elevated backdrop-blur-sm',
   glass: 'glass',
   bordered: 'bg-transparent border-2 border-border',
-  paradigm: 'bg-gradient-to-br from-surface-1 to-surface-2 border border-border',
+  paradigm: 'bg-gradient-to-br from-surface-1 to-surface-2 border border-border shadow-md',
 };
 
 const paddingStyles: Record<string, string> = {
   none: 'p-0',
-  sm: 'p-3',
-  md: 'p-4',
-  lg: 'p-6',
+  sm: 'p-4',
+  md: 'p-6',
+  lg: 'p-8',
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
@@ -49,12 +49,13 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
         variants={animate ? cardVariants : undefined}
         initial={animate ? 'initial' : undefined}
         animate={animate ? 'animate' : undefined}
-        whileHover={hoverable ? 'hover' : undefined}
+        whileHover={hoverable ? { y: -4, boxShadow: 'var(--shadow-lg)' } : undefined}
         className={cn(
-          'rounded-xl',
+          'rounded-2xl',
+          'transition-all duration-300',
           variantStyles[variant],
           paddingStyles[padding],
-          hoverable && 'cursor-pointer transition-shadow hover:shadow-lg',
+          hoverable && 'cursor-pointer',
           className
         )}
         {...(props as any)}
@@ -84,15 +85,15 @@ export function CardHeader({
 }: CardHeaderProps) {
   return (
     <div
-      className={cn('flex items-start justify-between gap-4 mb-4', className)}
+      className={cn('flex items-start justify-between gap-4 mb-6', className)}
       {...props}
     >
       <div>
         {title && (
-          <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
+          <h3 className="text-xl font-semibold text-text-primary">{title}</h3>
         )}
         {subtitle && (
-          <p className="text-sm text-text-secondary mt-0.5">{subtitle}</p>
+          <p className="text-sm text-text-secondary mt-1">{subtitle}</p>
         )}
         {children}
       </div>
@@ -121,7 +122,7 @@ export function CardFooter({
   return (
     <div
       className={cn(
-        'flex items-center justify-end gap-3 mt-4 pt-4 border-t border-border',
+        'flex items-center justify-end gap-4 mt-6 pt-6 border-t border-border',
         className
       )}
       {...props}

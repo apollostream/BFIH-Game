@@ -33,14 +33,17 @@ export function ResolutionPage() {
     return () => clearTimeout(timer);
   }, [setPhase]);
 
+  // Support both 'priors' and 'priors_by_paradigm' field names
+  const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+
   // Get posteriors from analysis result (or use priors as fallback)
   const posteriorsData = useMemo((): PosteriorsByParadigm => {
     // In real implementation, this would come from the analysis result
-    if (!scenarioConfig?.priors) return {};
+    if (!priorsSource) return {};
     const result: PosteriorsByParadigm = {};
-    for (const paradigmId of Object.keys(scenarioConfig.priors)) {
+    for (const paradigmId of Object.keys(priorsSource)) {
       result[paradigmId] = {};
-      const paradigmPriors = scenarioConfig.priors[paradigmId];
+      const paradigmPriors = priorsSource[paradigmId];
       for (const [hypId, prior] of Object.entries(paradigmPriors)) {
         // Simulate some posterior updates
         const priorVal = typeof prior === 'number' ? prior : prior.probability;
@@ -48,20 +51,20 @@ export function ResolutionPage() {
       }
     }
     return result;
-  }, [scenarioConfig?.priors]);
+  }, [priorsSource]);
 
   const priorsData = useMemo((): PosteriorsByParadigm => {
-    if (!scenarioConfig?.priors) return {};
+    if (!priorsSource) return {};
     const result: PosteriorsByParadigm = {};
-    for (const paradigmId of Object.keys(scenarioConfig.priors)) {
+    for (const paradigmId of Object.keys(priorsSource)) {
       result[paradigmId] = {};
-      const paradigmPriors = scenarioConfig.priors[paradigmId];
+      const paradigmPriors = priorsSource[paradigmId];
       for (const [hypId, prior] of Object.entries(paradigmPriors)) {
         result[paradigmId][hypId] = typeof prior === 'number' ? prior : prior.probability;
       }
     }
     return result;
-  }, [scenarioConfig?.priors]);
+  }, [priorsSource]);
 
   if (!scenarioConfig) {
     return (

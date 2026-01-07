@@ -40,18 +40,21 @@ export function EvidenceRoundPage() {
   }, [scenarioConfig]);
 
   // Build posteriors data (using priors initially, would be updated after evidence)
+  // Support both 'priors' and 'priors_by_paradigm' field names
+  const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+
   const posteriorsData = useMemo((): PosteriorsByParadigm => {
-    if (!scenarioConfig?.priors) return {};
+    if (!priorsSource) return {};
     const result: PosteriorsByParadigm = {};
-    for (const paradigmId of Object.keys(scenarioConfig.priors)) {
+    for (const paradigmId of Object.keys(priorsSource)) {
       result[paradigmId] = {};
-      const paradigmPriors = scenarioConfig.priors[paradigmId];
+      const paradigmPriors = priorsSource[paradigmId];
       for (const [hypId, prior] of Object.entries(paradigmPriors)) {
         result[paradigmId][hypId] = typeof prior === 'number' ? prior : prior.probability;
       }
     }
     return result;
-  }, [scenarioConfig?.priors]);
+  }, [priorsSource]);
 
   const revealNextCluster = () => {
     const unrevealedCluster = clusters.find(

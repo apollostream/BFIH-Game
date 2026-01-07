@@ -28,7 +28,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
 
     return (
-      <div className={cn('flex flex-col gap-1.5', fullWidth && 'w-full')}>
+      <div className={cn('flex flex-col gap-2', fullWidth && 'w-full')}>
         {label && (
           <label
             htmlFor={inputId}
@@ -39,7 +39,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {leftIcon && (
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
               {leftIcon}
             </div>
           )}
@@ -47,23 +47,23 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full px-4 py-2.5',
-              'bg-surface-1 text-text-primary',
-              'border border-border rounded-lg',
+              'w-full px-4 py-3',
+              'bg-surface-1/80 text-text-primary',
+              'border border-border rounded-xl',
               'placeholder:text-text-muted',
-              'transition-colors duration-200',
-              'hover:border-border-hover',
-              'focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent',
-              'disabled:opacity-50 disabled:cursor-not-allowed',
-              error && 'border-error focus:border-error focus:ring-error',
-              !!leftIcon && 'pl-10',
-              !!rightIcon && 'pr-10',
+              'transition-all duration-200',
+              'hover:border-border-hover hover:bg-surface-1',
+              'focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-surface-1',
+              'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface-1/80',
+              error && 'border-error focus:border-error focus:ring-error/20',
+              !!leftIcon && 'pl-11',
+              !!rightIcon && 'pr-11',
               className
             )}
             {...props}
           />
           {rightIcon && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted">
+            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-text-muted">
               {rightIcon}
             </div>
           )}
@@ -71,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {(error || helperText) && (
           <p
             className={cn(
-              'text-xs',
+              'text-xs px-1',
               error ? 'text-error' : 'text-text-muted'
             )}
           >
@@ -109,7 +109,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
     const inputId = id || label?.toLowerCase().replace(/\s+/g, '-');
 
     return (
-      <div className={cn('flex flex-col gap-1.5', fullWidth && 'w-full')}>
+      <div className={cn('flex flex-col gap-2', fullWidth && 'w-full')}>
         {label && (
           <label
             htmlFor={inputId}
@@ -123,15 +123,15 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
           id={inputId}
           className={cn(
             'w-full px-4 py-3',
-            'bg-surface-1 text-text-primary',
-            'border border-border rounded-lg',
+            'bg-surface-1/80 text-text-primary',
+            'border border-border rounded-xl',
             'placeholder:text-text-muted',
-            'transition-colors duration-200',
-            'hover:border-border-hover',
-            'focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent',
+            'transition-all duration-200',
+            'hover:border-border-hover hover:bg-surface-1',
+            'focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 focus:bg-surface-1',
             'disabled:opacity-50 disabled:cursor-not-allowed',
-            'resize-y min-h-[100px]',
-            error && 'border-error focus:border-error focus:ring-error',
+            'resize-y min-h-[120px]',
+            error && 'border-error focus:border-error focus:ring-error/20',
             className
           )}
           {...props}
@@ -139,7 +139,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
         {(error || helperText) && (
           <p
             className={cn(
-              'text-xs',
+              'text-xs px-1',
               error ? 'text-error' : 'text-text-muted'
             )}
           >
