@@ -21,6 +21,7 @@ from dataclasses import dataclass, asdict
 
 from openai import OpenAI
 from dotenv import load_dotenv
+import httpx
 
 
 # ============================================================================
@@ -43,7 +44,11 @@ MODEL = "gpt-4o"
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable not set")
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+# Create OpenAI client with extended timeout for long-running operations
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    timeout=httpx.Timeout(300.0, connect=30.0)  # 5 min total, 30s connect
+)
 
 
 # ============================================================================
@@ -584,46 +589,64 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         return posteriors
 
-    def _run_phase(self, prompt: str, tools: List[Dict], phase_name: str) -> str:
+    def _run_phase(self, prompt: str, tools: List[Dict], phase_name: str, max_retries: int = 2) -> str:
         """
-        Run a single phase with streaming output.
+        Run a single phase with streaming output and retry logic.
         Returns the output text from the phase.
         """
-        logger.info(f"Starting {phase_name}")
-        print(f"\n{'='*60}\n{phase_name}\n{'='*60}")
+        import time
 
-        response = None
-        stream = self.client.responses.create(
-            model=self.model,
-            input=prompt,
-            max_output_tokens=16000,  # Increased for comprehensive reports
-            tools=tools,
-            include=["file_search_call.results"] if any(t.get("type") == "file_search" for t in tools) else [],
-            stream=True
-        )
+        last_error = None
+        for attempt in range(max_retries + 1):
+            try:
+                logger.info(f"Starting {phase_name}" + (f" (attempt {attempt + 1})" if attempt > 0 else ""))
+                print(f"\n{'='*60}\n{phase_name}" + (f" (retry {attempt})" if attempt > 0 else "") + f"\n{'='*60}")
 
-        for event in stream:
-            if event.type == "response.output_text.delta":
-                print(event.delta, end="", flush=True)
-            elif event.type == "response.web_search_call.searching":
-                print(f"\n[Searching web...]")
-            elif event.type == "response.file_search_call.searching":
-                print(f"\n[Searching vector store...]")
-            elif event.type == "response.code_interpreter_call.interpreting":
-                print(f"\n[Running Python code...]")
-            elif event.type == "response.completed":
-                response = event.response
-            elif event.type == "error":
-                logger.error(f"Error in {phase_name}: {event.error.message}")
-                raise RuntimeError(f"API error in {phase_name}: {event.error.message}")
+                response = None
+                stream = self.client.responses.create(
+                    model=self.model,
+                    input=prompt,
+                    max_output_tokens=16000,  # Increased for comprehensive reports
+                    tools=tools,
+                    include=["file_search_call.results"] if any(t.get("type") == "file_search" for t in tools) else [],
+                    stream=True
+                )
 
-        if response is None:
-            raise RuntimeError(f"No response received for {phase_name}")
+                for event in stream:
+                    if event.type == "response.output_text.delta":
+                        print(event.delta, end="", flush=True)
+                    elif event.type == "response.web_search_call.searching":
+                        print(f"\n[Searching web...]")
+                    elif event.type == "response.file_search_call.searching":
+                        print(f"\n[Searching vector store...]")
+                    elif event.type == "response.code_interpreter_call.interpreting":
+                        print(f"\n[Running Python code...]")
+                    elif event.type == "response.completed":
+                        response = event.response
+                    elif event.type == "error":
+                        logger.error(f"Error in {phase_name}: {event.error.message}")
+                        raise RuntimeError(f"API error in {phase_name}: {event.error.message}")
 
-        print(f"\n[{phase_name} complete]")
-        logger.info(f"{phase_name} complete, status: {response.status}")
+                if response is None:
+                    raise RuntimeError(f"No response received for {phase_name}")
 
-        return response.output_text
+                print(f"\n[{phase_name} complete]")
+                logger.info(f"{phase_name} complete, status: {response.status}")
+
+                return response.output_text
+
+            except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                last_error = e
+                if attempt < max_retries:
+                    wait_time = (attempt + 1) * 5  # 5s, 10s backoff
+                    logger.warning(f"{phase_name} failed with {type(e).__name__}, retrying in {wait_time}s...")
+                    print(f"\n[Connection error, retrying in {wait_time}s...]")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    raise
+
+        raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
     def _run_phase_1_methodology(self, request: BFIHAnalysisRequest) -> str:
         """Phase 1: Retrieve BFIH methodology from vector store"""
