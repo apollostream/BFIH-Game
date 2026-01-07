@@ -21,8 +21,8 @@ export function ReportPage() {
     setPhase('report');
   }, [setPhase]);
 
-  // Get report content
-  const reportContent = currentAnalysis?.full_report || generateFallbackReport();
+  // Get report content - backend uses 'report' field, but check 'full_report' as fallback
+  const reportContent = currentAnalysis?.report || currentAnalysis?.full_report || generateFallbackReport();
 
   function generateFallbackReport() {
     if (!scenarioConfig) return '';

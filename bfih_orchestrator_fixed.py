@@ -780,64 +780,263 @@ Print the final posteriors clearly labeled.
     def _run_phase_5_report(self, request: BFIHAnalysisRequest,
                            methodology: str, evidence: str,
                            likelihoods: str, computation: str) -> str:
-        """Phase 5: Generate final BFIH report"""
+        """Phase 5: Generate final BFIH report following comprehensive template"""
         scenario_json = json.dumps(request.scenario_config, indent=2)
-        prompt = f"""
-You are generating the final BFIH analysis report.
 
-PROPOSITION: "{request.proposition}"
+        # Build paradigm info for report
+        paradigms = request.scenario_config.get("paradigms", [])
+        hypotheses = request.scenario_config.get("hypotheses", [])
+        priors = request.scenario_config.get("priors_by_paradigm", request.scenario_config.get("priors", {}))
+
+        paradigm_list = "\n".join([f"- {p.get('id', 'K?')}: {p.get('name', 'Unknown')} - {p.get('description', '')}" for p in paradigms])
+        hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
+
+        prompt = f"""
+You are generating the FINAL comprehensive BFIH analysis report. This report must be THOROUGH, DETAILED, and follow the EXACT structure below.
+
+PROPOSITION UNDER INVESTIGATION:
+"{request.proposition}"
 
 SCENARIO CONFIGURATION:
 {scenario_json}
 
-=== PHASE 1 METHODOLOGY ===
-{methodology[:2000]}
+PARADIGMS DEFINED:
+{paradigm_list}
 
-=== PHASE 2 EVIDENCE ===
-{evidence[:3000]}
+HYPOTHESES DEFINED:
+{hypothesis_list}
 
-=== PHASE 3 LIKELIHOODS ===
-{likelihoods[:3000]}
+=== PHASE 1 METHODOLOGY (for reference) ===
+{methodology[:3000]}
 
-=== PHASE 4 COMPUTATION ===
+=== PHASE 2 EVIDENCE GATHERED ===
+{evidence[:5000]}
+
+=== PHASE 3 LIKELIHOOD ASSIGNMENTS ===
+{likelihoods[:5000]}
+
+=== PHASE 4 BAYESIAN COMPUTATION OUTPUT ===
 {computation}
 
-YOUR TASK:
-Generate a comprehensive markdown report with these sections:
+================================================================================
+YOUR TASK: Generate a COMPREHENSIVE BFIH report with ALL 9 DELIVERABLES below.
+This must be a SUBSTANTIVE document - at minimum 3000 words. Do NOT truncate.
+================================================================================
 
-1. **Executive Summary** (2-3 paragraphs)
-   - Primary finding with verdict (VALIDATED/PARTIALLY VALIDATED/REJECTED/INDETERMINATE)
-   - Key posterior probabilities from Phase 4
-   - Paradigm dependence summary
+# Intellectual Honesty Analysis: [Create a short title from the proposition]
 
-2. **Scenario & Objectives**
+**Analysis conducted using OpenAI GPT-4.1 with Bayesian Framework for Intellectual Honesty (BFIH)**
 
-3. **Background Knowledge (K₀) Analysis**
-   - Paradigms and their assumptions
+---
 
-4. **Forcing Functions Application**
-   - Ontological Scan results
-   - Ancestral Check
-   - Paradigm Inversion
+## Proposition Under Investigation
 
-5. **Hypothesis Set Documentation**
-   - Table with all hypotheses
+**Proposition:** "{request.proposition}"
 
-6. **Evidence Matrix & Likelihood Analysis**
-   - Evidence clusters from Phase 3
-   - Likelihood tables
+---
 
-7. **Bayesian Update Trace**
-   - Final posteriors from Phase 4 computation
-   - Copy the exact posterior values
+## DELIVERABLE 1: Executive Summary
 
-8. **Paradigm-Dependence Analysis**
+Write 4-6 paragraphs covering:
+1. **Primary Finding**: State verdict (VALIDATED / PARTIALLY VALIDATED / PARTIALLY REJECTED / REJECTED / INDETERMINATE)
+2. List the dominant paradigm's conclusions with key posterior probabilities (decimal form: 0.XXX)
+3. Summarize at least one alternative paradigm's contrasting interpretation
+4. Highlight 5-8 of the most important evidence points and their qualitative impact
+5. State whether conclusions are robust under sensitivity analysis
+6. Distinguish between (a) high-confidence findings and (b) uncertain/contingent findings
 
-9. **Sensitivity Analysis Results**
+---
 
-10. **Intellectual Honesty Assessment**
+## DELIVERABLE 2: Dominant Paradigm Statement (K₀)
 
-Use decimal probabilities (e.g., 0.425). Include all posterior values from Phase 4.
+### My Interpretive Paradigm (K₀)
+State the dominant paradigm from the scenario config. Describe in 4-6 numbered points:
+1. Core assumptions about the domain
+2. How evidence is prioritized and weighed
+3. How costs/benefits/interests are conceptualized
+4. How temporal dynamics are interpreted
+
+### Background Knowledge & Expertise
+- Describe the "idealized analyst" performing this analysis
+- List 3-5 acknowledged limitations and biases
+
+### Expected Outcomes (Pre-Commitment)
+- State 3-5 "pre-committed" expectations given K₀ assumptions
+- What patterns would be expected before seeing specific evidence?
+
+---
+
+## DELIVERABLE 3: Hypothesis Set (H₀)
+
+### Mutually Exclusive, Collectively Exhaustive Hypotheses
+
+For EACH hypothesis from the scenario config:
+- **H[X]: [Name]**
+- Narrative definition (1 paragraph)
+- **Testable Predictions:** 3-5 bullet points of what would be expected if this hypothesis were true
+
+Include H0 (catch-all) with its definition.
+
+### Prior Allocation Table
+
+| Hypothesis | Prior P(H) | Rationale |
+|------------|:----------:|-----------|
+[Fill with actual priors from scenario config and brief rationales]
+
+State: "Priors sum to 1.0" and verify.
+
+---
+
+## DELIVERABLE 4: Paradigm Inversion (Alternative Paradigms)
+
+### Alternative Paradigm 1 (Θ₁): [Name from scenario config]
+
+**Foundational Assumptions (Θ₁):**
+- List 4 key assumptions
+
+**Key Differences from K₀:**
+
+| Dimension | K₀ (Dominant) | Θ₁ (Alternative) |
+|-----------|---------------|------------------|
+[Fill with 4-5 dimensions of contrast]
+
+**Paradigm-Conditional Expectations (Θ₁):**
+- Which hypotheses are favored under this paradigm?
+- What evidence patterns would be especially diagnostic?
+
+[Repeat for additional paradigms if present in config]
+
+---
+
+## DELIVERABLE 5: Evidence Matrix
+
+### Evidence Clustering Strategy
+Explain the 3-6 thematic clusters used to organize evidence.
+
+### Evidence Items
+
+For EACH major evidence item gathered in Phase 2:
+
+**E-[X]: [Short description]**
+
+[Narrative: 1-2 paragraphs describing what the evidence shows, source, timeframe, limitations]
+
+| Hypothesis | P(E | H) | Interpretation |
+|------------|:--------:|----------------|
+[Likelihood table for all hypotheses]
+
+[Include at least 6-10 evidence items with full tables]
+
+### Evidence Matrix Summary
+
+Provide a summary table showing evidence clusters vs hypotheses with aggregate support direction.
+
+---
+
+## DELIVERABLE 6: Perspective-by-Perspective Analysis
+
+Analyze from 3-4 distinct perspectives:
+
+### [Perspective 1] Perspective
+
+**Question:** [Perspective-specific question]
+
+**Evidence Standard:** [What counts as strong evidence from this view]
+
+**Conclusion:** **[Clear statement]**
+
+**Confidence:** [e.g., Moderate (60-70%), High (75-85%)]
+
+**Key Evidence:**
+- [Evidence item and implication]
+
+**Assessment:** [1-2 paragraphs]
+
+[Repeat for 2-3 more perspectives]
+
+---
+
+## DELIVERABLE 7: Paradigm Integration & Sensitivity Analysis
+
+### Posterior Probabilities Under Dominant Paradigm K₀
+
+| Hypothesis | Prior P(H) | Posterior P(H|E) | Change | Interpretation |
+|------------|:----------:|:----------------:|:------:|----------------|
+[Use exact values from Phase 4 computation]
+
+### Posterior Probabilities Under Alternative Paradigm(s)
+
+[Similar table for each alternative paradigm]
+
+### Sensitivity Analysis: ±20% Prior Variation
+
+| Scenario | Hypothesis | Prior | Posterior | Robustness |
+|----------|------------|:-----:|:---------:|------------|
+[Show how posteriors change with ±20% prior variation for 2-3 key hypotheses]
+
+**Robustness Assessment:** [Are conclusions stable under prior variation?]
+
+---
+
+## DELIVERABLE 8: Ancestral / Historical Check
+
+### Historical Baselines
+- [Baseline 1: relevant historical comparison]
+- [Baseline 2: another relevant comparison]
+
+### Comparison and Implications
+[2-3 paragraphs comparing current situation to historical baselines]
+- Does this represent continuity, gradual drift, or structural break?
+- Which hypotheses predict continuity vs. discontinuity?
+
+---
+
+## DELIVERABLE 9: Comprehensive Integration
+
+### Core Question: [Restate proposition as question]
+
+**Answer:** [VERDICT with nuance]
+
+**Supporting Hypotheses:**
+- H[X]: Posterior 0.XXX - [interpretation]
+- H[Y]: Posterior 0.XXX - [interpretation]
+
+**Key Evidence Clusters:**
+- [Cluster]: [Why it matters]
+
+**Confidence:** [Confidence level with justification]
+
+---
+
+## DELIVERABLE 10: Limitations, Unknowns, and Future Tests
+
+### Data and Measurement Limitations
+[Discuss 2-3 specific limitations]
+
+### Modeling Limitations
+[Discuss hypothesis design limits, independence assumptions]
+
+### Paradigm Dependence
+[Where do K₀ vs Θ₁ lead to different interpretations?]
+
+### Critical Future Tests
+- [Future observation 1 that would update beliefs]
+- [Future observation 2]
+- [Future observation 3]
+
+---
+
+**End of BFIH Report**
+
+================================================================================
+CRITICAL REQUIREMENTS:
+- Use decimal probabilities (0.XXX format, NOT percentages)
+- ALL posterior values MUST match Phase 4 computation output EXACTLY
+- Include FULL likelihood tables for evidence items
+- Report must be SUBSTANTIVE - minimum 3000 words
+- Use proper markdown formatting throughout
+- Include all computed metrics: posteriors, likelihood ratios, WoE where available
+================================================================================
 """
         tools = []  # No tools needed
         return self._run_phase(prompt, tools, "Phase 5: Report Generation")
