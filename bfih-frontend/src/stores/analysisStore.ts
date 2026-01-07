@@ -1,7 +1,7 @@
 // Analysis management state
 
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist } from 'zustand/middleware';
 import type { BFIHAnalysisResult, AnalysisStatusResponse } from '../types';
 import {
   submitAnalysis,
@@ -45,9 +45,10 @@ const POLL_INTERVAL = 3000; // 3 seconds
 
 export const useAnalysisStore = create<AnalysisState>()(
   devtools(
-    (set, get) => ({
-      // Initial state
-      pendingAnalysisId: null,
+    persist(
+      (set, get) => ({
+        // Initial state
+        pendingAnalysisId: null,
       status: 'idle',
       analysisStatus: null,
       currentAnalysis: null,
@@ -219,6 +220,16 @@ export const useAnalysisStore = create<AnalysisState>()(
         });
       },
     }),
+    {
+      name: 'bfih-analysis-store',
+      partialize: (state) => ({
+        // Persist analysis results so they survive navigation
+        currentAnalysis: state.currentAnalysis,
+        cachedResults: state.cachedResults,
+        status: state.status,
+      }),
+    }
+    ),
     { name: 'AnalysisStore' }
   )
 );

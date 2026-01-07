@@ -227,10 +227,15 @@ export const useGameStore = create<GameState>()(
         name: 'bfih-game-store',
         partialize: (state) => ({
           scenarioId: state.scenarioId,
+          scenarioConfig: state.scenarioConfig,  // Persist full config
+          analysisResult: state.analysisResult,  // Persist analysis result
           currentPhase: state.currentPhase,
           currentEvidenceRound: state.currentEvidenceRound,
+          totalEvidenceRounds: state.totalEvidenceRounds,
+          isGameActive: state.isGameActive,
           homeParadigm: state.homeParadigm,
           activeParadigm: state.activeParadigm,
+          selectedParadigms: state.selectedParadigms,
         }),
       }
     ),
