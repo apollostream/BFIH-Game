@@ -219,7 +219,7 @@ async def store_scenario(scenario: Dict):
         # Store scenario
         storage.store_scenario_config(
             scenario_id=scenario["scenario_id"],
-            scenario=scenario
+            config=scenario
         )
         
         logger.info(f"Stored scenario: {scenario['scenario_id']}")

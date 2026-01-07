@@ -97,17 +97,17 @@ export function getDomainColor(domain: Domain): string {
 }
 
 // Hypothesis colors (derived from associated paradigm)
-export function getHypothesisColor(hypothesisId: string, associatedParadigms: string[]): string {
+export function getHypothesisColor(hypothesisId: string, associatedParadigms?: string[]): string {
   if (hypothesisId === 'H0') return '#6B7280'; // Catch-all is gray
-  if (associatedParadigms.length > 0) {
+  if (associatedParadigms && associatedParadigms.length > 0) {
     return PARADIGM_COLORS[associatedParadigms[0]] || '#6B7280';
   }
   return '#6B7280';
 }
 
 // Generate gradient string for multi-paradigm hypothesis
-export function getMultiParadigmGradient(paradigmIds: string[]): string {
-  if (paradigmIds.length === 0) return PARADIGM_COLORS.K1;
+export function getMultiParadigmGradient(paradigmIds?: string[]): string {
+  if (!paradigmIds || paradigmIds.length === 0) return PARADIGM_COLORS.K1;
   if (paradigmIds.length === 1) return PARADIGM_COLORS[paradigmIds[0]] || '#6B7280';
 
   const colors = paradigmIds.map(id => PARADIGM_COLORS[id] || '#6B7280');

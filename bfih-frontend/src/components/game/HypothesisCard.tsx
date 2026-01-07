@@ -187,10 +187,10 @@ export function HypothesisCard({
           {/* Tags */}
           {showDetails && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {hypothesis.domains.map((domain) => (
+              {hypothesis.domains?.map((domain) => (
                 <DomainBadge key={domain} domain={domain} size="sm" />
               ))}
-              {hypothesis.associated_paradigms.map((paradigmId) => (
+              {hypothesis.associated_paradigms?.map((paradigmId) => (
                 <ParadigmBadge key={paradigmId} paradigmId={paradigmId} size="sm">
                   {paradigmId}
                 </ParadigmBadge>
