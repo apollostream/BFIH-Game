@@ -484,7 +484,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         Computes SEPARATE posteriors for each paradigm using:
         - Each paradigm's specific priors from scenario_config
-        - Common evidence cluster likelihoods from evidence_clusters
+        - PARADIGM-SPECIFIC likelihoods P(E|H,K) from evidence_clusters
         """
         posteriors = {}
         paradigms = scenario_config.get("paradigms", [])
@@ -502,22 +502,6 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         if evidence_clusters and priors_by_paradigm:
             logger.info(f"Computing paradigm-specific posteriors for {len(paradigms)} paradigms")
 
-            # Extract cluster likelihoods (P(E|H) for each hypothesis)
-            cluster_likelihoods = []
-            for cluster in evidence_clusters:
-                lh = cluster.get("likelihoods", {})
-                # Handle both formats: {"H1": 0.8} and {"H1": {"probability": 0.8}}
-                cluster_lh = {}
-                for h_id in hyp_ids:
-                    h_lh = lh.get(h_id, lh.get(h_id.upper(), lh.get(h_id.lower(), {})))
-                    if isinstance(h_lh, dict):
-                        cluster_lh[h_id] = h_lh.get("probability", 0.5)
-                    elif isinstance(h_lh, (int, float)):
-                        cluster_lh[h_id] = float(h_lh)
-                    else:
-                        cluster_lh[h_id] = 0.5  # Default neutral
-                cluster_likelihoods.append(cluster_lh)
-
             # Compute posteriors for each paradigm
             for paradigm in paradigms:
                 paradigm_id = paradigm.get("id")
@@ -528,21 +512,44 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 for h_id in hyp_ids:
                     p = paradigm_priors.get(h_id, paradigm_priors.get(h_id.upper(), {}))
                     if isinstance(p, dict):
-                        priors[h_id] = p.get("probability", 1.0 / len(hyp_ids))
+                        priors[h_id] = p.get("probability", p.get("prior", 1.0 / len(hyp_ids)))
                     elif isinstance(p, (int, float)):
                         priors[h_id] = float(p)
                     else:
                         priors[h_id] = 1.0 / len(hyp_ids)  # Uniform default
 
+                # Extract PARADIGM-SPECIFIC likelihoods P(E|H,K) for this paradigm
+                cluster_likelihoods = []
+                for cluster in evidence_clusters:
+                    # Try new format: likelihoods_by_paradigm[K][H]
+                    lh_by_paradigm = cluster.get("likelihoods_by_paradigm", {})
+                    if paradigm_id in lh_by_paradigm:
+                        lh = lh_by_paradigm[paradigm_id]
+                    else:
+                        # Fallback to old format: likelihoods[H] (same for all paradigms)
+                        lh = cluster.get("likelihoods", {})
+
+                    # Extract likelihood for each hypothesis
+                    cluster_lh = {}
+                    for h_id in hyp_ids:
+                        h_lh = lh.get(h_id, lh.get(h_id.upper(), lh.get(h_id.lower(), {})))
+                        if isinstance(h_lh, dict):
+                            cluster_lh[h_id] = h_lh.get("probability", 0.5)
+                        elif isinstance(h_lh, (int, float)):
+                            cluster_lh[h_id] = float(h_lh)
+                        else:
+                            cluster_lh[h_id] = 0.5  # Default neutral
+                    cluster_likelihoods.append(cluster_lh)
+
                 # Compute unnormalized posteriors using Bayes' theorem
+                # P(H|E,K) ∝ P(H|K) * ∏P(E_k|H,K)
                 unnormalized = {}
                 for h_id in hyp_ids:
-                    # P(H|E) ∝ P(H) * ∏P(E_k|H)
                     log_likelihood = 0.0
                     for cluster_lh in cluster_likelihoods:
-                        p_e_h = cluster_lh.get(h_id, 0.5)
-                        if p_e_h > 0:
-                            log_likelihood += math.log(p_e_h)
+                        p_e_h_k = cluster_lh.get(h_id, 0.5)
+                        if p_e_h_k > 0:
+                            log_likelihood += math.log(p_e_h_k)
                         else:
                             log_likelihood += math.log(1e-10)  # Avoid log(0)
 
@@ -721,56 +728,80 @@ Include 15-25 evidence items total across all hypotheses.
 
     def _run_phase_3_likelihoods(self, request: BFIHAnalysisRequest, evidence_text: str,
                                    evidence_items: List[Dict]) -> Tuple[str, List[Dict]]:
-        """Phase 3: Assign likelihoods to evidence. Returns (markdown_text, structured_clusters)"""
-        scenario_json = json.dumps(request.scenario_config, indent=2)
+        """Phase 3: Assign PARADIGM-SPECIFIC likelihoods to evidence.
 
-        # Get hypothesis IDs for the prompt
+        Returns (markdown_text, structured_clusters) where likelihoods are P(E|H,K)
+        - different for each paradigm-hypothesis combination.
+        """
+        # Get hypotheses and paradigms
         hypotheses = request.scenario_config.get("hypotheses", [])
+        paradigms = request.scenario_config.get("paradigms", [])
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+        paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
+
+        hypotheses_json = json.dumps(hypotheses, indent=2)
+        paradigms_json = json.dumps(paradigms, indent=2)
 
         prompt = f"""
-You are assigning likelihoods for a BFIH Bayesian analysis.
+You are assigning PARADIGM-SPECIFIC likelihoods for a BFIH Bayesian analysis.
 
 PROPOSITION: "{request.proposition}"
 
-SCENARIO CONFIGURATION:
-{scenario_json}
+HYPOTHESES (propositional statements to evaluate):
+{hypotheses_json}
+
+PARADIGMS (epistemic viewpoints that affect likelihood assessment):
+{paradigms_json}
 
 EVIDENCE GATHERED:
 {evidence_text[:6000]}
 
-YOUR TASK:
-1. Group evidence items into 3-5 CLUSTERS based on thematic similarity
-2. For each cluster, assign likelihoods P(E|H) for EACH hypothesis
-3. Justify each likelihood assignment (0.0 to 1.0)
-4. Ensure clusters are conditionally independent given any hypothesis
+CRITICAL CONCEPT: Likelihoods are P(E|H, K) - they depend on BOTH the hypothesis AND the paradigm!
 
-After your analysis, output a structured JSON block with ALL clusters and likelihoods.
-Use this EXACT format with markers:
+The SAME evidence can have DIFFERENT likelihoods under different paradigms because:
+- Different paradigms weight different types of evidence differently
+- A paradigm skeptical of economic explanations assigns lower P(E|H_economic, K_skeptic)
+- A paradigm trusting institutional data assigns higher P(E|H, K_institutional)
+
+YOUR TASK:
+1. Group evidence into 3-5 CLUSTERS based on thematic similarity
+2. For EACH cluster, assign likelihoods P(E|H, K) for:
+   - EACH hypothesis (H0, H1, H2, ...)
+   - UNDER EACH paradigm (K1, K2, K3, ...)
+3. Justify how paradigm viewpoint affects the likelihood assessment
+
+Output structured JSON with PARADIGM-SPECIFIC likelihoods:
 
 CLUSTERS_JSON_START
 [
   {{
     "cluster_id": "C1",
     "cluster_name": "Short descriptive name",
-    "description": "What evidence items are in this cluster",
+    "description": "What evidence this cluster contains",
     "evidence_ids": ["E1", "E2", "E3"],
-    "conditional_independence_justification": "Why these are conditionally independent",
-    "likelihoods": {{
-      "H0": {{"probability": 0.3, "justification": "..."}},
-      "H1": {{"probability": 0.8, "justification": "..."}},
-      "H2": {{"probability": 0.4, "justification": "..."}}
+    "likelihoods_by_paradigm": {{
+      "K1": {{
+        "H0": {{"probability": 0.3, "justification": "Under K1 viewpoint..."}},
+        "H1": {{"probability": 0.8, "justification": "K1 weights economic evidence highly..."}},
+        "H2": {{"probability": 0.4, "justification": "..."}}
+      }},
+      "K2": {{
+        "H0": {{"probability": 0.25, "justification": "Under K2 viewpoint..."}},
+        "H1": {{"probability": 0.5, "justification": "K2 is skeptical of pure economic explanations..."}},
+        "H2": {{"probability": 0.7, "justification": "K2 weights human factors more..."}}
+      }},
+      "K3": {{
+        ...
+      }}
     }}
-  }},
-  {{
-    "cluster_id": "C2",
-    ...
   }}
 ]
 CLUSTERS_JSON_END
 
-Hypotheses to include: {hyp_ids}
-Create 3-5 clusters covering all evidence.
+Hypotheses: {hyp_ids}
+Paradigms: {paradigm_ids}
+
+Create 3-5 clusters. Each cluster MUST have likelihoods for ALL paradigm-hypothesis combinations.
 """
         tools = []  # No tools needed, pure reasoning
         result = self._run_phase(prompt, tools, "Phase 3: Likelihood Assignment")
@@ -1461,105 +1492,105 @@ Output ONLY valid JSON array, no markdown:
         """
         Phase 0b: Generate hypotheses with forcing functions and MECE synthesis.
 
-        Executes:
-        - Initial hypothesis generation per paradigm
-        - Ontological Scan (7 domains)
-        - Ancestral Check (historical solutions)
-        - Paradigm Inversion (inverse hypotheses)
-        - MECE Synthesis (consolidate into unified set)
+        IMPORTANT: Hypotheses are PROPOSITIONAL STATEMENTS about the world, NOT paradigm labels.
+        All hypotheses should be evaluable from ANY paradigm's perspective.
+        Paradigms determine priors and likelihoods, but hypotheses are paradigm-independent statements.
         """
         num_hypotheses = {"easy": 4, "medium": 6, "hard": 8}.get(difficulty, 6)
         paradigm_json = json.dumps(paradigms, indent=2)
 
         prompt = f"""
-You are generating hypotheses for a BFIH analysis with FORCING FUNCTIONS.
+You are generating HYPOTHESES for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
 
 PROPOSITION: "{proposition}"
 
-PARADIGMS:
+PARADIGMS (these are VIEWPOINTS, not hypotheses):
 {paradigm_json}
+
+CRITICAL CONCEPTUAL DISTINCTION:
+- HYPOTHESES are PROPOSITIONAL STATEMENTS about the world - claims that could be true or false
+- PARADIGMS are EPISTEMIC VIEWPOINTS that determine how we assess evidence and assign probabilities
+- Hypotheses do NOT map 1-to-1 to paradigms!
+- ALL hypotheses will be evaluated from EVERY paradigm's perspective
+
+GOOD HYPOTHESIS EXAMPLES (propositional statements):
+- "The 737 MAX crashes resulted primarily from Boeing prioritizing schedule over safety testing"
+- "Inadequate pilot training on MCAS system caused the crashes"
+- "Regulatory capture allowed insufficient FAA oversight"
+- "The single-sensor MCAS design was the primary technical failure"
+
+BAD HYPOTHESIS EXAMPLES (these are paradigm labels, NOT propositions):
+- "Economic and Psychological Drivers" ❌
+- "Techno-Economic Explanation" ❌
+- "Human-Centric Factors" ❌
 
 TARGET: Generate {num_hypotheses} hypotheses (including H0 catch-all)
 
-Execute these FORCING FUNCTIONS in order:
+Execute these FORCING FUNCTIONS:
 
 ## FORCING FUNCTION 1: ONTOLOGICAL SCAN
-Verify coverage of these 7 domains. For each, either include a hypothesis OR justify exclusion:
-- Biological (genetic, neurological, health factors)
-- Economic (capital, incentives, resources)
-- Cultural/Social (norms, networks, community)
-- Theological (faith, transcendence, religious institutions)
-- Historical (precedent, tradition, time-tested mechanisms)
-- Institutional (regulations, organizations, governance)
-- Psychological (individual motivation, cognition, personality)
+Generate hypotheses covering relevant domains:
+- Economic (incentives, cost pressures, market competition)
+- Institutional (regulations, organizational structure, governance)
+- Psychological (human factors, decision-making, cognitive biases)
+- Cultural (organizational culture, industry norms)
+- Historical (precedent, path dependence)
+- Technical (engineering, design, systems)
+- Biological (if relevant to proposition)
 
 ## FORCING FUNCTION 2: ANCESTRAL CHECK
-Identify how similar problems were solved historically.
-Include at least one hypothesis reflecting a time-tested mechanism.
+What historical analogues exist? Include hypotheses reflecting time-tested failure modes.
 
-## FORCING FUNCTION 3: PARADIGM INVERSION
-For each paradigm, generate at least one hypothesis from its INVERSE paradigm's perspective.
+## FORCING FUNCTION 3: MECE SYNTHESIS
+Ensure hypotheses are:
+- MUTUALLY EXCLUSIVE: Only one can be the PRIMARY explanation
+- COLLECTIVELY EXHAUSTIVE: All plausible explanations covered
+- PROPOSITIONAL: Each is a clear claim about the world
+- PARADIGM-NEUTRAL in naming: Names describe the claim, not a viewpoint
 
-## FORCING FUNCTION 4: MECE SYNTHESIS
-After generating hypotheses from all paradigms:
-1. Collect ALL hypotheses
-2. Identify overlaps and consolidate
-3. Ensure MUTUAL EXCLUSIVITY: no two hypotheses can both be true
-4. Ensure COLLECTIVE EXHAUSTIVENESS: hypotheses cover all plausible explanations
-5. Include H0 as catch-all for unknown/combination factors
-6. Restate each hypothesis with clear, unambiguous boundaries
-
-Output ONLY valid JSON with this structure:
+Output ONLY valid JSON:
 {{
   "hypotheses": [
     {{
       "id": "H0",
-      "name": "Unknown/Combination",
-      "narrative": "Multiple factors combined in ways not identified",
+      "name": "Unknown or Combined Factors",
+      "statement": "The outcome resulted from factors not identified or a combination that cannot be isolated",
       "domains": [],
-      "associated_paradigms": ["K1", "K2", "K3"],
-      "is_ancestral_solution": false,
       "is_catch_all": true
     }},
     {{
       "id": "H1",
-      "name": "...",
-      "narrative": "...",
-      "domains": ["Economic", "Psychological"],
-      "associated_paradigms": ["K1"],
-      "is_ancestral_solution": false,
+      "name": "[Descriptive name of the claim]",
+      "statement": "[Full propositional statement - what this hypothesis claims is true]",
+      "domains": ["Economic", "Institutional"],
+      "testable_predictions": ["If true, we would observe...", "..."],
+      "is_catch_all": false
+    }},
+    {{
+      "id": "H2",
+      "name": "[Another descriptive name]",
+      "statement": "[Another propositional claim]",
+      "domains": ["Technical", "Psychological"],
+      "testable_predictions": ["..."],
       "is_catch_all": false
     }}
   ],
   "forcing_functions_log": {{
     "ontological_scan": {{
-      "Biological": {{"hypothesis_id": null, "justification": "..."}},
-      "Economic": {{"hypothesis_id": "H1", "justification": "..."}},
-      "Cultural": {{"hypothesis_id": "H2", "justification": "..."}},
-      "Theological": {{"hypothesis_id": "H3", "justification": "..."}},
-      "Historical": {{"hypothesis_id": "H3", "justification": "..."}},
-      "Institutional": {{"hypothesis_id": "H4", "justification": "..."}},
-      "Psychological": {{"hypothesis_id": "H1", "justification": "..."}}
+      "Economic": {{"covered_by": "H1", "justification": "..."}},
+      "Institutional": {{"covered_by": "H1, H3", "justification": "..."}},
+      "Technical": {{"covered_by": "H2", "justification": "..."}},
+      "Psychological": {{"covered_by": "H2", "justification": "..."}},
+      "Cultural": {{"covered_by": "H3", "justification": "..."}},
+      "Historical": {{"covered_by": "H4", "justification": "..."}}
     }},
     "ancestral_check": {{
-      "historical_analogue": "...",
-      "primary_mechanism": "...",
-      "hypothesis_id": "H3",
-      "justification": "..."
+      "historical_analogues": ["DC-10 cargo door failures", "Challenger O-ring decision"],
+      "lessons_applied": "..."
     }},
-    "paradigm_inversion": [
-      {{
-        "primary_paradigm": "K1",
-        "inverse_paradigm": "K2",
-        "generated_hypothesis_id": "H3",
-        "quality_assessment": "..."
-      }}
-    ],
-    "mece_synthesis": {{
-      "total_candidates": 8,
-      "consolidated_to": {num_hypotheses},
-      "overlaps_resolved": ["..."],
-      "validation": "All hypotheses are mutually exclusive and collectively exhaustive"
+    "mece_verification": {{
+      "mutual_exclusivity": "Hypotheses identify different PRIMARY causes...",
+      "collective_exhaustiveness": "H0 catches any unexplained remainder..."
     }}
   }}
 }}
