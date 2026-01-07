@@ -856,439 +856,305 @@ Print the final posteriors clearly labeled.
                            likelihoods: str, computation: str,
                            evidence_items: List[Dict] = None,
                            evidence_clusters: List[Dict] = None) -> str:
-        """Phase 5: Generate final BFIH report following comprehensive template.
+        """Phase 5: Generate final BFIH report in multiple sub-phases for better quality.
 
-        Now receives structured evidence_items and evidence_clusters for detailed tables.
+        Generates report sections separately then concatenates them.
         """
-        scenario_json = json.dumps(request.scenario_config, indent=2)
-
-        # Build paradigm info for report
+        # Build context data
         paradigms = request.scenario_config.get("paradigms", [])
         hypotheses = request.scenario_config.get("hypotheses", [])
         priors = request.scenario_config.get("priors_by_paradigm", request.scenario_config.get("priors", {}))
 
         paradigm_list = "\n".join([f"- {p.get('id', 'K?')}: {p.get('name', 'Unknown')} - {p.get('description', '')}" for p in paradigms])
         hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
-
-        # Format structured evidence for the prompt
         evidence_items_json = json.dumps(evidence_items or [], indent=2)
         evidence_clusters_json = json.dumps(evidence_clusters or [], indent=2)
 
-        prompt = f"""
-You are generating the FINAL comprehensive BFIH analysis report. This MUST be a DETAILED, THOROUGH document of AT LEAST 5000 WORDS following the EXACT structure and format shown in the examples below.
+        # Phase 5a: Executive Summary, Paradigms, Hypotheses
+        section_a = self._run_phase_5a_intro(
+            request, paradigm_list, hypothesis_list, computation, priors
+        )
 
-PROPOSITION UNDER INVESTIGATION:
-"{request.proposition}"
+        # Phase 5b: Evidence Matrix (all evidence items with citations)
+        section_b = self._run_phase_5b_evidence(
+            request, evidence_items, evidence_clusters, hypotheses
+        )
 
-SCENARIO CONFIGURATION:
-{scenario_json}
+        # Phase 5c: Bayesian Results, Conclusions, Sensitivity
+        section_c = self._run_phase_5c_results(
+            request, computation, paradigms, hypotheses, priors
+        )
 
-PARADIGMS DEFINED:
-{paradigm_list}
+        # Phase 5d: Bibliography
+        section_d = self._run_phase_5d_bibliography(evidence_items)
 
-HYPOTHESES DEFINED:
-{hypothesis_list}
+        # Combine all sections
+        full_report = f"""# BFIH Analysis Report: {request.proposition}
 
-=== PHASE 1 METHODOLOGY ===
-{methodology}
-
-=== PHASE 2 EVIDENCE GATHERED (narrative) ===
-{evidence}
-
-=== STRUCTURED EVIDENCE ITEMS (use for detailed tables) ===
-{evidence_items_json}
-
-=== PHASE 3 LIKELIHOOD ASSIGNMENTS (narrative) ===
-{likelihoods}
-
-=== STRUCTURED EVIDENCE CLUSTERS WITH LIKELIHOODS (use for tables) ===
-{evidence_clusters_json}
-
-=== PHASE 4 BAYESIAN COMPUTATION OUTPUT ===
-{computation}
-
-================================================================================
-GENERATE A COMPREHENSIVE BFIH REPORT WITH THE EXACT FORMAT SHOWN BELOW.
-THIS REPORT MUST BE AT LEAST 5000 WORDS. DO NOT ABBREVIATE OR TRUNCATE.
-FOLLOW THE EXAMPLE FORMATS EXACTLY.
-================================================================================
+**Analysis conducted using Bayesian Framework for Intellectual Honesty (BFIH)**
 
 ---
 
-# Intellectual Honesty Analysis: [Create descriptive title from proposition]
-
-**Analysis conducted using OpenAI with Bayesian Framework for Intellectual Honesty (BFIH Rev 4)**
+{section_a}
 
 ---
 
-## Proposition Under Investigation
-
-**Proposition:** "{request.proposition}"
+{section_b}
 
 ---
 
-## Executive Summary
-
-[WRITE 5-7 DETAILED PARAGRAPHS covering:]
-
-**Primary Finding:** The proposition is **[VERDICT: VALIDATED / PARTIALLY VALIDATED / PARADIGM-DEPENDENT / PARTIALLY REJECTED / REJECTED / INDETERMINATE]**. Under the [dominant paradigm name], [hypothesis X] has posterior probability of [0.XXX], indicating [interpretation]. Under [alternative paradigm], [different hypothesis] dominates with posterior [0.XXX].
-
-**Key Evidence (list 6-10 specific findings with numbers):**
-- [Evidence 1]: [Specific statistic or finding, e.g., "SMD=-0.591 for depression reduction"]
-- [Evidence 2]: [Another specific finding with source]
-- [Evidence 3]: ...
-[Continue for all major evidence]
-
-**Robustness:** [State whether conclusions are stable under ±20% prior variation]
-
-**High-Confidence Findings vs. Uncertainties:**
-- High confidence: [List 2-3 findings that hold across paradigms]
-- Remaining uncertainties: [List 2-3 areas where paradigm choice matters]
+{section_c}
 
 ---
 
-## DELIVERABLE 1: Dominant Paradigm Statement (K₀)
-
-### My Interpretive Paradigm (K₀): [Name from config]
-
-I approach this analysis from a **[Paradigm Name]** framework. This holds that:
-
-1. **[Core assumption 1]**: [Detailed explanation - 2-3 sentences]
-2. **[Core assumption 2]**: [Detailed explanation]
-3. **[Core assumption 3]**: [Detailed explanation]
-4. **[Core assumption 4]**: [Detailed explanation]
-
-### Background Knowledge & Expertise
-
-The idealized analyst for this framework has:
-- [Knowledge area 1]
-- [Knowledge area 2]
-- [Methodological expertise]
-
-**Acknowledged Limitations and Biases:**
-- [Limitation 1]: [How it might affect analysis]
-- [Limitation 2]: [How it might affect analysis]
-- [Limitation 3]: [How it might affect analysis]
-
-### Expected Outcomes (Pre-Commitment)
-
-Prior to examining specific evidence, under K₀ I expected:
-1. [Expected finding 1 - what patterns would emerge]
-2. [Expected finding 2]
-3. [Expected finding 3]
-4. [Expected finding 4]
-
-This pre-commitment is documented to enable detection of confirmation bias.
-
----
-
-## DELIVERABLE 2: Comprehensive Hypothesis Set (H₀)
-
-### Mutually Exclusive, Collectively Exhaustive Hypotheses
-
-[FOR EACH HYPOTHESIS, use this EXACT format:]
-
-**H1: [Full Name]**
-
-[Narrative definition: 3-5 sentences explaining what state of the world this hypothesis describes]
-
-**Mechanism:** [1-2 sentences explaining HOW this would work if true]
-
-**Testable Predictions (H1):**
-- [Prediction 1: What empirical pattern would we observe?]
-- [Prediction 2: What data would support this?]
-- [Prediction 3: What would we NOT see if this is true?]
-- [Prediction 4: What distinguishes this from other hypotheses?]
-
----
-
-**H2: [Full Name]**
-
-[Same detailed format as H1]
-
----
-
-[Continue for ALL hypotheses H3, H4, H5, H0...]
-
----
-
-### Prior Allocation Table
-
-| Hypothesis | Prior P(H) | Rationale |
-|------------|:----------:|-----------|
-| H1 | 0.XXX | [2-3 sentence justification grounded in K₀ assumptions] |
-| H2 | 0.XXX | [2-3 sentence justification] |
-| H3 | 0.XXX | [2-3 sentence justification] |
-| H4 | 0.XXX | [2-3 sentence justification] |
-| H5 | 0.XXX | [2-3 sentence justification] |
-| H0 | 0.XXX | [Reason for catch-all probability mass] |
-
-**Verification:** Priors sum to [calculate sum] ≈ 1.0 ✓
-
----
-
-## DELIVERABLE 3: Paradigm Inversion (Alternative Paradigms)
-
-### Inverse Paradigm (Θ₁): [Name]
-
-The inverse of my dominant paradigm holds that:
-
-**Foundational Assumptions (Θ₁):**
-1. [Inverted assumption 1]
-2. [Inverted assumption 2]
-3. [Inverted assumption 3]
-4. [Inverted assumption 4]
-
-**Key Differences from K₀:**
-
-| Dimension | K₀ ([Dominant Name]) | Θ₁ ([Alternative Name]) |
-|-----------|----------------------|-------------------------|
-| Evidence weighting | [K₀ approach] | [Θ₁ approach] |
-| Causal mechanisms | [K₀ view] | [Θ₁ view] |
-| Success criteria | [K₀ definition] | [Θ₁ definition] |
-| Temporal dynamics | [K₀ interpretation] | [Θ₁ interpretation] |
-| Key actors | [K₀ focus] | [Θ₁ focus] |
-
-**What the Inverse Paradigm Sees That K₀ Misses:**
-1. [Insight 1 - detailed explanation]
-2. [Insight 2 - detailed explanation]
-3. [Insight 3 - detailed explanation]
-
-**Paradigm-Conditional Expectations (Θ₁):**
-- Under Θ₁, hypotheses [list] are expected to be most plausible
-- Evidence patterns such as [examples] would be especially diagnostic
-
-[Repeat for additional paradigms K2, K3, K4 from config]
-
----
-
-## DELIVERABLE 4: Evidence Matrix
-
-**IMPORTANT: Use the STRUCTURED EVIDENCE ITEMS JSON and STRUCTURED EVIDENCE CLUSTERS JSON
-provided above to generate this section. Each evidence item should have its full details
-from the JSON (source_url, citation_apa, etc.) and each cluster has pre-computed likelihoods.**
-
-### Evidence Clustering Strategy
-
-Evidence is organized into [N] thematic clusters (from STRUCTURED EVIDENCE CLUSTERS):
-
-1. **Cluster [cluster_id]: [cluster_name]** - [description from JSON]
-2. **Cluster [cluster_id]: [cluster_name]** - [description from JSON]
-[Continue for ALL clusters from the JSON]
-
----
-
-### Evidence Items
-
-[FOR EACH EVIDENCE ITEM from STRUCTURED EVIDENCE ITEMS JSON, use this format:]
-
-**[evidence_id]: [description]**
-
-*Source:* [source_name] ([date_accessed])
-*URL:* [source_url]
-*Citation:* [citation_apa]
-*Type:* [evidence_type]
-*Supports:* [supports_hypotheses] | *Refutes:* [refutes_hypotheses]
-
-[Expand the description to 2-3 sentences with context]
-
-| Hypothesis | P(E\|H) | Reasoning |
-|------------|:--------:|-----------|
-| H1 | 0.XX | [Use likelihood from STRUCTURED EVIDENCE CLUSTERS + reasoning] |
-| H2 | 0.XX | [Use likelihood from clusters JSON] |
-| H3 | 0.XX | [Use likelihood from clusters JSON] |
-| H4 | 0.XX | [Use likelihood from clusters JSON] |
-| H5 | 0.XX | [Use likelihood from clusters JSON] |
-| H0 | 0.XX | [Use likelihood from clusters JSON] |
-
----
-
-[INCLUDE ALL EVIDENCE ITEMS FROM THE STRUCTURED JSON - typically 15-25 items]
-
----
-
-### Evidence Matrix Summary
-
-| Evidence | Cluster | Supports | Refutes | Neutral |
-|----------|---------|----------|---------|---------|
-| E₁ | A | H1, H2 | H3 | H4, H5 |
-| E₂ | A | H2 | H1 | H3, H4 |
-[Complete for all evidence items]
-
----
-
-## DELIVERABLE 5: Perspective-by-Perspective Analysis
-
-### [Perspective 1: e.g., Empirical/Scientific] Perspective
-
-**Guiding Question:** [Question this perspective asks]
-
-**Evidence Standard:** [What counts as "good evidence" from this view]
-
-**Key Evidence:**
-- E₁: [Specific implication]
-- E₃: [Specific implication]
-- E₅: [Specific implication]
-
-**Conclusion:** **[Clear 1-sentence conclusion]**
-
-**Confidence:** [High (80-90%) / Moderate (60-75%) / Low (40-55%)] - [Justification]
-
-**Assessment:** [2-3 paragraph analysis of what this perspective concludes and why]
-
----
-
-### [Perspective 2: e.g., Institutional/Policy] Perspective
-
-[Same detailed format]
-
----
-
-### [Perspective 3: e.g., Historical/Comparative] Perspective
-
-[Same detailed format]
-
----
-
-### [Perspective 4: e.g., Ethical/Normative] Perspective
-
-[Same detailed format]
-
----
-
-## DELIVERABLE 6: Bayesian Update & Sensitivity Analysis
-
-### Final Posterior Probabilities Under K₀
-
-[COPY EXACT VALUES FROM PHASE 4 COMPUTATION]
-
-| Hypothesis | Prior P(H) | Posterior P(H\|E) | Change | LR | WoE (dB) | Interpretation |
-|------------|:----------:|:-----------------:|:------:|:--:|:--------:|----------------|
-| H1 | 0.XXX | 0.XXX | +0.XX | X.X | +X.X | [Interpretation] |
-| H2 | 0.XXX | 0.XXX | +0.XX | X.X | +X.X | [Interpretation] |
-| H3 | 0.XXX | 0.XXX | -0.XX | X.X | -X.X | [Interpretation] |
-| H4 | 0.XXX | 0.XXX | ±0.XX | X.X | ±X.X | [Interpretation] |
-| H5 | 0.XXX | 0.XXX | ±0.XX | X.X | ±X.X | [Interpretation] |
-| H0 | 0.XXX | 0.XXX | ±0.XX | X.X | ±X.X | [Interpretation] |
-
-**Normalization Check:** Sum = [calculate] ≈ 1.0 ✓
-
-### Posteriors Under Alternative Paradigm(s)
-
-[Similar table for each alternative paradigm with different priors]
-
-### Sensitivity Analysis: ±20% Prior Variation
-
-| Scenario | Hypothesis | Baseline Prior | Varied Prior | New Posterior | Robustness |
-|----------|------------|:--------------:|:------------:|:-------------:|------------|
-| K₀ baseline | H1 | 0.XX | 0.XX | 0.XXX | Baseline |
-| K₀ -20% | H1 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
-| K₀ +20% | H1 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
-| K₀ baseline | H2 | 0.XX | 0.XX | 0.XXX | Baseline |
-| K₀ -20% | H2 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
-| K₀ +20% | H2 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
-
-**Robustness Assessment:** [2-3 sentences on whether key conclusions change with prior variation]
-
----
-
-## DELIVERABLE 7: Ancestral / Historical Check
-
-### Historical Baselines
-
-**Baseline 1: [Historical period/comparison]**
-[2-3 sentences describing the historical baseline and its relevance]
-
-**Baseline 2: [Another historical comparison]**
-[2-3 sentences]
-
-### Comparison and Implications
-
-[3-4 paragraphs analyzing:]
-- How does current situation compare to historical baselines?
-- Does this represent continuity, gradual drift, or structural break?
-- Which hypotheses predict continuity vs. discontinuity?
-- What does history suggest about likely trajectories?
-
----
-
-## DELIVERABLE 8: Comprehensive Integration
-
-### Core Question: [Restate proposition as direct question]
-
-**Answer:** **[VERDICT]** - [2-3 sentence nuanced answer]
-
-**Dominant Hypothesis:** H[X] ([Name]) with posterior 0.XXX under K₀
-
-**Supporting Evidence:**
-1. [Most important evidence and its impact]
-2. [Second most important]
-3. [Third most important]
-
-**Key Caveats:**
-- [Caveat 1]
-- [Caveat 2]
-
-**Confidence Level:** [High/Moderate/Low] ([XX-XX%]) based on [justification]
-
----
-
-## DELIVERABLE 9: Limitations, Unknowns, and Future Tests
-
-### Data and Measurement Limitations
-
-1. **[Limitation 1]:** [Detailed explanation of limitation and how it could affect conclusions]
-2. **[Limitation 2]:** [Detailed explanation]
-3. **[Limitation 3]:** [Detailed explanation]
-
-### Modeling and Structural Limitations
-
-- **Independence assumptions:** [Discussion of whether evidence items are truly independent]
-- **Hypothesis exhaustiveness:** [Discussion of whether H0 catch-all is too large]
-- **Paradigm completeness:** [Discussion of potentially missing paradigms]
-
-### Paradigm Dependence
-
-[2-3 paragraphs discussing where K₀ vs. alternative paradigms lead to materially different conclusions]
-
-### Critical Future Tests
-
-What observations would most efficiently update these beliefs?
-
-1. **[Future test 1]:** [What it would tell us and which hypotheses it would discriminate between]
-2. **[Future test 2]:** [Description]
-3. **[Future test 3]:** [Description]
-
----
-
-## Intellectual Honesty Checklist
-
-| Forcing Function | Applied? | Notes |
-|-----------------|:--------:|-------|
-| Ontological Scan (7 domains) | ✓/✗ | [Which domains covered] |
-| Ancestral Check | ✓/✗ | [Historical baselines examined] |
-| Paradigm Inversion | ✓/✗ | [Alternative paradigms generated] |
-| MECE Verification | ✓/✗ | [Priors sum to 1.0] |
-| Sensitivity Analysis | ✓/✗ | [±20% variation tested] |
+{section_d}
 
 ---
 
 **End of BFIH Analysis Report**
-
-================================================================================
-CRITICAL REQUIREMENTS - READ CAREFULLY:
-1. MINIMUM 5000 WORDS - Do not abbreviate or truncate any section
-2. Use DECIMAL probabilities (0.XXX format, NOT percentages)
-3. ALL posterior values MUST match Phase 4 computation EXACTLY
-4. Include COMPLETE likelihood tables for EVERY evidence item (8-12 items minimum)
-5. Each evidence item needs the FULL table with P(E|H) for ALL hypotheses
-6. Include REASONING column in all likelihood tables
-7. Follow the EXACT format shown above - do not simplify
-8. Include specific numbers, statistics, sources throughout
-================================================================================
 """
-        tools = []  # No tools needed
-        return self._run_phase(prompt, tools, "Phase 5: Report Generation")
+        return full_report
+
+    def _run_phase_5a_intro(self, request: BFIHAnalysisRequest,
+                            paradigm_list: str, hypothesis_list: str,
+                            computation: str, priors: Dict) -> str:
+        """Phase 5a: Generate Executive Summary, Paradigms, and Hypotheses sections."""
+        prompt = f"""
+Write the INTRODUCTION sections of a BFIH analysis report.
+
+PROPOSITION: "{request.proposition}"
+
+PARADIGMS:
+{paradigm_list}
+
+HYPOTHESES:
+{hypothesis_list}
+
+PRIORS BY PARADIGM:
+{json.dumps(priors, indent=2)}
+
+COMPUTATION RESULTS:
+{computation[:3000]}
+
+Generate these sections in markdown:
+
+## Executive Summary
+
+**Verdict:** [VALIDATED / PARTIALLY VALIDATED / REJECTED / INDETERMINATE based on posteriors]
+
+Write 3-4 paragraphs covering:
+1. Primary finding with specific posterior probability values
+2. Which hypothesis has highest posterior and under which paradigm
+3. Key evidence that drove the conclusions
+4. Whether conclusions are robust across paradigms
+
+---
+
+## 1. Paradigms Analyzed
+
+For EACH paradigm, write 1-2 paragraphs describing:
+- The paradigm name and core assumptions
+- What this paradigm treats as valid evidence
+- How it would approach this question differently from other paradigms
+
+---
+
+## 2. Hypothesis Set
+
+For EACH hypothesis:
+
+**H[X]: [Full Name]**
+
+[3-4 sentence description of what this hypothesis claims]
+
+**Prior Probabilities:**
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+[Table showing prior for each paradigm with brief justification]
+
+Use DECIMAL format (0.XXX) for all probabilities.
+"""
+        return self._run_phase(prompt, [], "Phase 5a: Introduction Sections")
+
+    def _run_phase_5b_evidence(self, request: BFIHAnalysisRequest,
+                               evidence_items: List[Dict],
+                               evidence_clusters: List[Dict],
+                               hypotheses: List[Dict]) -> str:
+        """Phase 5b: Generate Evidence Matrix with full citations."""
+        evidence_json = json.dumps(evidence_items or [], indent=2)
+        clusters_json = json.dumps(evidence_clusters or [], indent=2)
+        hyp_ids = [h.get('id', f'H{i}') for i, h in enumerate(hypotheses)]
+
+        prompt = f"""
+Write the EVIDENCE MATRIX section of a BFIH analysis report.
+
+PROPOSITION: "{request.proposition}"
+
+HYPOTHESES: {hyp_ids}
+
+STRUCTURED EVIDENCE ITEMS (you MUST include ALL of these):
+{evidence_json}
+
+EVIDENCE CLUSTERS WITH LIKELIHOODS:
+{clusters_json}
+
+Generate this section in markdown:
+
+## 3. Evidence Matrix
+
+### Evidence Items
+
+For EACH evidence item in the JSON above, create an entry with this EXACT format:
+
+---
+
+### E[id]: [description]
+
+**Source:** [source_name]
+**URL:** [source_url - include the FULL clickable URL]
+**Citation:** [citation_apa]
+**Date Accessed:** [date_accessed]
+**Evidence Type:** [evidence_type]
+**Supports:** [supports_hypotheses] | **Refutes:** [refutes_hypotheses]
+
+[Write 2-3 sentences analyzing what this evidence shows and why it matters]
+
+**Likelihood Assessment:**
+
+| Hypothesis | P(E\|H) | Reasoning |
+|------------|---------|-----------|
+| H1 | 0.XX | [Brief justification for this likelihood] |
+| H2 | 0.XX | [Brief justification] |
+| H3 | 0.XX | [Brief justification] |
+| H4 | 0.XX | [Brief justification] |
+| H5 | 0.XX | [Brief justification] |
+| H0 | 0.XX | [Brief justification] |
+
+---
+
+IMPORTANT:
+- Include ALL {len(evidence_items or [])} evidence items from the JSON
+- Include the FULL URL for each source (not truncated)
+- Include the complete APA citation
+- Create likelihood table for EACH evidence item
+"""
+        return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
+
+    def _run_phase_5c_results(self, request: BFIHAnalysisRequest,
+                              computation: str, paradigms: List[Dict],
+                              hypotheses: List[Dict], priors: Dict) -> str:
+        """Phase 5c: Generate Bayesian Results, Paradigm Comparison, Conclusions."""
+        prompt = f"""
+Write the RESULTS and CONCLUSIONS sections of a BFIH analysis report.
+
+PROPOSITION: "{request.proposition}"
+
+PARADIGMS: {json.dumps([p.get('name') for p in paradigms])}
+
+HYPOTHESES: {json.dumps([h.get('name') for h in hypotheses])}
+
+PRIORS BY PARADIGM:
+{json.dumps(priors, indent=2)}
+
+BAYESIAN COMPUTATION OUTPUT (use these EXACT values):
+{computation}
+
+Generate these sections in markdown:
+
+## 4. Evidence Clusters Summary
+
+Summarize how evidence was clustered and the joint likelihoods.
+
+---
+
+## 5. Bayesian Computation Results
+
+**Final Posterior Probabilities:**
+
+| Hypothesis | Prior | Posterior | Change | LR | WoE (dB) |
+|------------|-------|-----------|--------|-----|----------|
+[Fill in with EXACT values from computation output above]
+
+**Normalization Check:** Sum of posteriors = [calculate] ≈ 1.0
+
+---
+
+## 6. Paradigm Comparison
+
+How do conclusions differ across paradigms? For each paradigm:
+- Which hypothesis dominates?
+- What posterior probability?
+- Key differences in reasoning?
+
+---
+
+## 7. Sensitivity Analysis
+
+Analyze what happens with ±20% prior variation:
+- Are conclusions stable?
+- Which hypotheses are most sensitive?
+
+---
+
+## 8. Conclusions
+
+**Primary Finding:** [Clear statement of what the analysis concludes]
+
+**Verdict:** [VALIDATED / PARTIALLY VALIDATED / REJECTED / INDETERMINATE]
+
+**Confidence Level:** [High/Moderate/Low] with justification
+
+**Key Uncertainties:** What remains unknown or paradigm-dependent
+
+**Recommendations:** What actions or further analysis might be warranted
+
+Use DECIMAL format (0.XXX) for all probabilities.
+Copy posterior values EXACTLY from the computation output.
+"""
+        return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions")
+
+    def _run_phase_5d_bibliography(self, evidence_items: List[Dict]) -> str:
+        """Phase 5d: Generate Bibliography from evidence items."""
+        if not evidence_items:
+            return "## 9. Bibliography\n\nNo sources available."
+
+        # Build bibliography directly from evidence items
+        bib_entries = []
+        for i, item in enumerate(evidence_items, 1):
+            citation = item.get('citation_apa', '')
+            url = item.get('source_url', '')
+            source = item.get('source_name', 'Unknown Source')
+            desc = item.get('description', '')
+
+            if citation:
+                entry = citation
+                if url and url not in citation:
+                    entry += f" Retrieved from {url}"
+            else:
+                entry = f"{source}. {desc}."
+                if url:
+                    entry += f" Retrieved from {url}"
+
+            bib_entries.append(f"{i}. {entry}")
+
+        bibliography = "## 9. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
+
+        # Add intellectual honesty checklist
+        bibliography += """
+
+---
+
+## 10. Intellectual Honesty Checklist
+
+| Forcing Function | Applied | Notes |
+|-----------------|---------|-------|
+| Ontological Scan (7 domains) | ✓ | Multiple domains covered |
+| Ancestral Check | ✓ | Historical baselines examined |
+| Paradigm Inversion | ✓ | Alternative paradigms generated |
+| MECE Verification | ✓ | Hypotheses are mutually exclusive and collectively exhaustive |
+| Sensitivity Analysis | ✓ | Prior variation tested |
+"""
+        return bibliography
 
     def _build_bayesian_code_template(self) -> str:
         """Return the Python code template for Bayesian computation"""
