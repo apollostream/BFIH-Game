@@ -89,19 +89,29 @@ export const useGameStore = create<GameState>()(
 
         getEvidenceClusters: () => {
           const config = get().scenarioConfig;
-          return config?.evidence?.clusters || [];
+          // Support both evidence.clusters and evidence_clusters field names
+          return config?.evidence_clusters || config?.evidence?.clusters || [];
         },
 
         getCurrentCluster: () => {
           const { currentEvidenceRound, scenarioConfig } = get();
-          const clusters = scenarioConfig?.evidence?.clusters || [];
+          // Support both field names
+          const clusters = scenarioConfig?.evidence_clusters || scenarioConfig?.evidence?.clusters || [];
           return clusters[currentEvidenceRound] || null;
         },
 
         getPriors: (paradigmId?: string) => {
           const { scenarioConfig, activeParadigm } = get();
           const pid = paradigmId || activeParadigm;
-          return scenarioConfig?.priors_by_paradigm?.[pid] || {};
+          // Support both priors and priors_by_paradigm field names
+          const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+          const paradigmPriors = priorsSource?.[pid] || {};
+          // Normalize: extract probability from object if needed
+          const result: Record<string, number> = {};
+          for (const [hypId, prior] of Object.entries(paradigmPriors)) {
+            result[hypId] = typeof prior === 'number' ? prior : (prior as { probability: number })?.probability || 0;
+          }
+          return result;
         },
 
         getPosteriors: (paradigmId?: string) => {

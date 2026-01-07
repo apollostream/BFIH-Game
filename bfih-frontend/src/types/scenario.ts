@@ -48,23 +48,23 @@ export interface Hypothesis {
   id: string;
   name: string;
   narrative: string;
-  domains: Domain[];
-  associated_paradigms: string[];
-  is_ancestral_solution: boolean;
-  is_catch_all: boolean;
+  domains?: Domain[];  // Optional - backend may not provide
+  associated_paradigms?: string[];  // Optional - backend may not provide
+  is_ancestral_solution?: boolean;  // Optional
+  is_catch_all?: boolean;  // Optional
 }
 
 export interface EvidenceItem {
   evidence_id: string;
   description: string;
   content?: string; // Alias for description
-  source_name: string;
-  source_url: string;
-  citation_apa: string;
-  date_accessed: string;
-  supports_hypotheses: string[];
-  refutes_hypotheses: string[];
-  evidence_type: 'quantitative' | 'qualitative' | 'expert_testimony' | 'historical_analogy' | 'policy' | 'institutional';
+  source_name?: string;  // May be omitted
+  source_url?: string;  // May be omitted
+  citation_apa?: string;  // May be omitted
+  date_accessed?: string;  // May be omitted
+  supports_hypotheses?: string[];  // May be omitted
+  refutes_hypotheses?: string[];  // May be omitted
+  evidence_type?: 'quantitative' | 'qualitative' | 'expert_testimony' | 'historical_analogy' | 'policy' | 'institutional';  // May be omitted
 }
 
 export interface ClusterLikelihood {
@@ -75,10 +75,11 @@ export interface ClusterLikelihood {
 export interface EvidenceCluster {
   cluster_id: string;
   cluster_name: string;
-  description: string;
-  evidence_ids: string[];
-  conditional_independence_justification: string;
+  description?: string;  // May be omitted
+  evidence_ids?: string[];  // May be omitted if items provided directly
+  conditional_independence_justification?: string;  // May be omitted
   likelihoods?: Record<string, ClusterLikelihood>;
+  likelihoods_by_paradigm?: Record<string, Record<string, ClusterLikelihood>>;  // Paradigm-specific likelihoods
   // Direct items for clusters that include evidence
   items?: EvidenceItem[];
 }

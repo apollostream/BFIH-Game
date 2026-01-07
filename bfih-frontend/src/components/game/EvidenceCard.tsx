@@ -60,17 +60,19 @@ export function EvidenceCard({
         <div className="pt-2">
           {/* Header with type */}
           <div className="flex items-start justify-between mb-3">
-            <EvidenceTypeBadge evidenceType={evidence.evidence_type} />
-            <a
-              href={evidence.source_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="text-xs text-accent hover:underline flex items-center gap-1"
-            >
-              Source
-              <ExternalLinkIcon className="w-3 h-3" />
-            </a>
+            {evidence.evidence_type && <EvidenceTypeBadge evidenceType={evidence.evidence_type} />}
+            {evidence.source_url && (
+              <a
+                href={evidence.source_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs text-accent hover:underline flex items-center gap-1"
+              >
+                Source
+                <ExternalLinkIcon className="w-3 h-3" />
+              </a>
+            )}
           </div>
 
           {/* Description */}
@@ -80,12 +82,12 @@ export function EvidenceCard({
 
           {/* Hypothesis support/refute */}
           <div className="flex flex-wrap gap-2 mb-3">
-            {evidence.supports_hypotheses.map((hId) => (
+            {evidence.supports_hypotheses?.map((hId) => (
               <Badge key={hId} variant="success" size="sm" dot>
                 Supports {hId}
               </Badge>
             ))}
-            {evidence.refutes_hypotheses.map((hId) => (
+            {evidence.refutes_hypotheses?.map((hId) => (
               <Badge key={hId} variant="danger" size="sm" dot>
                 Refutes {hId}
               </Badge>
@@ -93,11 +95,22 @@ export function EvidenceCard({
           </div>
 
           {/* Citation */}
-          <div className="text-xs text-text-muted border-t border-border pt-3">
-            <p className="font-medium mb-1">Citation:</p>
-            <p className="italic">{evidence.citation_apa}</p>
-            <p className="mt-1">Accessed: {evidence.date_accessed}</p>
-          </div>
+          {(evidence.citation_apa || evidence.date_accessed || evidence.source_name) && (
+            <div className="text-xs text-text-muted border-t border-border pt-3">
+              {evidence.citation_apa && (
+                <>
+                  <p className="font-medium mb-1">Citation:</p>
+                  <p className="italic">{evidence.citation_apa}</p>
+                </>
+              )}
+              {evidence.date_accessed && (
+                <p className="mt-1">Accessed: {evidence.date_accessed}</p>
+              )}
+              {evidence.source_name && !evidence.citation_apa && (
+                <p className="mt-1">Source: {evidence.source_name}</p>
+              )}
+            </div>
+          )}
         </div>
       </Card>
     </motion.div>
@@ -176,12 +189,14 @@ export function EvidenceClusterCard({
           >
             <div className="p-4 pt-0 space-y-3 border-t border-border">
               {/* Conditional independence note */}
-              <div className="p-3 rounded-lg bg-surface-2 text-xs text-text-secondary">
-                <span className="font-medium text-text-primary">
-                  Conditional Independence:
-                </span>{' '}
-                {cluster.conditional_independence_justification}
-              </div>
+              {cluster.conditional_independence_justification && (
+                <div className="p-3 rounded-lg bg-surface-2 text-xs text-text-secondary">
+                  <span className="font-medium text-text-primary">
+                    Conditional Independence:
+                  </span>{' '}
+                  {cluster.conditional_independence_justification}
+                </div>
+              )}
 
               {/* Evidence items */}
               <div className="space-y-3">
