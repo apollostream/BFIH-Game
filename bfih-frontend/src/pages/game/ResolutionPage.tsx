@@ -90,15 +90,28 @@ export function ResolutionPage() {
   const payoffs = useMemo(() => {
     const result: Record<string, number> = {};
     const posteriors = posteriorsData[activeParadigm] || {};
+    const priors = priorsData[activeParadigm] || {};
 
-    for (const hypothesis of scenarioConfig.hypotheses || []) {
+    // Find the winner (highest posterior)
+    const hypotheses = scenarioConfig.hypotheses || [];
+    let winnerId = '';
+    let maxPosterior = -1;
+    for (const h of hypotheses) {
+      const post = posteriors[h.id] || 0;
+      if (post > maxPosterior) {
+        maxPosterior = post;
+        winnerId = h.id;
+      }
+    }
+
+    for (const hypothesis of hypotheses) {
       const posterior = posteriors[hypothesis.id] || 0;
-      const _bet = bets[hypothesis.id] || 0;
-      void _bet; // Used internally by calculatePayoff
-      result[hypothesis.id] = calculatePayoff(hypothesis.id, posterior);
+      const prior = priors[hypothesis.id] || 0;
+      const isWinner = hypothesis.id === winnerId;
+      result[hypothesis.id] = calculatePayoff(hypothesis.id, posterior, isWinner, prior);
     }
     return result;
-  }, [scenarioConfig.hypotheses, bets, posteriorsData, activeParadigm, calculatePayoff]);
+  }, [scenarioConfig.hypotheses, bets, posteriorsData, priorsData, activeParadigm, calculatePayoff]);
 
   const totalPayoff = Object.values(payoffs).reduce((sum, p) => sum + p, 0);
 
