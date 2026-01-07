@@ -8,7 +8,7 @@ import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { HypothesisRanking } from '../../components/game/HypothesisCard';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
-import { useGameStore, useBettingStore } from '../../stores';
+import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants, formatPercent, formatCredits } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
@@ -24,6 +24,7 @@ export function ResolutionPage() {
     setPhase,
   } = useGameStore();
   const { bets, calculatePayoff } = useBettingStore();
+  const { currentAnalysis } = useAnalysisStore();
   const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   const [showPayoffs, setShowPayoffs] = useState(false);
@@ -38,22 +39,24 @@ export function ResolutionPage() {
   // Support both 'priors' and 'priors_by_paradigm' field names
   const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
 
-  // Get posteriors from analysis result (or use priors as fallback)
+  // Get posteriors from analysis result
   const posteriorsData = useMemo((): PosteriorsByParadigm => {
-    // In real implementation, this would come from the analysis result
+    // Use actual posteriors from analysis result
+    if (currentAnalysis?.posteriors) {
+      return currentAnalysis.posteriors;
+    }
+    // Fallback to priors if no posteriors available
     if (!priorsSource) return {};
     const result: PosteriorsByParadigm = {};
     for (const paradigmId of Object.keys(priorsSource)) {
       result[paradigmId] = {};
       const paradigmPriors = priorsSource[paradigmId];
       for (const [hypId, prior] of Object.entries(paradigmPriors)) {
-        // Simulate some posterior updates
-        const priorVal = typeof prior === 'number' ? prior : prior.probability;
-        result[paradigmId][hypId] = priorVal;
+        result[paradigmId][hypId] = typeof prior === 'number' ? prior : prior.probability;
       }
     }
     return result;
-  }, [priorsSource]);
+  }, [currentAnalysis, priorsSource]);
 
   const priorsData = useMemo((): PosteriorsByParadigm => {
     if (!priorsSource) return {};

@@ -38,7 +38,7 @@ export function DebriefPage() {
   // Support both 'priors' and 'priors_by_paradigm' field names
   const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
 
-  // Build posteriors and priors
+  // Build priors data
   const priorsData = useMemo((): PosteriorsByParadigm => {
     if (!priorsSource) return {};
     const result: PosteriorsByParadigm = {};
@@ -52,8 +52,15 @@ export function DebriefPage() {
     return result;
   }, [priorsSource]);
 
-  // Same as priors for now (in real impl, would use actual posteriors)
-  const posteriorsData = priorsData;
+  // Get posteriors from analysis result
+  const posteriorsData = useMemo((): PosteriorsByParadigm => {
+    // Use actual posteriors from analysis result
+    if (currentAnalysis?.posteriors) {
+      return currentAnalysis.posteriors;
+    }
+    // Fallback to priors if no posteriors available
+    return priorsData;
+  }, [currentAnalysis, priorsData]);
 
   if (!scenarioConfig) {
     return (
