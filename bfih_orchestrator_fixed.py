@@ -116,18 +116,20 @@ class BFIHOrchestrator:
             # Phase 1: Retrieve methodology from vector store
             methodology = self._run_phase_1_methodology(request)
 
-            # Phase 2: Gather evidence via web search
-            evidence = self._run_phase_2_evidence(request, methodology)
+            # Phase 2: Gather evidence via web search (returns structured evidence)
+            evidence_text, evidence_items = self._run_phase_2_evidence(request, methodology)
 
-            # Phase 3: Assign likelihoods to evidence
-            likelihoods = self._run_phase_3_likelihoods(request, evidence)
+            # Phase 3: Assign likelihoods to evidence (returns structured clusters)
+            likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
+                request, evidence_text, evidence_items
+            )
 
             # Phase 4: Run Bayesian computation
-            computation = self._run_phase_4_computation(request, likelihoods)
+            computation = self._run_phase_4_computation(request, likelihoods_text)
 
             # Phase 5: Generate final report
             bfih_report = self._run_phase_5_report(
-                request, methodology, evidence, likelihoods, computation
+                request, methodology, evidence_text, likelihoods_text, computation
             )
 
             # Extract posteriors from computation output (Phase 4)
@@ -148,13 +150,20 @@ class BFIHOrchestrator:
                     "model": self.model,
                     "phases_completed": 5,
                     "duration_seconds": duration_seconds,
-                    "user_id": request.user_id
+                    "user_id": request.user_id,
+                    "evidence_items_count": len(evidence_items),
+                    "evidence_clusters_count": len(evidence_clusters)
                 },
                 created_at=analysis_end.isoformat()
             )
 
+            # Store structured evidence in metadata for access
+            result.metadata["evidence_items"] = evidence_items
+            result.metadata["evidence_clusters"] = evidence_clusters
+
             logger.info(f"BFIH analysis completed successfully: {analysis_id}")
             logger.info(f"Duration: {duration_seconds:.1f}s")
+            logger.info(f"Evidence: {len(evidence_items)} items in {len(evidence_clusters)} clusters")
             return result
 
         except Exception as e:
@@ -554,8 +563,8 @@ Focus on actionable steps for applying each forcing function.
         tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
         return self._run_phase(prompt, tools, "Phase 1: Retrieve Methodology")
 
-    def _run_phase_2_evidence(self, request: BFIHAnalysisRequest, methodology: str) -> str:
-        """Phase 2: Gather evidence via web search"""
+    def _run_phase_2_evidence(self, request: BFIHAnalysisRequest, methodology: str) -> Tuple[str, List[Dict]]:
+        """Phase 2: Gather evidence via web search. Returns (markdown_text, structured_evidence)"""
         scenario_json = json.dumps(request.scenario_config, indent=2)
         prompt = f"""
 You are gathering evidence for a BFIH analysis.
@@ -573,22 +582,76 @@ For EACH hypothesis in the scenario, search for real-world evidence:
 1. Generate 2-3 specific web search queries per hypothesis
 2. Execute web searches to find supporting or refuting evidence
 3. Organize evidence by hypothesis
-4. Record source citations for all evidence
+4. Record FULL source citations with URLs for all evidence
 
-Output format:
-## Evidence for [Hypothesis Name]
-- **Evidence item**: [description]
-  - Source: [citation]
-  - Supports/Refutes: [which hypothesis]
+After your evidence summary, output a structured JSON block with ALL evidence items.
+Use this EXACT format with the markers:
 
-Include at least 3-5 evidence items per hypothesis.
+EVIDENCE_JSON_START
+[
+  {{
+    "evidence_id": "E1",
+    "description": "Brief description of the evidence",
+    "source_name": "Publication or website name",
+    "source_url": "https://full.url/to/source",
+    "citation_apa": "Author/Publication. (Year). Title. URL",
+    "date_accessed": "2026-01-06",
+    "supports_hypotheses": ["H1"],
+    "refutes_hypotheses": [],
+    "evidence_type": "quantitative|qualitative|expert_testimony|historical_analogy"
+  }},
+  {{
+    "evidence_id": "E2",
+    ...
+  }}
+]
+EVIDENCE_JSON_END
+
+Include 15-25 evidence items total across all hypotheses.
 """
         tools = [{"type": "web_search", "search_context_size": "medium"}]
-        return self._run_phase(prompt, tools, "Phase 2: Evidence Gathering")
+        result = self._run_phase(prompt, tools, "Phase 2: Evidence Gathering")
 
-    def _run_phase_3_likelihoods(self, request: BFIHAnalysisRequest, evidence: str) -> str:
-        """Phase 3: Assign likelihoods to evidence"""
+        # Parse structured evidence from response
+        evidence_items = self._parse_evidence_json(result)
+
+        return result, evidence_items
+
+    def _parse_evidence_json(self, text: str) -> List[Dict]:
+        """Extract structured evidence from EVIDENCE_JSON_START/END markers"""
+        pattern = r"EVIDENCE_JSON_START\s*(\[.*?\])\s*EVIDENCE_JSON_END"
+        match = re.search(pattern, text, re.DOTALL)
+
+        if match:
+            try:
+                evidence = json.loads(match.group(1))
+                logger.info(f"Parsed {len(evidence)} structured evidence items")
+                return evidence
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse evidence JSON: {e}")
+
+        # Fallback: try to find any JSON array
+        try:
+            array_match = re.search(r'\[\s*\{[^]]+\}\s*\]', text, re.DOTALL)
+            if array_match:
+                evidence = json.loads(array_match.group(0))
+                logger.info(f"Parsed {len(evidence)} evidence items (fallback)")
+                return evidence
+        except:
+            pass
+
+        logger.warning("Could not parse structured evidence, returning empty list")
+        return []
+
+    def _run_phase_3_likelihoods(self, request: BFIHAnalysisRequest, evidence_text: str,
+                                   evidence_items: List[Dict]) -> Tuple[str, List[Dict]]:
+        """Phase 3: Assign likelihoods to evidence. Returns (markdown_text, structured_clusters)"""
         scenario_json = json.dumps(request.scenario_config, indent=2)
+
+        # Get hypothesis IDs for the prompt
+        hypotheses = request.scenario_config.get("hypotheses", [])
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+
         prompt = f"""
 You are assigning likelihoods for a BFIH Bayesian analysis.
 
@@ -598,26 +661,74 @@ SCENARIO CONFIGURATION:
 {scenario_json}
 
 EVIDENCE GATHERED:
-{evidence[:6000]}
+{evidence_text[:6000]}
 
 YOUR TASK:
-For each piece of evidence, assign likelihoods P(E|H) under each hypothesis:
-1. Consider how likely this evidence would be if each hypothesis were true
-2. Justify each likelihood assignment (0.0 to 1.0)
-3. Group evidence into clusters for conditional independence
+1. Group evidence items into 3-5 CLUSTERS based on thematic similarity
+2. For each cluster, assign likelihoods P(E|H) for EACH hypothesis
+3. Justify each likelihood assignment (0.0 to 1.0)
+4. Ensure clusters are conditionally independent given any hypothesis
 
-Output format for each evidence cluster:
-## Cluster [Name]: [description of evidence items]
-| Hypothesis | P(Evidence|H) | Justification |
-|------------|---------------|---------------|
-| H1         | 0.XX          | [reason]      |
-| H2         | 0.XX          | [reason]      |
-...
+After your analysis, output a structured JSON block with ALL clusters and likelihoods.
+Use this EXACT format with markers:
 
-Create 3-5 evidence clusters with likelihoods for all hypotheses.
+CLUSTERS_JSON_START
+[
+  {{
+    "cluster_id": "C1",
+    "cluster_name": "Short descriptive name",
+    "description": "What evidence items are in this cluster",
+    "evidence_ids": ["E1", "E2", "E3"],
+    "conditional_independence_justification": "Why these are conditionally independent",
+    "likelihoods": {{
+      "H0": {{"probability": 0.3, "justification": "..."}},
+      "H1": {{"probability": 0.8, "justification": "..."}},
+      "H2": {{"probability": 0.4, "justification": "..."}}
+    }}
+  }},
+  {{
+    "cluster_id": "C2",
+    ...
+  }}
+]
+CLUSTERS_JSON_END
+
+Hypotheses to include: {hyp_ids}
+Create 3-5 clusters covering all evidence.
 """
         tools = []  # No tools needed, pure reasoning
-        return self._run_phase(prompt, tools, "Phase 3: Likelihood Assignment")
+        result = self._run_phase(prompt, tools, "Phase 3: Likelihood Assignment")
+
+        # Parse structured clusters from response
+        clusters = self._parse_clusters_json(result)
+
+        return result, clusters
+
+    def _parse_clusters_json(self, text: str) -> List[Dict]:
+        """Extract structured clusters from CLUSTERS_JSON_START/END markers"""
+        pattern = r"CLUSTERS_JSON_START\s*(\[.*?\])\s*CLUSTERS_JSON_END"
+        match = re.search(pattern, text, re.DOTALL)
+
+        if match:
+            try:
+                clusters = json.loads(match.group(1))
+                logger.info(f"Parsed {len(clusters)} evidence clusters")
+                return clusters
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse clusters JSON: {e}")
+
+        # Fallback: try to find any JSON array with cluster structure
+        try:
+            array_match = re.search(r'\[\s*\{[^]]*"cluster_id"[^]]+\}\s*\]', text, re.DOTALL)
+            if array_match:
+                clusters = json.loads(array_match.group(0))
+                logger.info(f"Parsed {len(clusters)} clusters (fallback)")
+                return clusters
+        except:
+            pass
+
+        logger.warning("Could not parse structured clusters, returning empty list")
+        return []
 
     def _run_phase_4_computation(self, request: BFIHAnalysisRequest, likelihoods: str) -> str:
         """Phase 4: Run Bayesian computation with code interpreter"""
@@ -944,6 +1055,20 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
         )
 
         result = self.conduct_analysis(request)
+
+        # Update scenario config with evidence data from analysis
+        evidence_items = result.metadata.get("evidence_items", [])
+        evidence_clusters = result.metadata.get("evidence_clusters", [])
+
+        scenario_config["evidence"] = {
+            "items": evidence_items,
+            "clusters": evidence_clusters,
+            "total_items": len(evidence_items),
+            "total_clusters": len(evidence_clusters)
+        }
+
+        # Re-save scenario config with evidence included
+        self._save_scenario_config(scenario_id, scenario_config)
 
         # Add generated config to result
         result.metadata["generated_config"] = scenario_config
