@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { listScenarios } from '../api';
+import { useGameStore, useAnalysisStore } from '../stores';
 import { pageVariants, staggerContainerVariants, cardVariants, formatDate } from '../utils';
 import type { ScenarioSummary } from '../types';
 
@@ -15,6 +16,13 @@ export function ScenarioLibraryPage() {
   const [scenarios, setScenarios] = useState<ScenarioSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Get current game state to show "Continue" option
+  const { scenarioId, scenarioConfig, isGameActive } = useGameStore();
+  const { currentAnalysis } = useAnalysisStore();
+
+  // Check if there's an active game to continue
+  const hasActiveGame = isGameActive && scenarioId && scenarioConfig;
 
   useEffect(() => {
     loadScenarios();
@@ -55,6 +63,30 @@ export function ScenarioLibraryPage() {
             New Analysis
           </Button>
         </div>
+
+        {/* Continue Current Analysis */}
+        {hasActiveGame && (
+          <motion.div variants={cardVariants} className="mb-8">
+            <Card variant="glass" className="p-6 border-2 border-accent/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="success">Active</Badge>
+                    <h3 className="text-lg font-semibold text-text-primary">
+                      Current Analysis
+                    </h3>
+                  </div>
+                  <p className="text-text-secondary line-clamp-1">
+                    {scenarioConfig?.proposition || scenarioConfig?.narrative || 'Untitled'}
+                  </p>
+                </div>
+                <Button onClick={() => navigate(`/game/${scenarioId}/setup`)}>
+                  Continue Game
+                </Button>
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
         {/* Content */}
         {loading ? (

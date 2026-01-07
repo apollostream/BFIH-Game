@@ -49,21 +49,21 @@ export const useAnalysisStore = create<AnalysisState>()(
       (set, get) => ({
         // Initial state
         pendingAnalysisId: null,
-      status: 'idle',
-      analysisStatus: null,
-      currentAnalysis: null,
-      progress: 0,
-      errorMessage: null,
-      error: null,
-      estimatedSeconds: null,
-      startTime: null,
-      isSubmitting: false,
-      isPolling: false,
-      pollIntervalId: null,
-      cachedResults: {},
+        status: 'idle' as AnalysisStatusType,
+        analysisStatus: null,
+        currentAnalysis: null,
+        progress: 0,
+        errorMessage: null,
+        error: null,
+        estimatedSeconds: null,
+        startTime: null,
+        isSubmitting: false,
+        isPolling: false,
+        pollIntervalId: null,
+        cachedResults: {},
 
-      // Actions
-      submitNewAnalysis: async (proposition) => {
+        // Actions
+        submitNewAnalysis: async (proposition) => {
         set({
           status: 'submitting',
           isSubmitting: true,
@@ -219,16 +219,16 @@ export const useAnalysisStore = create<AnalysisState>()(
           isPolling: false,
         });
       },
-    }),
-    {
-      name: 'bfih-analysis-store',
-      partialize: (state) => ({
-        // Persist analysis results so they survive navigation
-        currentAnalysis: state.currentAnalysis,
-        cachedResults: state.cachedResults,
-        status: state.status,
       }),
-    }
+      {
+        name: 'bfih-analysis-store',
+        partialize: (state) => ({
+          // Persist analysis results so they survive navigation
+          currentAnalysis: state.currentAnalysis,
+          cachedResults: state.cachedResults,
+          status: state.status,
+        }),
+      }
     ),
     { name: 'AnalysisStore' }
   )
