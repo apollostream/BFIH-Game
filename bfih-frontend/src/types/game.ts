@@ -65,13 +65,13 @@ export interface PlayerState {
 export interface GameSettings {
   initialBudget: number;
   minimumBet: number;
-  payoffFunction: 'log_score' | 'quadratic_score' | 'proportional_posterior';
+  payoffFunction: 'odds_against' | 'log_score' | 'quadratic_score' | 'proportional_posterior';
 }
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   initialBudget: 100,
   minimumBet: 1,
-  payoffFunction: 'proportional_posterior'
+  payoffFunction: 'odds_against'  // Horse race style - odds set by priors
 };
 
 // Weight of Evidence helpers

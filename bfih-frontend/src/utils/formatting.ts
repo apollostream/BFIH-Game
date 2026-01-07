@@ -106,13 +106,23 @@ export function formatEvidenceType(type: string): string {
 }
 
 // Calculate payoff based on function type
+// For 'odds_against': Horse race style where odds are set by priors
+//   Payoff = bet * (1 + odds-against) = bet / prior  (if correct)
+//   Low prior = high payout (longshot), High prior = low payout (favorite)
 export function calculatePayoff(
   bet: number,
   posterior: number,
   isCorrect: boolean,
-  payoffFunction: 'proportional_posterior' | 'log_score' | 'quadratic_score'
+  payoffFunction: 'odds_against' | 'proportional_posterior' | 'log_score' | 'quadratic_score',
+  prior?: number
 ): number {
   switch (payoffFunction) {
+    case 'odds_against':
+      // Horse race style: payoff = bet * (1 + odds-against) = bet / prior
+      // Odds-against = (1 - prior) / prior, so 1 + odds-against = 1/prior
+      // Example: prior=0.2 → odds-against=4:1 → payoff = 5× bet
+      if (!prior || prior <= 0) return isCorrect ? bet : 0;
+      return isCorrect ? bet / prior : 0;
     case 'proportional_posterior':
       return isCorrect ? bet * (1 + posterior) : 0;
     case 'log_score':

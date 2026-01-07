@@ -52,7 +52,9 @@ interface BettingState {
   setSubjectivePriors: (priors: Record<string, number>) => void;
   calculatePayoff: (
     hypothesisId: string,
-    posterior: number
+    posterior: number,
+    isWinner?: boolean,
+    prior?: number
   ) => number;
   resetBetting: () => void;
   reset: () => void;
@@ -72,7 +74,7 @@ export const useBettingStore = create<BettingState>()(
         settings: {
           initialBudget: 100,
           minimumBet: 1,
-          payoffFunction: 'proportional_posterior',
+          payoffFunction: 'odds_against',  // Horse race style - odds set by priors
         },
         betsLocked: false,
 
@@ -226,11 +228,18 @@ export const useBettingStore = create<BettingState>()(
           set({ subjectivePriors: priors });
         },
 
-        calculatePayoff: (hypothesisId, posterior) => {
+        calculatePayoff: (hypothesisId, posterior, isWinner, prior) => {
           const { bets, settings } = get();
           const bet = bets[hypothesisId] || 0;
 
           switch (settings.payoffFunction) {
+            case 'odds_against':
+              // Horse race style: payoff = bet / prior (if winner), 0 (if loser)
+              // Odds-against = (1-prior)/prior, so 1 + odds-against = 1/prior
+              // Example: prior=0.2 → odds-against=4:1 → payoff = 5× bet
+              if (!prior || prior <= 0) return isWinner ? bet : 0;
+              return isWinner ? bet / prior : 0;
+
             case 'proportional_posterior':
               // Payout = bet * (2 * posterior - 1) for expected value normalization
               return bet * (2 * posterior - 1);
