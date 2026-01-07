@@ -8,12 +8,14 @@ import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { HypothesisCard } from '../../components/game/HypothesisCard';
 import { Badge, DomainBadge } from '../../components/ui/Badge';
 import { useGameStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 
 export function HypothesisGenerationPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const navigate = useNavigate();
   const { scenarioConfig, setPhase } = useGameStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('hypotheses');
@@ -41,7 +43,12 @@ export function HypothesisGenerationPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="hypotheses" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="hypotheses"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">

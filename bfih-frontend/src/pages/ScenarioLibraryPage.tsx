@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { listScenarios } from '../api';
-import { useGameStore, useAnalysisStore } from '../stores';
+import { useGameStore } from '../stores';
 import { pageVariants, staggerContainerVariants, cardVariants, formatDate } from '../utils';
 import type { ScenarioSummary } from '../types';
 
@@ -19,7 +19,6 @@ export function ScenarioLibraryPage() {
 
   // Get current game state to show "Continue" option
   const { scenarioId, scenarioConfig, isGameActive } = useGameStore();
-  const { currentAnalysis } = useAnalysisStore();
 
   // Check if there's an active game to continue
   const hasActiveGame = isGameActive && scenarioId && scenarioConfig;

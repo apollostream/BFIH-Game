@@ -9,6 +9,7 @@ import { HypothesisRanking } from '../../components/game/HypothesisCard';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
 import { useGameStore, useBettingStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants, formatPercent, formatCredits } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -23,6 +24,7 @@ export function ResolutionPage() {
     setPhase,
   } = useGameStore();
   const { bets, calculatePayoff } = useBettingStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   const [showPayoffs, setShowPayoffs] = useState(false);
 
@@ -112,7 +114,12 @@ export function ResolutionPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="resolution" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="resolution"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">

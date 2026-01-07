@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { ParadigmCard } from '../../components/game/ParadigmCard';
 import { useGameStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 
 export function ScenarioSetupPage() {
@@ -18,6 +19,7 @@ export function ScenarioSetupPage() {
     toggleParadigm,
     setPhase,
   } = useGameStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('setup');
@@ -49,7 +51,12 @@ export function ScenarioSetupPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="setup" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="setup"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div

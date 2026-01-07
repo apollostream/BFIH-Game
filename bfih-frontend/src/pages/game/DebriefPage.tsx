@@ -9,6 +9,7 @@ import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants, formatPercent, formatCredits } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -25,6 +26,7 @@ export function DebriefPage() {
   } = useGameStore();
   const { bets, budget, getTotalBet, betHistory, reset: resetBetting } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   const [showInsights, setShowInsights] = useState(false);
 
@@ -132,7 +134,12 @@ export function DebriefPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="debrief" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="debrief"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">

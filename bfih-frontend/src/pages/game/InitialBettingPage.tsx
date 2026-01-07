@@ -8,6 +8,7 @@ import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { BettingSlider, BudgetBar, BetSummary } from '../../components/game/BettingSlider';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { useGameStore, useBettingStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -28,6 +29,7 @@ export function InitialBettingPage() {
     getTotalBet,
     hasBets,
   } = useBettingStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('betting');
@@ -81,7 +83,12 @@ export function InitialBettingPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="betting" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="betting"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">

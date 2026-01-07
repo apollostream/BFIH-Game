@@ -10,6 +10,7 @@ import { EvidenceMatrixHeatmap } from '../../components/visualizations/EvidenceM
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BudgetBar, BetSummary } from '../../components/game/BettingSlider';
 import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -25,6 +26,7 @@ export function EvidenceRoundPage() {
   } = useGameStore();
   const { bets, budget, getTotalBet, raiseBet } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   const [revealedClusters, setRevealedClusters] = useState<string[]>([]);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -103,7 +105,12 @@ export function EvidenceRoundPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="evidence" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="evidence"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">

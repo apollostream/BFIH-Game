@@ -9,6 +9,7 @@ import { ParadigmSelector } from '../../components/game/ParadigmCard';
 import { HypothesisCard } from '../../components/game/HypothesisCard';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
 import { useGameStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants, formatPercent } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -22,6 +23,7 @@ export function PriorAssignmentPage() {
     setActiveParadigm,
     setPhase,
   } = useGameStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('priors');
@@ -71,7 +73,12 @@ export function PriorAssignmentPage() {
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="priors" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="priors"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">

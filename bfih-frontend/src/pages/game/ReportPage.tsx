@@ -9,6 +9,7 @@ import { Badge } from '../../components/ui/Badge';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { EvidenceMatrixHeatmap } from '../../components/visualizations/EvidenceMatrixHeatmap';
 import { useGameStore, useAnalysisStore } from '../../stores';
+import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants } from '../../utils';
 
 export function ReportPage() {
@@ -16,6 +17,7 @@ export function ReportPage() {
   const navigate = useNavigate();
   const { scenarioConfig, selectedParadigms, activeParadigm, setPhase } = useGameStore();
   const { currentAnalysis } = useAnalysisStore();
+  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('report');
@@ -104,7 +106,12 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
     >
       <PageContainer>
         {/* Phase Indicator */}
-        <PhaseIndicator currentPhase="report" className="mb-8" />
+        <PhaseIndicator
+          currentPhase="report"
+          completedPhases={completedPhases}
+          onPhaseClick={handlePhaseClick}
+          className="mb-8"
+        />
 
         {/* Title */}
         <motion.div variants={cardVariants} className="text-center mb-8">
