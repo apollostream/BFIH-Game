@@ -859,8 +859,8 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
             logger.warning("Could not find 'BFIH POSTERIOR COMPUTATION' section, searching full report")
             section_text = report
 
-        # Pattern: H1: 0.91 or H4: 1.2e-3 or H0: 0.00015
-        posterior_pattern = r"\b(H\d+)\s*:\s*([0-9.]+(?:e[+-]?\d+)?)\b"
+        # Pattern: H1: 0.91 or H4: 1.2e-3 or **H1**: 0.3890 (with optional bold markdown)
+        posterior_pattern = r"\*?\*?(H\d+)\*?\*?\s*:\s*([0-9.]+(?:e[+-]?\d+)?)"
         matches = re.findall(posterior_pattern, section_text, re.IGNORECASE)
 
         for hypothesis_id, value_str in matches:
@@ -881,6 +881,387 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
 
         logger.info(f"Extracted posteriors: {extracted}")
         return extracted
+
+    # ========================================================================
+    # AUTONOMOUS ANALYSIS (Topic Submission → Full Analysis)
+    # ========================================================================
+
+    def analyze_topic(self, proposition: str, domain: str = "business",
+                      difficulty: str = "medium") -> BFIHAnalysisResult:
+        """
+        Autonomous BFIH analysis from topic submission.
+
+        Accepts just a proposition and generates everything autonomously:
+        - Paradigms (2-4 with epistemic stances)
+        - Hypotheses (with forcing functions: Ontological Scan, Ancestral Check, Paradigm Inversion)
+        - MECE synthesis (unified hypothesis set)
+        - Priors per paradigm
+        - Full analysis with evidence, likelihoods, posteriors, report
+
+        Args:
+            proposition: The question to analyze (e.g., "Why did X succeed?")
+            domain: Domain category (business, medical, policy, historical, etc.)
+            difficulty: easy (3-4 hyp), medium (5-6 hyp), hard (7+ hyp)
+
+        Returns:
+            BFIHAnalysisResult with full report and generated config
+        """
+        analysis_start = datetime.now(timezone.utc)
+        scenario_id = f"auto_{uuid.uuid4().hex[:8]}"
+
+        logger.info(f"{'='*60}")
+        logger.info(f"AUTONOMOUS BFIH ANALYSIS")
+        logger.info(f"Proposition: {proposition}")
+        logger.info(f"Domain: {domain}, Difficulty: {difficulty}")
+        logger.info(f"{'='*60}")
+
+        # Phase 0a: Generate paradigms
+        paradigms = self._generate_paradigms(proposition, domain)
+
+        # Phase 0b: Generate hypotheses with forcing functions + MECE synthesis
+        hypotheses, forcing_functions_log = self._generate_hypotheses_with_forcing_functions(
+            proposition, paradigms, difficulty
+        )
+
+        # Phase 0c: Assign priors per paradigm
+        priors_by_paradigm = self._assign_priors(hypotheses, paradigms)
+
+        # Build scenario_config dynamically
+        scenario_config = self._build_scenario_config(
+            scenario_id, proposition, domain, paradigms, hypotheses,
+            forcing_functions_log, priors_by_paradigm
+        )
+
+        # Save scenario config to file
+        self._save_scenario_config(scenario_id, scenario_config)
+
+        # Create request and run existing phases 1-5
+        request = BFIHAnalysisRequest(
+            scenario_id=scenario_id,
+            proposition=proposition,
+            scenario_config=scenario_config,
+            user_id="autonomous"
+        )
+
+        result = self.conduct_analysis(request)
+
+        # Add generated config to result
+        result.metadata["generated_config"] = scenario_config
+        result.metadata["autonomous"] = True
+
+        return result
+
+    def _generate_paradigms(self, proposition: str, domain: str) -> List[Dict]:
+        """
+        Phase 0a: Generate 2-4 paradigms relevant to the proposition.
+        """
+        prompt = f"""
+You are generating paradigms for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
+
+PROPOSITION: "{proposition}"
+DOMAIN: {domain}
+
+Generate 2-4 paradigms that represent fundamentally different worldviews for analyzing this question.
+Include at least one inverse pair (e.g., Secular-Individualist ↔ Religious-Communitarian).
+
+For each paradigm provide:
+- id: K1, K2, K3, etc.
+- name: Short descriptive name (e.g., "Secular-Individualist")
+- description: Epistemic stance - what this paradigm treats as valid evidence and causal mechanisms
+- inverse_paradigm_id: ID of the inverse paradigm if applicable, or null
+- characteristics: Object with:
+  - prefers_evidence_types: List of evidence types this paradigm values
+  - skeptical_of: List of factors this paradigm discounts
+  - causal_preference: Primary causal mechanism this paradigm favors
+
+Output ONLY valid JSON array, no markdown:
+[
+  {{
+    "id": "K1",
+    "name": "...",
+    "description": "...",
+    "inverse_paradigm_id": "K2",
+    "characteristics": {{
+      "prefers_evidence_types": ["..."],
+      "skeptical_of": ["..."],
+      "causal_preference": "..."
+    }}
+  }}
+]
+"""
+        result = self._run_phase(prompt, [], "Phase 0a: Generate Paradigms")
+
+        # Parse JSON from response
+        try:
+            # Find JSON array in response
+            json_match = re.search(r'\[.*\]', result, re.DOTALL)
+            if json_match:
+                paradigms = json.loads(json_match.group(0))
+            else:
+                raise ValueError("No JSON array found in response")
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"Failed to parse paradigms: {e}")
+            # Fallback to default paradigms
+            paradigms = [
+                {"id": "K1", "name": "Secular-Rationalist", "description": "Material and measurable factors",
+                 "inverse_paradigm_id": "K2", "characteristics": {}},
+                {"id": "K2", "name": "Religious-Communitarian", "description": "Faith, community, transcendent values",
+                 "inverse_paradigm_id": "K1", "characteristics": {}},
+                {"id": "K3", "name": "Economistic-Rationalist", "description": "Capital efficiency and incentives",
+                 "inverse_paradigm_id": None, "characteristics": {}}
+            ]
+
+        logger.info(f"Generated {len(paradigms)} paradigms: {[p['name'] for p in paradigms]}")
+        return paradigms
+
+    def _generate_hypotheses_with_forcing_functions(
+        self, proposition: str, paradigms: List[Dict], difficulty: str
+    ) -> Tuple[List[Dict], Dict]:
+        """
+        Phase 0b: Generate hypotheses with forcing functions and MECE synthesis.
+
+        Executes:
+        - Initial hypothesis generation per paradigm
+        - Ontological Scan (7 domains)
+        - Ancestral Check (historical solutions)
+        - Paradigm Inversion (inverse hypotheses)
+        - MECE Synthesis (consolidate into unified set)
+        """
+        num_hypotheses = {"easy": 4, "medium": 6, "hard": 8}.get(difficulty, 6)
+        paradigm_json = json.dumps(paradigms, indent=2)
+
+        prompt = f"""
+You are generating hypotheses for a BFIH analysis with FORCING FUNCTIONS.
+
+PROPOSITION: "{proposition}"
+
+PARADIGMS:
+{paradigm_json}
+
+TARGET: Generate {num_hypotheses} hypotheses (including H0 catch-all)
+
+Execute these FORCING FUNCTIONS in order:
+
+## FORCING FUNCTION 1: ONTOLOGICAL SCAN
+Verify coverage of these 7 domains. For each, either include a hypothesis OR justify exclusion:
+- Biological (genetic, neurological, health factors)
+- Economic (capital, incentives, resources)
+- Cultural/Social (norms, networks, community)
+- Theological (faith, transcendence, religious institutions)
+- Historical (precedent, tradition, time-tested mechanisms)
+- Institutional (regulations, organizations, governance)
+- Psychological (individual motivation, cognition, personality)
+
+## FORCING FUNCTION 2: ANCESTRAL CHECK
+Identify how similar problems were solved historically.
+Include at least one hypothesis reflecting a time-tested mechanism.
+
+## FORCING FUNCTION 3: PARADIGM INVERSION
+For each paradigm, generate at least one hypothesis from its INVERSE paradigm's perspective.
+
+## FORCING FUNCTION 4: MECE SYNTHESIS
+After generating hypotheses from all paradigms:
+1. Collect ALL hypotheses
+2. Identify overlaps and consolidate
+3. Ensure MUTUAL EXCLUSIVITY: no two hypotheses can both be true
+4. Ensure COLLECTIVE EXHAUSTIVENESS: hypotheses cover all plausible explanations
+5. Include H0 as catch-all for unknown/combination factors
+6. Restate each hypothesis with clear, unambiguous boundaries
+
+Output ONLY valid JSON with this structure:
+{{
+  "hypotheses": [
+    {{
+      "id": "H0",
+      "name": "Unknown/Combination",
+      "narrative": "Multiple factors combined in ways not identified",
+      "domains": [],
+      "associated_paradigms": ["K1", "K2", "K3"],
+      "is_ancestral_solution": false,
+      "is_catch_all": true
+    }},
+    {{
+      "id": "H1",
+      "name": "...",
+      "narrative": "...",
+      "domains": ["Economic", "Psychological"],
+      "associated_paradigms": ["K1"],
+      "is_ancestral_solution": false,
+      "is_catch_all": false
+    }}
+  ],
+  "forcing_functions_log": {{
+    "ontological_scan": {{
+      "Biological": {{"hypothesis_id": null, "justification": "..."}},
+      "Economic": {{"hypothesis_id": "H1", "justification": "..."}},
+      "Cultural": {{"hypothesis_id": "H2", "justification": "..."}},
+      "Theological": {{"hypothesis_id": "H3", "justification": "..."}},
+      "Historical": {{"hypothesis_id": "H3", "justification": "..."}},
+      "Institutional": {{"hypothesis_id": "H4", "justification": "..."}},
+      "Psychological": {{"hypothesis_id": "H1", "justification": "..."}}
+    }},
+    "ancestral_check": {{
+      "historical_analogue": "...",
+      "primary_mechanism": "...",
+      "hypothesis_id": "H3",
+      "justification": "..."
+    }},
+    "paradigm_inversion": [
+      {{
+        "primary_paradigm": "K1",
+        "inverse_paradigm": "K2",
+        "generated_hypothesis_id": "H3",
+        "quality_assessment": "..."
+      }}
+    ],
+    "mece_synthesis": {{
+      "total_candidates": 8,
+      "consolidated_to": {num_hypotheses},
+      "overlaps_resolved": ["..."],
+      "validation": "All hypotheses are mutually exclusive and collectively exhaustive"
+    }}
+  }}
+}}
+"""
+        # Use file_search to get forcing function methodology from treatise
+        tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
+        result = self._run_phase(prompt, tools, "Phase 0b: Generate Hypotheses + Forcing Functions")
+
+        # Parse JSON from response
+        try:
+            json_match = re.search(r'\{.*\}', result, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(0))
+                hypotheses = data.get("hypotheses", [])
+                forcing_functions_log = data.get("forcing_functions_log", {})
+            else:
+                raise ValueError("No JSON object found in response")
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"Failed to parse hypotheses: {e}")
+            # Fallback
+            hypotheses = [
+                {"id": "H0", "name": "Unknown/Combination", "narrative": "Unknown factors",
+                 "domains": [], "associated_paradigms": ["K1", "K2", "K3"],
+                 "is_ancestral_solution": False, "is_catch_all": True}
+            ]
+            forcing_functions_log = {}
+
+        logger.info(f"Generated {len(hypotheses)} MECE hypotheses")
+        return hypotheses, forcing_functions_log
+
+    def _assign_priors(self, hypotheses: List[Dict], paradigms: List[Dict]) -> Dict:
+        """
+        Phase 0c: Each paradigm assigns priors to the UNIFIED MECE hypothesis set.
+        """
+        hypotheses_json = json.dumps(hypotheses, indent=2)
+        paradigms_json = json.dumps(paradigms, indent=2)
+
+        prompt = f"""
+You are assigning prior probabilities for a BFIH analysis.
+
+UNIFIED MECE HYPOTHESIS SET (all paradigms must use this same set):
+{hypotheses_json}
+
+PARADIGMS:
+{paradigms_json}
+
+For EACH paradigm, assign prior probabilities P(H|K) to EACH hypothesis.
+
+RULES:
+1. Priors must sum to 1.0 for each paradigm
+2. Different paradigms should weight the SAME hypotheses differently
+3. A secular paradigm should assign LOW prior to theological hypotheses
+4. A religious paradigm should assign HIGH prior to faith-based hypotheses
+5. Provide brief justification for non-trivial priors
+
+Output ONLY valid JSON with this structure:
+{{
+  "K1": {{
+    "H0": {{"prior": 0.10, "justification": "Catch-all kept low"}},
+    "H1": {{"prior": 0.40, "justification": "..."}},
+    "H2": {{"prior": 0.30, "justification": "..."}},
+    "H3": {{"prior": 0.10, "justification": "..."}},
+    "H4": {{"prior": 0.10, "justification": "..."}}
+  }},
+  "K2": {{
+    "H0": {{"prior": 0.05, "justification": "..."}},
+    ...
+  }}
+}}
+"""
+        result = self._run_phase(prompt, [], "Phase 0c: Assign Priors")
+
+        # Parse JSON from response
+        try:
+            json_match = re.search(r'\{.*\}', result, re.DOTALL)
+            if json_match:
+                priors_by_paradigm = json.loads(json_match.group(0))
+            else:
+                raise ValueError("No JSON object found in response")
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.error(f"Failed to parse priors: {e}")
+            # Fallback: uniform priors
+            priors_by_paradigm = {}
+            uniform_prior = 1.0 / len(hypotheses)
+            for p in paradigms:
+                priors_by_paradigm[p["id"]] = {
+                    h["id"]: {"prior": uniform_prior, "justification": "Uniform (fallback)"}
+                    for h in hypotheses
+                }
+
+        logger.info(f"Assigned priors for {len(priors_by_paradigm)} paradigms")
+        return priors_by_paradigm
+
+    def _build_scenario_config(
+        self, scenario_id: str, proposition: str, domain: str,
+        paradigms: List[Dict], hypotheses: List[Dict],
+        forcing_functions_log: Dict, priors_by_paradigm: Dict
+    ) -> Dict:
+        """
+        Build the full scenario config following Section 10.2 schema.
+        """
+        # Convert priors to simpler format for scenario_config
+        simple_priors = {}
+        for paradigm_id, hyp_priors in priors_by_paradigm.items():
+            simple_priors[paradigm_id] = {
+                h_id: data["prior"] if isinstance(data, dict) else data
+                for h_id, data in hyp_priors.items()
+            }
+
+        config = {
+            "schema_version": "1.0",
+            "scenario_metadata": {
+                "scenario_id": scenario_id,
+                "title": proposition,
+                "description": f"Autonomous BFIH analysis of: {proposition}",
+                "domain": domain,
+                "difficulty_level": "medium",
+                "created_date": datetime.now(timezone.utc).isoformat(),
+                "contributors": ["BFIH Autonomous System"],
+                "ground_truth_hypothesis_id": None
+            },
+            "scenario_narrative": {
+                "title": proposition,
+                "background": f"Analysis of: {proposition}",
+                "research_question": proposition
+            },
+            "paradigms": paradigms,
+            "hypotheses": hypotheses,
+            "forcing_functions_log": forcing_functions_log,
+            "priors_by_paradigm": simple_priors
+        }
+
+        return config
+
+    def _save_scenario_config(self, scenario_id: str, config: Dict) -> str:
+        """
+        Save the generated scenario config to a JSON file.
+        """
+        filename = f"scenario_config_{scenario_id}.json"
+        with open(filename, 'w') as f:
+            json.dump(config, f, indent=2)
+        logger.info(f"Saved scenario config to: {filename}")
+        return filename
 
 
 # ============================================================================
@@ -1017,10 +1398,47 @@ def example_conduct_analysis():
     # Save full result
     with open("analysis_result.json", "w") as f:
         json.dump(result.to_dict(), f, indent=2)
-    
+
+    return result
+
+
+def example_autonomous_analysis():
+    """Example: Autonomous BFIH analysis from just a proposition"""
+
+    # Just provide a proposition - everything else is generated automatically!
+    proposition = "Why is startup Turing Labs succeeding in CPG formulated products formulation while competitors are struggling?"
+
+    # Run autonomous analysis
+    orchestrator = BFIHOrchestrator()
+    result = orchestrator.analyze_topic(
+        proposition=proposition,
+        domain="business",
+        difficulty="medium"
+    )
+
+    # Print results
+    print("\n" + "="*80)
+    print("AUTONOMOUS BFIH ANALYSIS RESULT")
+    print("="*80)
+    print(f"Analysis ID: {result.analysis_id}")
+    print(f"Scenario: {result.scenario_id}")
+    print(f"Proposition: {result.proposition}")
+    print(f"\nAutonomous: {result.metadata.get('autonomous', False)}")
+    print("\nReport Preview (first 1000 chars):")
+    print(result.report[:1000] + "...")
+    print("\nPosteriors:")
+    print(json.dumps(result.posteriors, indent=2))
+    print("\nMetadata:")
+    print(json.dumps({k: v for k, v in result.metadata.items() if k != 'generated_config'}, indent=2))
+    print("\nFull result saved to: analysis_result.json")
+
+    # Save full result
+    with open("analysis_result.json", "w") as f:
+        json.dump(result.to_dict(), f, indent=2)
+
     return result
 
 
 if __name__ == "__main__":
-    # Run example analysis
-    example_conduct_analysis()
+    # Run autonomous analysis (generates everything from just the proposition)
+    example_autonomous_analysis()
