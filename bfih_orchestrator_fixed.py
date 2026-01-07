@@ -10,6 +10,7 @@ This module coordinates:
 """
 
 import json
+import math
 import os
 import logging
 import re
@@ -135,7 +136,10 @@ class BFIHOrchestrator:
             )
 
             # Extract posteriors from computation output (Phase 4)
-            posteriors = self._extract_posteriors_from_report(computation, request.scenario_config)
+            # Pass evidence_clusters to compute paradigm-specific posteriors
+            posteriors = self._extract_posteriors_from_report(
+                computation, request.scenario_config, evidence_clusters
+            )
 
             # Create result object
             analysis_id = str(uuid.uuid4())
@@ -472,35 +476,104 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 """
         return prompt
     
-    def _extract_posteriors_from_report(self, report: str, scenario_config: Dict) -> Dict:
+    def _extract_posteriors_from_report(self, report: str, scenario_config: Dict,
+                                         evidence_clusters: List[Dict] = None) -> Dict:
         """
         Extract posterior probabilities from the generated report.
         Returns dict of {paradigm_id: {hypothesis_id: posterior_value}}
 
-        Uses regex to parse the BFIH POSTERIOR COMPUTATION section.
-        Applies same posteriors to all paradigms (flexible extraction).
+        Computes SEPARATE posteriors for each paradigm using:
+        - Each paradigm's specific priors from scenario_config
+        - Common evidence cluster likelihoods from evidence_clusters
         """
-        # Parse posteriors from the report text
-        extracted = self._parse_posterior_section(report)
-
-        if not extracted:
-            logger.warning("No posteriors extracted from report, using defaults")
-
-        # Build result structure: same posteriors for all paradigms
         posteriors = {}
         paradigms = scenario_config.get("paradigms", [])
+        hypotheses = scenario_config.get("hypotheses", [])
+        priors_by_paradigm = scenario_config.get("priors_by_paradigm", scenario_config.get("priors", {}))
 
         # If no paradigms defined, create a default one
         if not paradigms:
             paradigms = [{"id": "default"}]
 
-        for paradigm in paradigms:
-            paradigm_id = paradigm.get("id")
-            posteriors[paradigm_id] = {}
+        # Get hypothesis IDs
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
 
-            # Use extracted posteriors directly (flexible extraction)
-            for hypothesis_id, value in extracted.items():
-                posteriors[paradigm_id][hypothesis_id] = value
+        # If we have evidence clusters with likelihoods, compute paradigm-specific posteriors
+        if evidence_clusters and priors_by_paradigm:
+            logger.info(f"Computing paradigm-specific posteriors for {len(paradigms)} paradigms")
+
+            # Extract cluster likelihoods (P(E|H) for each hypothesis)
+            cluster_likelihoods = []
+            for cluster in evidence_clusters:
+                lh = cluster.get("likelihoods", {})
+                # Handle both formats: {"H1": 0.8} and {"H1": {"probability": 0.8}}
+                cluster_lh = {}
+                for h_id in hyp_ids:
+                    h_lh = lh.get(h_id, lh.get(h_id.upper(), lh.get(h_id.lower(), {})))
+                    if isinstance(h_lh, dict):
+                        cluster_lh[h_id] = h_lh.get("probability", 0.5)
+                    elif isinstance(h_lh, (int, float)):
+                        cluster_lh[h_id] = float(h_lh)
+                    else:
+                        cluster_lh[h_id] = 0.5  # Default neutral
+                cluster_likelihoods.append(cluster_lh)
+
+            # Compute posteriors for each paradigm
+            for paradigm in paradigms:
+                paradigm_id = paradigm.get("id")
+                paradigm_priors = priors_by_paradigm.get(paradigm_id, {})
+
+                # Get priors for each hypothesis
+                priors = {}
+                for h_id in hyp_ids:
+                    p = paradigm_priors.get(h_id, paradigm_priors.get(h_id.upper(), {}))
+                    if isinstance(p, dict):
+                        priors[h_id] = p.get("probability", 1.0 / len(hyp_ids))
+                    elif isinstance(p, (int, float)):
+                        priors[h_id] = float(p)
+                    else:
+                        priors[h_id] = 1.0 / len(hyp_ids)  # Uniform default
+
+                # Compute unnormalized posteriors using Bayes' theorem
+                unnormalized = {}
+                for h_id in hyp_ids:
+                    # P(H|E) ∝ P(H) * ∏P(E_k|H)
+                    log_likelihood = 0.0
+                    for cluster_lh in cluster_likelihoods:
+                        p_e_h = cluster_lh.get(h_id, 0.5)
+                        if p_e_h > 0:
+                            log_likelihood += math.log(p_e_h)
+                        else:
+                            log_likelihood += math.log(1e-10)  # Avoid log(0)
+
+                    total_likelihood = math.exp(log_likelihood)
+                    unnormalized[h_id] = priors[h_id] * total_likelihood
+
+                # Normalize
+                norm_const = sum(unnormalized.values())
+                if norm_const > 0:
+                    posteriors[paradigm_id] = {
+                        h_id: unnormalized[h_id] / norm_const
+                        for h_id in hyp_ids
+                    }
+                else:
+                    # Fallback to priors if computation fails
+                    posteriors[paradigm_id] = priors.copy()
+
+                logger.info(f"Paradigm {paradigm_id} posteriors: {posteriors[paradigm_id]}")
+        else:
+            # Fallback: Parse posteriors from report text (same for all paradigms)
+            logger.warning("No evidence clusters available, falling back to text extraction")
+            extracted = self._parse_posterior_section(report)
+
+            if not extracted:
+                logger.warning("No posteriors extracted from report, using defaults")
+
+            for paradigm in paradigms:
+                paradigm_id = paradigm.get("id")
+                posteriors[paradigm_id] = {}
+                for hypothesis_id, value in extracted.items():
+                    posteriors[paradigm_id][hypothesis_id] = value
 
         return posteriors
 
