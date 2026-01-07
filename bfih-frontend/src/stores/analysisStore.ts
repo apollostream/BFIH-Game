@@ -1,7 +1,7 @@
 // Analysis management state
 
 import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
+import { devtools, persist, createJSONStorage } from 'zustand/middleware';
 import type { BFIHAnalysisResult, AnalysisStatusResponse } from '../types';
 import {
   submitAnalysis,
@@ -45,7 +45,8 @@ const POLL_INTERVAL = 3000; // 3 seconds
 
 export const useAnalysisStore = create<AnalysisState>()(
   devtools(
-    (set, get) => ({
+    persist(
+      (set, get) => ({
         // Initial state
         pendingAnalysisId: null,
         status: 'idle' as AnalysisStatusType,
@@ -218,7 +219,17 @@ export const useAnalysisStore = create<AnalysisState>()(
           isPolling: false,
         });
       },
-    }),
+      }),
+      {
+        name: 'bfih-analysis-store',
+        // Use sessionStorage instead of localStorage - data cleared on browser close
+        storage: createJSONStorage(() => sessionStorage),
+        partialize: (state) => ({
+          currentAnalysis: state.currentAnalysis,
+          status: state.status,
+        }),
+      }
+    ),
     { name: 'AnalysisStore' }
   )
 );
