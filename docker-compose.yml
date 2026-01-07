@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # BFIH Backend API
+  bfih-api:
+    build: .
+    container_name: bfih-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - TREATISE_VECTOR_STORE_ID=${TREATISE_VECTOR_STORE_ID}
+      - DATABASE_URL=postgresql://bfih:bfih_password@postgres:5432/bfih_db
+      - REDIS_URL=redis://redis:6379/0
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - bfih-network
+    restart: unless-stopped
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: bfih-postgres
+    environment:
+      - POSTGRES_USER=bfih
+      - POSTGRES_PASSWORD=bfih_password
+      - POSTGRES_DB=bfih_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - bfih-network
+    restart: unless-stopped
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: bfih-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - bfih-network
+    restart: unless-stopped
+
+  # Adminer (Database UI - optional)
+  adminer:
+    image: adminer
+    container_name: bfih-adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    networks:
+      - bfih-network
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  redis-data:
+
+networks:
+  bfih-network:
+    driver: bridge
