@@ -234,11 +234,12 @@ export const useBettingStore = create<BettingState>()(
 
           switch (settings.payoffFunction) {
             case 'odds_against':
-              // Horse race style: payoff = bet / prior (if winner), 0 (if loser)
+              // Horse race style: net profit = (bet / prior) - bet if winner, -bet if loser
               // Odds-against = (1-prior)/prior, so 1 + odds-against = 1/prior
-              // Example: prior=0.2 → odds-against=4:1 → payoff = 5× bet
-              if (!prior || prior <= 0) return isWinner ? bet : 0;
-              return isWinner ? bet / prior : 0;
+              // Example: prior=0.2, bet=10 → total return=50, net profit=40
+              // If loser: you lose your bet entirely (-bet)
+              if (!prior || prior <= 0) return isWinner ? 0 : -bet;
+              return isWinner ? (bet / prior) - bet : -bet;
 
             case 'proportional_posterior':
               // Payout = bet * (2 * posterior - 1) for expected value normalization

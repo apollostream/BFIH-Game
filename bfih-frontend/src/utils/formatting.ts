@@ -118,11 +118,12 @@ export function calculatePayoff(
 ): number {
   switch (payoffFunction) {
     case 'odds_against':
-      // Horse race style: payoff = bet * (1 + odds-against) = bet / prior
+      // Horse race style: net profit = (bet / prior) - bet if correct, -bet if wrong
       // Odds-against = (1 - prior) / prior, so 1 + odds-against = 1/prior
-      // Example: prior=0.2 → odds-against=4:1 → payoff = 5× bet
-      if (!prior || prior <= 0) return isCorrect ? bet : 0;
-      return isCorrect ? bet / prior : 0;
+      // Example: prior=0.2, bet=10 → total return=50, net profit=+40
+      // If wrong: you lose your bet entirely (-bet)
+      if (!prior || prior <= 0) return isCorrect ? 0 : -bet;
+      return isCorrect ? (bet / prior) - bet : -bet;
     case 'proportional_posterior':
       return isCorrect ? bet * (1 + posterior) : 0;
     case 'log_score':
