@@ -1,0 +1,99 @@
+// Analysis API endpoints
+
+import { get, post } from './client';
+import type {
+  AnalysisSubmitResponse,
+  AnalysisStatusResponse,
+  BFIHAnalysisResult,
+  ScenarioConfig,
+} from '../types';
+
+export interface SubmitAnalysisParams {
+  proposition: string;
+  scenario_config?: ScenarioConfig;
+  user_id?: string;
+}
+
+// Submit a new analysis (autonomous mode - just proposition)
+export async function submitAnalysis(params: SubmitAnalysisParams): Promise<AnalysisSubmitResponse> {
+  const body = {
+    scenario_id: `auto_${Date.now().toString(16).slice(-8)}`,
+    proposition: params.proposition,
+    scenario_config: params.scenario_config || {},
+    user_id: params.user_id,
+  };
+
+  const response = await post<AnalysisSubmitResponse>('/api/bfih-analysis', body);
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.data!;
+}
+
+// Get analysis status (for polling)
+export async function getAnalysisStatus(analysisId: string): Promise<AnalysisStatusResponse> {
+  const response = await get<AnalysisStatusResponse>(`/api/analysis-status/${analysisId}`);
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.data!;
+}
+
+// Get completed analysis result
+export async function getAnalysis(analysisId: string): Promise<BFIHAnalysisResult> {
+  const response = await get<BFIHAnalysisResult>(`/api/bfih-analysis/${analysisId}`);
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.data!;
+}
+
+// Poll analysis until complete
+export async function pollAnalysisUntilComplete(
+  analysisId: string,
+  onStatusUpdate?: (status: AnalysisStatusResponse) => void,
+  intervalMs: number = 3000,
+  maxAttempts: number = 100
+): Promise<BFIHAnalysisResult> {
+  let attempts = 0;
+
+  return new Promise((resolve, reject) => {
+    const poll = async () => {
+      attempts++;
+
+      if (attempts > maxAttempts) {
+        reject(new Error('Analysis polling timed out'));
+        return;
+      }
+
+      try {
+        const status = await getAnalysisStatus(analysisId);
+        onStatusUpdate?.(status);
+
+        if (status.status === 'completed') {
+          const result = await getAnalysis(analysisId);
+          resolve(result);
+          return;
+        }
+
+        if (status.status === 'failed') {
+          reject(new Error(status.error || 'Analysis failed'));
+          return;
+        }
+
+        // Still processing, poll again
+        setTimeout(poll, intervalMs);
+      } catch (error) {
+        reject(error);
+      }
+    };
+
+    poll();
+  });
+}
