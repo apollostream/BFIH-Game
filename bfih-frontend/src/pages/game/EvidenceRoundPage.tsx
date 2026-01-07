@@ -9,7 +9,7 @@ import { EvidenceClusterCard } from '../../components/game/EvidenceCard';
 import { EvidenceMatrixHeatmap } from '../../components/visualizations/EvidenceMatrixHeatmap';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BudgetBar, BetSummary } from '../../components/game/BettingSlider';
-import { useGameStore, useBettingStore } from '../../stores';
+import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -24,6 +24,7 @@ export function EvidenceRoundPage() {
     setPhase,
   } = useGameStore();
   const { bets, budget, getTotalBet, raiseBet } = useBettingStore();
+  const { currentAnalysis } = useAnalysisStore();
 
   const [revealedClusters, setRevealedClusters] = useState<string[]>([]);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -34,10 +35,12 @@ export function EvidenceRoundPage() {
     setPhase('evidence');
   }, [setPhase]);
 
-  // Get clusters for this round
+  // Get clusters for this round - check analysis metadata first, then scenarioConfig
   const clusters = useMemo(() => {
-    return scenarioConfig?.evidence_clusters || [];
-  }, [scenarioConfig]);
+    return currentAnalysis?.metadata?.evidence_clusters
+      || scenarioConfig?.evidence_clusters
+      || [];
+  }, [currentAnalysis, scenarioConfig]);
 
   // Build posteriors data (using priors initially, would be updated after evidence)
   // Support both 'priors' and 'priors_by_paradigm' field names

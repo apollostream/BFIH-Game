@@ -8,7 +8,7 @@ import { Badge } from '../../components/ui/Badge';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
-import { useGameStore, useBettingStore } from '../../stores';
+import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
 import { pageVariants, staggerContainerVariants, cardVariants, formatPercent, formatCredits } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
@@ -24,6 +24,7 @@ export function DebriefPage() {
     resetGame,
   } = useGameStore();
   const { bets, budget, getTotalBet, betHistory, reset: resetBetting } = useBettingStore();
+  const { currentAnalysis } = useAnalysisStore();
 
   const [showInsights, setShowInsights] = useState(false);
 
@@ -94,8 +95,10 @@ export function DebriefPage() {
       results.push("You diversified your bets across many hypotheses - conservative strategy");
     }
 
-    // Evidence impact
-    const clusters = scenarioConfig.evidence_clusters || [];
+    // Evidence impact - check analysis metadata first, then scenarioConfig
+    const clusters = currentAnalysis?.metadata?.evidence_clusters
+      || scenarioConfig.evidence_clusters
+      || [];
     if (clusters.length >= 3) {
       results.push(`${clusters.length} evidence clusters were analyzed, each updating posterior probabilities`);
     }
@@ -107,7 +110,7 @@ export function DebriefPage() {
     }
 
     return results;
-  }, [scenarioConfig, paradigms, posteriorsData, bets]);
+  }, [scenarioConfig, paradigms, posteriorsData, bets, currentAnalysis]);
 
   const handlePlayAgain = () => {
     resetBetting();
@@ -159,7 +162,9 @@ export function DebriefPage() {
               </div>
               <div>
                 <div className="text-4xl font-bold text-paradigm-k3 mb-1">
-                  {scenarioConfig.evidence_clusters?.length || 0}
+                  {currentAnalysis?.metadata?.evidence_clusters?.length
+                    || scenarioConfig.evidence_clusters?.length
+                    || 0}
                 </div>
                 <div className="text-text-secondary">Evidence Clusters</div>
               </div>
