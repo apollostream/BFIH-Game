@@ -792,7 +792,7 @@ Print the final posteriors clearly labeled.
         hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
 
         prompt = f"""
-You are generating the FINAL comprehensive BFIH analysis report. This report must be THOROUGH, DETAILED, and follow the EXACT structure below.
+You are generating the FINAL comprehensive BFIH analysis report. This MUST be a DETAILED, THOROUGH document of AT LEAST 5000 WORDS following the EXACT structure and format shown in the examples below.
 
 PROPOSITION UNDER INVESTIGATION:
 "{request.proposition}"
@@ -806,26 +806,29 @@ PARADIGMS DEFINED:
 HYPOTHESES DEFINED:
 {hypothesis_list}
 
-=== PHASE 1 METHODOLOGY (for reference) ===
-{methodology[:3000]}
+=== PHASE 1 METHODOLOGY ===
+{methodology}
 
 === PHASE 2 EVIDENCE GATHERED ===
-{evidence[:5000]}
+{evidence}
 
 === PHASE 3 LIKELIHOOD ASSIGNMENTS ===
-{likelihoods[:5000]}
+{likelihoods}
 
 === PHASE 4 BAYESIAN COMPUTATION OUTPUT ===
 {computation}
 
 ================================================================================
-YOUR TASK: Generate a COMPREHENSIVE BFIH report with ALL 9 DELIVERABLES below.
-This must be a SUBSTANTIVE document - at minimum 3000 words. Do NOT truncate.
+GENERATE A COMPREHENSIVE BFIH REPORT WITH THE EXACT FORMAT SHOWN BELOW.
+THIS REPORT MUST BE AT LEAST 5000 WORDS. DO NOT ABBREVIATE OR TRUNCATE.
+FOLLOW THE EXAMPLE FORMATS EXACTLY.
 ================================================================================
 
-# Intellectual Honesty Analysis: [Create a short title from the proposition]
+---
 
-**Analysis conducted using OpenAI GPT-4.1 with Bayesian Framework for Intellectual Honesty (BFIH)**
+# Intellectual Honesty Analysis: [Create descriptive title from proposition]
+
+**Analysis conducted using OpenAI with Bayesian Framework for Intellectual Honesty (BFIH Rev 4)**
 
 ---
 
@@ -835,207 +838,363 @@ This must be a SUBSTANTIVE document - at minimum 3000 words. Do NOT truncate.
 
 ---
 
-## DELIVERABLE 1: Executive Summary
+## Executive Summary
 
-Write 4-6 paragraphs covering:
-1. **Primary Finding**: State verdict (VALIDATED / PARTIALLY VALIDATED / PARTIALLY REJECTED / REJECTED / INDETERMINATE)
-2. List the dominant paradigm's conclusions with key posterior probabilities (decimal form: 0.XXX)
-3. Summarize at least one alternative paradigm's contrasting interpretation
-4. Highlight 5-8 of the most important evidence points and their qualitative impact
-5. State whether conclusions are robust under sensitivity analysis
-6. Distinguish between (a) high-confidence findings and (b) uncertain/contingent findings
+[WRITE 5-7 DETAILED PARAGRAPHS covering:]
+
+**Primary Finding:** The proposition is **[VERDICT: VALIDATED / PARTIALLY VALIDATED / PARADIGM-DEPENDENT / PARTIALLY REJECTED / REJECTED / INDETERMINATE]**. Under the [dominant paradigm name], [hypothesis X] has posterior probability of [0.XXX], indicating [interpretation]. Under [alternative paradigm], [different hypothesis] dominates with posterior [0.XXX].
+
+**Key Evidence (list 6-10 specific findings with numbers):**
+- [Evidence 1]: [Specific statistic or finding, e.g., "SMD=-0.591 for depression reduction"]
+- [Evidence 2]: [Another specific finding with source]
+- [Evidence 3]: ...
+[Continue for all major evidence]
+
+**Robustness:** [State whether conclusions are stable under ±20% prior variation]
+
+**High-Confidence Findings vs. Uncertainties:**
+- High confidence: [List 2-3 findings that hold across paradigms]
+- Remaining uncertainties: [List 2-3 areas where paradigm choice matters]
 
 ---
 
-## DELIVERABLE 2: Dominant Paradigm Statement (K₀)
+## DELIVERABLE 1: Dominant Paradigm Statement (K₀)
 
-### My Interpretive Paradigm (K₀)
-State the dominant paradigm from the scenario config. Describe in 4-6 numbered points:
-1. Core assumptions about the domain
-2. How evidence is prioritized and weighed
-3. How costs/benefits/interests are conceptualized
-4. How temporal dynamics are interpreted
+### My Interpretive Paradigm (K₀): [Name from config]
+
+I approach this analysis from a **[Paradigm Name]** framework. This holds that:
+
+1. **[Core assumption 1]**: [Detailed explanation - 2-3 sentences]
+2. **[Core assumption 2]**: [Detailed explanation]
+3. **[Core assumption 3]**: [Detailed explanation]
+4. **[Core assumption 4]**: [Detailed explanation]
 
 ### Background Knowledge & Expertise
-- Describe the "idealized analyst" performing this analysis
-- List 3-5 acknowledged limitations and biases
+
+The idealized analyst for this framework has:
+- [Knowledge area 1]
+- [Knowledge area 2]
+- [Methodological expertise]
+
+**Acknowledged Limitations and Biases:**
+- [Limitation 1]: [How it might affect analysis]
+- [Limitation 2]: [How it might affect analysis]
+- [Limitation 3]: [How it might affect analysis]
 
 ### Expected Outcomes (Pre-Commitment)
-- State 3-5 "pre-committed" expectations given K₀ assumptions
-- What patterns would be expected before seeing specific evidence?
+
+Prior to examining specific evidence, under K₀ I expected:
+1. [Expected finding 1 - what patterns would emerge]
+2. [Expected finding 2]
+3. [Expected finding 3]
+4. [Expected finding 4]
+
+This pre-commitment is documented to enable detection of confirmation bias.
 
 ---
 
-## DELIVERABLE 3: Hypothesis Set (H₀)
+## DELIVERABLE 2: Comprehensive Hypothesis Set (H₀)
 
 ### Mutually Exclusive, Collectively Exhaustive Hypotheses
 
-For EACH hypothesis from the scenario config:
-- **H[X]: [Name]**
-- Narrative definition (1 paragraph)
-- **Testable Predictions:** 3-5 bullet points of what would be expected if this hypothesis were true
+[FOR EACH HYPOTHESIS, use this EXACT format:]
 
-Include H0 (catch-all) with its definition.
+**H1: [Full Name]**
+
+[Narrative definition: 3-5 sentences explaining what state of the world this hypothesis describes]
+
+**Mechanism:** [1-2 sentences explaining HOW this would work if true]
+
+**Testable Predictions (H1):**
+- [Prediction 1: What empirical pattern would we observe?]
+- [Prediction 2: What data would support this?]
+- [Prediction 3: What would we NOT see if this is true?]
+- [Prediction 4: What distinguishes this from other hypotheses?]
+
+---
+
+**H2: [Full Name]**
+
+[Same detailed format as H1]
+
+---
+
+[Continue for ALL hypotheses H3, H4, H5, H0...]
+
+---
 
 ### Prior Allocation Table
 
 | Hypothesis | Prior P(H) | Rationale |
 |------------|:----------:|-----------|
-[Fill with actual priors from scenario config and brief rationales]
+| H1 | 0.XXX | [2-3 sentence justification grounded in K₀ assumptions] |
+| H2 | 0.XXX | [2-3 sentence justification] |
+| H3 | 0.XXX | [2-3 sentence justification] |
+| H4 | 0.XXX | [2-3 sentence justification] |
+| H5 | 0.XXX | [2-3 sentence justification] |
+| H0 | 0.XXX | [Reason for catch-all probability mass] |
 
-State: "Priors sum to 1.0" and verify.
+**Verification:** Priors sum to [calculate sum] ≈ 1.0 ✓
 
 ---
 
-## DELIVERABLE 4: Paradigm Inversion (Alternative Paradigms)
+## DELIVERABLE 3: Paradigm Inversion (Alternative Paradigms)
 
-### Alternative Paradigm 1 (Θ₁): [Name from scenario config]
+### Inverse Paradigm (Θ₁): [Name]
+
+The inverse of my dominant paradigm holds that:
 
 **Foundational Assumptions (Θ₁):**
-- List 4 key assumptions
+1. [Inverted assumption 1]
+2. [Inverted assumption 2]
+3. [Inverted assumption 3]
+4. [Inverted assumption 4]
 
 **Key Differences from K₀:**
 
-| Dimension | K₀ (Dominant) | Θ₁ (Alternative) |
-|-----------|---------------|------------------|
-[Fill with 4-5 dimensions of contrast]
+| Dimension | K₀ ([Dominant Name]) | Θ₁ ([Alternative Name]) |
+|-----------|----------------------|-------------------------|
+| Evidence weighting | [K₀ approach] | [Θ₁ approach] |
+| Causal mechanisms | [K₀ view] | [Θ₁ view] |
+| Success criteria | [K₀ definition] | [Θ₁ definition] |
+| Temporal dynamics | [K₀ interpretation] | [Θ₁ interpretation] |
+| Key actors | [K₀ focus] | [Θ₁ focus] |
+
+**What the Inverse Paradigm Sees That K₀ Misses:**
+1. [Insight 1 - detailed explanation]
+2. [Insight 2 - detailed explanation]
+3. [Insight 3 - detailed explanation]
 
 **Paradigm-Conditional Expectations (Θ₁):**
-- Which hypotheses are favored under this paradigm?
-- What evidence patterns would be especially diagnostic?
+- Under Θ₁, hypotheses [list] are expected to be most plausible
+- Evidence patterns such as [examples] would be especially diagnostic
 
-[Repeat for additional paradigms if present in config]
+[Repeat for additional paradigms K2, K3, K4 from config]
 
 ---
 
-## DELIVERABLE 5: Evidence Matrix
+## DELIVERABLE 4: Evidence Matrix
 
 ### Evidence Clustering Strategy
-Explain the 3-6 thematic clusters used to organize evidence.
+
+Evidence is organized into [N] thematic clusters:
+
+1. **Cluster A: [Name]** - [What this cluster captures and why it matters]
+2. **Cluster B: [Name]** - [Description]
+3. **Cluster C: [Name]** - [Description]
+[Continue for all clusters]
+
+---
 
 ### Evidence Items
 
-For EACH major evidence item gathered in Phase 2:
+[FOR EACH EVIDENCE ITEM, use this EXACT format with FULL likelihood tables:]
 
-**E-[X]: [Short description]**
+**E₁: [Descriptive Title]**
 
-[Narrative: 1-2 paragraphs describing what the evidence shows, source, timeframe, limitations]
+*Source:* [Author (Year) or Organization]
 
-| Hypothesis | P(E | H) | Interpretation |
-|------------|:--------:|----------------|
-[Likelihood table for all hypotheses]
+*Description:* [2-4 sentences describing what the evidence shows, including specific numbers, statistics, sample sizes, time periods, and methodological notes]
 
-[Include at least 6-10 evidence items with full tables]
+| Hypothesis | P(E₁\|H) | Reasoning |
+|------------|:--------:|-----------|
+| H1 | 0.XX | [2-3 sentences explaining why this likelihood given H1] |
+| H2 | 0.XX | [2-3 sentences explaining why this likelihood given H2] |
+| H3 | 0.XX | [2-3 sentences] |
+| H4 | 0.XX | [2-3 sentences] |
+| H5 | 0.XX | [2-3 sentences] |
+| H0 | 0.XX | [2-3 sentences] |
+
+---
+
+**E₂: [Next Evidence Item]**
+
+[Same complete format with full likelihood table]
+
+---
+
+[INCLUDE AT LEAST 8-12 EVIDENCE ITEMS WITH FULL TABLES]
+
+---
 
 ### Evidence Matrix Summary
 
-Provide a summary table showing evidence clusters vs hypotheses with aggregate support direction.
+| Evidence | Cluster | Supports | Refutes | Neutral |
+|----------|---------|----------|---------|---------|
+| E₁ | A | H1, H2 | H3 | H4, H5 |
+| E₂ | A | H2 | H1 | H3, H4 |
+[Complete for all evidence items]
 
 ---
 
-## DELIVERABLE 6: Perspective-by-Perspective Analysis
+## DELIVERABLE 5: Perspective-by-Perspective Analysis
 
-Analyze from 3-4 distinct perspectives:
+### [Perspective 1: e.g., Empirical/Scientific] Perspective
 
-### [Perspective 1] Perspective
+**Guiding Question:** [Question this perspective asks]
 
-**Question:** [Perspective-specific question]
-
-**Evidence Standard:** [What counts as strong evidence from this view]
-
-**Conclusion:** **[Clear statement]**
-
-**Confidence:** [e.g., Moderate (60-70%), High (75-85%)]
+**Evidence Standard:** [What counts as "good evidence" from this view]
 
 **Key Evidence:**
-- [Evidence item and implication]
+- E₁: [Specific implication]
+- E₃: [Specific implication]
+- E₅: [Specific implication]
 
-**Assessment:** [1-2 paragraphs]
+**Conclusion:** **[Clear 1-sentence conclusion]**
 
-[Repeat for 2-3 more perspectives]
+**Confidence:** [High (80-90%) / Moderate (60-75%) / Low (40-55%)] - [Justification]
+
+**Assessment:** [2-3 paragraph analysis of what this perspective concludes and why]
 
 ---
 
-## DELIVERABLE 7: Paradigm Integration & Sensitivity Analysis
+### [Perspective 2: e.g., Institutional/Policy] Perspective
 
-### Posterior Probabilities Under Dominant Paradigm K₀
+[Same detailed format]
 
-| Hypothesis | Prior P(H) | Posterior P(H|E) | Change | Interpretation |
-|------------|:----------:|:----------------:|:------:|----------------|
-[Use exact values from Phase 4 computation]
+---
 
-### Posterior Probabilities Under Alternative Paradigm(s)
+### [Perspective 3: e.g., Historical/Comparative] Perspective
 
-[Similar table for each alternative paradigm]
+[Same detailed format]
+
+---
+
+### [Perspective 4: e.g., Ethical/Normative] Perspective
+
+[Same detailed format]
+
+---
+
+## DELIVERABLE 6: Bayesian Update & Sensitivity Analysis
+
+### Final Posterior Probabilities Under K₀
+
+[COPY EXACT VALUES FROM PHASE 4 COMPUTATION]
+
+| Hypothesis | Prior P(H) | Posterior P(H\|E) | Change | LR | WoE (dB) | Interpretation |
+|------------|:----------:|:-----------------:|:------:|:--:|:--------:|----------------|
+| H1 | 0.XXX | 0.XXX | +0.XX | X.X | +X.X | [Interpretation] |
+| H2 | 0.XXX | 0.XXX | +0.XX | X.X | +X.X | [Interpretation] |
+| H3 | 0.XXX | 0.XXX | -0.XX | X.X | -X.X | [Interpretation] |
+| H4 | 0.XXX | 0.XXX | ±0.XX | X.X | ±X.X | [Interpretation] |
+| H5 | 0.XXX | 0.XXX | ±0.XX | X.X | ±X.X | [Interpretation] |
+| H0 | 0.XXX | 0.XXX | ±0.XX | X.X | ±X.X | [Interpretation] |
+
+**Normalization Check:** Sum = [calculate] ≈ 1.0 ✓
+
+### Posteriors Under Alternative Paradigm(s)
+
+[Similar table for each alternative paradigm with different priors]
 
 ### Sensitivity Analysis: ±20% Prior Variation
 
-| Scenario | Hypothesis | Prior | Posterior | Robustness |
-|----------|------------|:-----:|:---------:|------------|
-[Show how posteriors change with ±20% prior variation for 2-3 key hypotheses]
+| Scenario | Hypothesis | Baseline Prior | Varied Prior | New Posterior | Robustness |
+|----------|------------|:--------------:|:------------:|:-------------:|------------|
+| K₀ baseline | H1 | 0.XX | 0.XX | 0.XXX | Baseline |
+| K₀ -20% | H1 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
+| K₀ +20% | H1 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
+| K₀ baseline | H2 | 0.XX | 0.XX | 0.XXX | Baseline |
+| K₀ -20% | H2 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
+| K₀ +20% | H2 | 0.XX | 0.XX | 0.XXX | [Stable/Sensitive] |
 
-**Robustness Assessment:** [Are conclusions stable under prior variation?]
+**Robustness Assessment:** [2-3 sentences on whether key conclusions change with prior variation]
 
 ---
 
-## DELIVERABLE 8: Ancestral / Historical Check
+## DELIVERABLE 7: Ancestral / Historical Check
 
 ### Historical Baselines
-- [Baseline 1: relevant historical comparison]
-- [Baseline 2: another relevant comparison]
+
+**Baseline 1: [Historical period/comparison]**
+[2-3 sentences describing the historical baseline and its relevance]
+
+**Baseline 2: [Another historical comparison]**
+[2-3 sentences]
 
 ### Comparison and Implications
-[2-3 paragraphs comparing current situation to historical baselines]
+
+[3-4 paragraphs analyzing:]
+- How does current situation compare to historical baselines?
 - Does this represent continuity, gradual drift, or structural break?
 - Which hypotheses predict continuity vs. discontinuity?
+- What does history suggest about likely trajectories?
 
 ---
 
-## DELIVERABLE 9: Comprehensive Integration
+## DELIVERABLE 8: Comprehensive Integration
 
-### Core Question: [Restate proposition as question]
+### Core Question: [Restate proposition as direct question]
 
-**Answer:** [VERDICT with nuance]
+**Answer:** **[VERDICT]** - [2-3 sentence nuanced answer]
 
-**Supporting Hypotheses:**
-- H[X]: Posterior 0.XXX - [interpretation]
-- H[Y]: Posterior 0.XXX - [interpretation]
+**Dominant Hypothesis:** H[X] ([Name]) with posterior 0.XXX under K₀
 
-**Key Evidence Clusters:**
-- [Cluster]: [Why it matters]
+**Supporting Evidence:**
+1. [Most important evidence and its impact]
+2. [Second most important]
+3. [Third most important]
 
-**Confidence:** [Confidence level with justification]
+**Key Caveats:**
+- [Caveat 1]
+- [Caveat 2]
+
+**Confidence Level:** [High/Moderate/Low] ([XX-XX%]) based on [justification]
 
 ---
 
-## DELIVERABLE 10: Limitations, Unknowns, and Future Tests
+## DELIVERABLE 9: Limitations, Unknowns, and Future Tests
 
 ### Data and Measurement Limitations
-[Discuss 2-3 specific limitations]
 
-### Modeling Limitations
-[Discuss hypothesis design limits, independence assumptions]
+1. **[Limitation 1]:** [Detailed explanation of limitation and how it could affect conclusions]
+2. **[Limitation 2]:** [Detailed explanation]
+3. **[Limitation 3]:** [Detailed explanation]
+
+### Modeling and Structural Limitations
+
+- **Independence assumptions:** [Discussion of whether evidence items are truly independent]
+- **Hypothesis exhaustiveness:** [Discussion of whether H0 catch-all is too large]
+- **Paradigm completeness:** [Discussion of potentially missing paradigms]
 
 ### Paradigm Dependence
-[Where do K₀ vs Θ₁ lead to different interpretations?]
+
+[2-3 paragraphs discussing where K₀ vs. alternative paradigms lead to materially different conclusions]
 
 ### Critical Future Tests
-- [Future observation 1 that would update beliefs]
-- [Future observation 2]
-- [Future observation 3]
+
+What observations would most efficiently update these beliefs?
+
+1. **[Future test 1]:** [What it would tell us and which hypotheses it would discriminate between]
+2. **[Future test 2]:** [Description]
+3. **[Future test 3]:** [Description]
 
 ---
 
-**End of BFIH Report**
+## Intellectual Honesty Checklist
+
+| Forcing Function | Applied? | Notes |
+|-----------------|:--------:|-------|
+| Ontological Scan (7 domains) | ✓/✗ | [Which domains covered] |
+| Ancestral Check | ✓/✗ | [Historical baselines examined] |
+| Paradigm Inversion | ✓/✗ | [Alternative paradigms generated] |
+| MECE Verification | ✓/✗ | [Priors sum to 1.0] |
+| Sensitivity Analysis | ✓/✗ | [±20% variation tested] |
+
+---
+
+**End of BFIH Analysis Report**
 
 ================================================================================
-CRITICAL REQUIREMENTS:
-- Use decimal probabilities (0.XXX format, NOT percentages)
-- ALL posterior values MUST match Phase 4 computation output EXACTLY
-- Include FULL likelihood tables for evidence items
-- Report must be SUBSTANTIVE - minimum 3000 words
-- Use proper markdown formatting throughout
-- Include all computed metrics: posteriors, likelihood ratios, WoE where available
+CRITICAL REQUIREMENTS - READ CAREFULLY:
+1. MINIMUM 5000 WORDS - Do not abbreviate or truncate any section
+2. Use DECIMAL probabilities (0.XXX format, NOT percentages)
+3. ALL posterior values MUST match Phase 4 computation EXACTLY
+4. Include COMPLETE likelihood tables for EVERY evidence item (8-12 items minimum)
+5. Each evidence item needs the FULL table with P(E|H) for ALL hypotheses
+6. Include REASONING column in all likelihood tables
+7. Follow the EXACT format shown above - do not simplify
+8. Include specific numbers, statistics, sources throughout
 ================================================================================
 """
         tools = []  # No tools needed
