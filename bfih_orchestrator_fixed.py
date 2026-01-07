@@ -128,9 +128,10 @@ class BFIHOrchestrator:
             # Phase 4: Run Bayesian computation
             computation = self._run_phase_4_computation(request, likelihoods_text)
 
-            # Phase 5: Generate final report
+            # Phase 5: Generate final report (pass structured data for detailed tables)
             bfih_report = self._run_phase_5_report(
-                request, methodology, evidence_text, likelihoods_text, computation
+                request, methodology, evidence_text, likelihoods_text, computation,
+                evidence_items, evidence_clusters
             )
 
             # Extract posteriors from computation output (Phase 4)
@@ -515,7 +516,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         stream = self.client.responses.create(
             model=self.model,
             input=prompt,
-            max_output_tokens=8000,
+            max_output_tokens=16000,  # Increased for comprehensive reports
             tools=tools,
             include=["file_search_call.results"] if any(t.get("type") == "file_search" for t in tools) else [],
             stream=True
@@ -779,8 +780,13 @@ Print the final posteriors clearly labeled.
 
     def _run_phase_5_report(self, request: BFIHAnalysisRequest,
                            methodology: str, evidence: str,
-                           likelihoods: str, computation: str) -> str:
-        """Phase 5: Generate final BFIH report following comprehensive template"""
+                           likelihoods: str, computation: str,
+                           evidence_items: List[Dict] = None,
+                           evidence_clusters: List[Dict] = None) -> str:
+        """Phase 5: Generate final BFIH report following comprehensive template.
+
+        Now receives structured evidence_items and evidence_clusters for detailed tables.
+        """
         scenario_json = json.dumps(request.scenario_config, indent=2)
 
         # Build paradigm info for report
@@ -790,6 +796,10 @@ Print the final posteriors clearly labeled.
 
         paradigm_list = "\n".join([f"- {p.get('id', 'K?')}: {p.get('name', 'Unknown')} - {p.get('description', '')}" for p in paradigms])
         hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
+
+        # Format structured evidence for the prompt
+        evidence_items_json = json.dumps(evidence_items or [], indent=2)
+        evidence_clusters_json = json.dumps(evidence_clusters or [], indent=2)
 
         prompt = f"""
 You are generating the FINAL comprehensive BFIH analysis report. This MUST be a DETAILED, THOROUGH document of AT LEAST 5000 WORDS following the EXACT structure and format shown in the examples below.
@@ -809,11 +819,17 @@ HYPOTHESES DEFINED:
 === PHASE 1 METHODOLOGY ===
 {methodology}
 
-=== PHASE 2 EVIDENCE GATHERED ===
+=== PHASE 2 EVIDENCE GATHERED (narrative) ===
 {evidence}
 
-=== PHASE 3 LIKELIHOOD ASSIGNMENTS ===
+=== STRUCTURED EVIDENCE ITEMS (use for detailed tables) ===
+{evidence_items_json}
+
+=== PHASE 3 LIKELIHOOD ASSIGNMENTS (narrative) ===
 {likelihoods}
+
+=== STRUCTURED EVIDENCE CLUSTERS WITH LIKELIHOODS (use for tables) ===
+{evidence_clusters_json}
 
 === PHASE 4 BAYESIAN COMPUTATION OUTPUT ===
 {computation}
@@ -975,45 +991,46 @@ The inverse of my dominant paradigm holds that:
 
 ## DELIVERABLE 4: Evidence Matrix
 
+**IMPORTANT: Use the STRUCTURED EVIDENCE ITEMS JSON and STRUCTURED EVIDENCE CLUSTERS JSON
+provided above to generate this section. Each evidence item should have its full details
+from the JSON (source_url, citation_apa, etc.) and each cluster has pre-computed likelihoods.**
+
 ### Evidence Clustering Strategy
 
-Evidence is organized into [N] thematic clusters:
+Evidence is organized into [N] thematic clusters (from STRUCTURED EVIDENCE CLUSTERS):
 
-1. **Cluster A: [Name]** - [What this cluster captures and why it matters]
-2. **Cluster B: [Name]** - [Description]
-3. **Cluster C: [Name]** - [Description]
-[Continue for all clusters]
+1. **Cluster [cluster_id]: [cluster_name]** - [description from JSON]
+2. **Cluster [cluster_id]: [cluster_name]** - [description from JSON]
+[Continue for ALL clusters from the JSON]
 
 ---
 
 ### Evidence Items
 
-[FOR EACH EVIDENCE ITEM, use this EXACT format with FULL likelihood tables:]
+[FOR EACH EVIDENCE ITEM from STRUCTURED EVIDENCE ITEMS JSON, use this format:]
 
-**E₁: [Descriptive Title]**
+**[evidence_id]: [description]**
 
-*Source:* [Author (Year) or Organization]
+*Source:* [source_name] ([date_accessed])
+*URL:* [source_url]
+*Citation:* [citation_apa]
+*Type:* [evidence_type]
+*Supports:* [supports_hypotheses] | *Refutes:* [refutes_hypotheses]
 
-*Description:* [2-4 sentences describing what the evidence shows, including specific numbers, statistics, sample sizes, time periods, and methodological notes]
+[Expand the description to 2-3 sentences with context]
 
-| Hypothesis | P(E₁\|H) | Reasoning |
+| Hypothesis | P(E\|H) | Reasoning |
 |------------|:--------:|-----------|
-| H1 | 0.XX | [2-3 sentences explaining why this likelihood given H1] |
-| H2 | 0.XX | [2-3 sentences explaining why this likelihood given H2] |
-| H3 | 0.XX | [2-3 sentences] |
-| H4 | 0.XX | [2-3 sentences] |
-| H5 | 0.XX | [2-3 sentences] |
-| H0 | 0.XX | [2-3 sentences] |
+| H1 | 0.XX | [Use likelihood from STRUCTURED EVIDENCE CLUSTERS + reasoning] |
+| H2 | 0.XX | [Use likelihood from clusters JSON] |
+| H3 | 0.XX | [Use likelihood from clusters JSON] |
+| H4 | 0.XX | [Use likelihood from clusters JSON] |
+| H5 | 0.XX | [Use likelihood from clusters JSON] |
+| H0 | 0.XX | [Use likelihood from clusters JSON] |
 
 ---
 
-**E₂: [Next Evidence Item]**
-
-[Same complete format with full likelihood table]
-
----
-
-[INCLUDE AT LEAST 8-12 EVIDENCE ITEMS WITH FULL TABLES]
+[INCLUDE ALL EVIDENCE ITEMS FROM THE STRUCTURED JSON - typically 15-25 items]
 
 ---
 
