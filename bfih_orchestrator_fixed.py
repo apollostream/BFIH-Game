@@ -1406,7 +1406,7 @@ def example_autonomous_analysis():
     """Example: Autonomous BFIH analysis from just a proposition"""
 
     # Just provide a proposition - everything else is generated automatically!
-    proposition = "Why is startup Turing Labs succeeding in CPG formulated products formulation while competitors are struggling?"
+    proposition = "Why did Boeing's 737 MAX suffer two fatal crashes while Airbus maintained a strong safety record?"
 
     # Run autonomous analysis
     orchestrator = BFIHOrchestrator()
