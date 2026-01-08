@@ -184,7 +184,7 @@ class BFIHOrchestrator:
                     computation_priors[h_id] = p if isinstance(p, (int, float)) else p.get("probability", 0.5)
 
             enriched_clusters, joint_metrics = self._compute_cluster_bayesian_metrics(
-                evidence_clusters, computation_priors
+                evidence_clusters, computation_priors, first_paradigm
             )
 
             # Format pre-computed tables for report
@@ -1757,7 +1757,7 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
         }
 
     def _compute_cluster_bayesian_metrics(
-        self, evidence_clusters: List[Dict], priors: Dict[str, float]
+        self, evidence_clusters: List[Dict], priors: Dict[str, float], paradigm_id: str = None
     ) -> Tuple[List[Dict], Dict]:
         """
         Compute P(E|¬H), LR, and WoE for each cluster using MATHEMATICAL formulas.
@@ -1769,8 +1769,9 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
             where P(H_j|¬H_i) = P(H_j) / (1 - P(H_i))
 
         Args:
-            evidence_clusters: List of clusters with 'likelihoods' dict {H_id: P(E|H)}
+            evidence_clusters: List of clusters with likelihoods data
             priors: Dict of {H_id: prior_probability}
+            paradigm_id: Which paradigm's likelihoods to use (e.g., 'K0')
 
         Returns:
             (enriched_clusters, summary_metrics) where:
@@ -1785,12 +1786,32 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
         enriched_clusters = []
 
         # Track cumulative likelihoods for joint computation
+        # Joint P(E|H_j) = PRODUCT of P(C_i|H_j) for all clusters i
         cumulative_likelihood = {h: 1.0 for h in hyp_ids}
-        cumulative_neg_likelihood = {h: 1.0 for h in hyp_ids}
 
         for cluster in evidence_clusters:
             cluster_name = cluster.get("cluster_id") or cluster.get("cluster_name", "Unknown")
-            likelihoods = cluster.get("likelihoods", {})
+
+            # Try multiple sources for likelihoods:
+            # 1. likelihoods_by_paradigm[paradigm_id] (structured output format)
+            # 2. likelihoods (simple format)
+            likelihoods = {}
+            likelihoods_by_paradigm = cluster.get("likelihoods_by_paradigm", {})
+
+            if paradigm_id and paradigm_id in likelihoods_by_paradigm:
+                likelihoods = likelihoods_by_paradigm[paradigm_id]
+                logger.debug(f"Cluster '{cluster_name}': using likelihoods from paradigm {paradigm_id}")
+            elif likelihoods_by_paradigm:
+                # Fall back to first available paradigm
+                first_paradigm = list(likelihoods_by_paradigm.keys())[0]
+                likelihoods = likelihoods_by_paradigm[first_paradigm]
+                logger.debug(f"Cluster '{cluster_name}': using likelihoods from fallback paradigm {first_paradigm}")
+            else:
+                likelihoods = cluster.get("likelihoods", {})
+                if likelihoods:
+                    logger.debug(f"Cluster '{cluster_name}': using simple likelihoods format")
+                else:
+                    logger.warning(f"Cluster '{cluster_name}': no likelihoods found, using defaults")
 
             # Normalize likelihood format (may be {H: prob} or {H: {probability: prob}})
             norm_likelihoods = {}
@@ -1851,9 +1872,8 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
                     "direction": direction
                 }
 
-                # Update cumulative likelihoods
+                # Update cumulative likelihood for joint computation
                 cumulative_likelihood[h_i] *= p_e_h
-                cumulative_neg_likelihood[h_i] *= p_e_not_h
 
             # Add metrics to enriched cluster
             enriched_cluster = dict(cluster)
@@ -1862,41 +1882,73 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
 
             logger.debug(f"Cluster '{cluster_name}' metrics computed for {len(bayesian_metrics)} hypotheses")
 
-        # Compute joint/cumulative metrics
+        # Compute joint/cumulative metrics using correct Bayesian formulas:
+        # 1. Joint P(E|H_j) = PRODUCT(P(C_i|H_j)) for all clusters i
+        # 2. Posterior P(H_j|E) = P(E|H_j) × P(H_j) / SUM(P(E|H_l) × P(H_l))
+        # 3. Total LR = Odds(H_j|E) / Odds(H_j), where Odds(X) = P(X)/(1-P(X))
+
         joint_metrics = {}
+
+        # Step 1: Joint likelihoods are already in cumulative_likelihood
+        # Step 2: Compute unnormalized posteriors
+        unnorm_posteriors = {}
         for h_i in hyp_ids:
             prior_i = priors.get(h_i, 1.0 / len(hyp_ids))
             joint_p_e_h = cumulative_likelihood[h_i]
-            joint_p_e_not_h = cumulative_neg_likelihood[h_i]
+            unnorm_posteriors[h_i] = prior_i * joint_p_e_h
 
-            if joint_p_e_not_h > 0:
-                total_lr = joint_p_e_h / joint_p_e_not_h
+        # Normalization constant = P(E) = SUM(P(E|H_l) × P(H_l))
+        norm_const = sum(unnorm_posteriors.values())
+
+        # Step 3: Compute posteriors and Total LR from odds ratio
+        for h_i in hyp_ids:
+            prior_i = priors.get(h_i, 1.0 / len(hyp_ids))
+            joint_p_e_h = cumulative_likelihood[h_i]
+
+            # Normalized posterior
+            if norm_const > 0:
+                posterior = unnorm_posteriors[h_i] / norm_const
             else:
-                total_lr = float('inf') if joint_p_e_h > 0 else 1.0
+                posterior = prior_i  # Fallback to prior if no evidence
 
+            # Compute joint P(E|¬H) using weighted average of other hypotheses' joint likelihoods
+            # P(E|¬H_j) = SUM(P(E|H_k) × P(H_k|¬H_j)) for k≠j
+            # where P(H_k|¬H_j) = P(H_k) / (1 - P(H_j))
+            complement_prior = 1.0 - prior_i
+            if complement_prior > 0:
+                joint_p_e_not_h = sum(
+                    cumulative_likelihood[h_k] * (priors.get(h_k, 0) / complement_prior)
+                    for h_k in hyp_ids if h_k != h_i
+                )
+            else:
+                joint_p_e_not_h = 0.0
+
+            # Total LR = Odds(H|E) / Odds(H) = [P(H|E)/(1-P(H|E))] / [P(H)/(1-P(H))]
+            # This is mathematically equivalent to P(E|H) / P(E|¬H)
+            prior_odds = prior_i / (1.0 - prior_i) if prior_i < 1.0 else float('inf')
+            posterior_odds = posterior / (1.0 - posterior) if posterior < 1.0 else float('inf')
+
+            if prior_odds > 0 and prior_odds != float('inf'):
+                total_lr = posterior_odds / prior_odds
+            elif posterior_odds == float('inf'):
+                total_lr = float('inf')
+            else:
+                total_lr = 1.0
+
+            # Weight of Evidence in decibans
             if total_lr > 0 and total_lr != float('inf'):
                 total_woe = 10 * math.log10(total_lr)
             else:
                 total_woe = float('inf') if total_lr == float('inf') else float('-inf')
 
-            # Compute posterior
-            unnorm_posterior = prior_i * joint_p_e_h
             joint_metrics[h_i] = {
                 "prior": round(prior_i, 4),
                 "joint_P(E|H)": f"{joint_p_e_h:.4e}",
                 "joint_P(E|~H)": f"{joint_p_e_not_h:.4e}",
                 "total_LR": round(total_lr, 4) if total_lr != float('inf') else "inf",
                 "total_WoE_dB": round(total_woe, 2) if total_woe not in [float('inf'), float('-inf')] else str(total_woe),
-                "unnorm_posterior": unnorm_posterior
+                "posterior": round(posterior, 6)
             }
-
-        # Normalize posteriors
-        norm_const = sum(m["unnorm_posterior"] for m in joint_metrics.values())
-        if norm_const > 0:
-            for h_i in hyp_ids:
-                joint_metrics[h_i]["posterior"] = round(
-                    joint_metrics[h_i]["unnorm_posterior"] / norm_const, 6
-                )
 
         logger.info(f"Computed Bayesian metrics for {len(enriched_clusters)} clusters, {len(hyp_ids)} hypotheses")
         return enriched_clusters, joint_metrics
