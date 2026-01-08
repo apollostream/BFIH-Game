@@ -128,15 +128,34 @@ export function HypothesisCard({
                 <h3 className="font-semibold text-text-primary">
                   {hypothesis.name}
                 </h3>
-                <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  {hypothesis.truth_value_type && hypothesis.truth_value_type !== 'other' && (
+                    <Badge
+                      variant={
+                        hypothesis.truth_value_type === 'affirm' ? 'success' :
+                        hypothesis.truth_value_type === 'deny' ? 'error' :
+                        'warning'
+                      }
+                      size="sm"
+                    >
+                      {hypothesis.truth_value_type === 'affirm' ? 'TRUE' :
+                       hypothesis.truth_value_type === 'deny' ? 'FALSE' :
+                       'PARTIAL'}
+                    </Badge>
+                  )}
                   {hypothesis.is_catch_all && (
                     <Badge variant="default" size="sm">
                       Catch-all
                     </Badge>
                   )}
                   {hypothesis.is_ancestral_solution && (
-                    <Badge variant="warning" size="sm">
+                    <Badge variant="secondary" size="sm">
                       Ancestral
+                    </Badge>
+                  )}
+                  {hypothesis.is_paradigm_inversion && (
+                    <Badge variant="primary" size="sm">
+                      Inverted
                     </Badge>
                   )}
                 </div>
@@ -177,11 +196,18 @@ export function HypothesisCard({
             )}
           </div>
 
-          {/* Narrative */}
-          {showDetails && (
-            <p className="text-sm text-text-secondary mb-3 line-clamp-2">
-              {hypothesis.narrative}
-            </p>
+          {/* Statement/Narrative */}
+          {showDetails && (hypothesis.statement || hypothesis.narrative || hypothesis.mechanism_if_true) && (
+            <div className="mb-3">
+              <p className="text-sm text-text-secondary">
+                {hypothesis.statement || hypothesis.narrative}
+              </p>
+              {hypothesis.mechanism_if_true && hypothesis.statement && (
+                <p className="text-sm text-text-muted mt-2 italic">
+                  Mechanism: {hypothesis.mechanism_if_true}
+                </p>
+              )}
+            </div>
           )}
 
           {/* Tags */}

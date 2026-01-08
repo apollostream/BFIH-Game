@@ -44,14 +44,22 @@ export type Domain =
   | 'Psychological'
   | 'Technological';
 
+export type TruthValueType = 'affirm' | 'deny' | 'qualify' | 'other';
+
 export interface Hypothesis {
   id: string;
   name: string;
-  narrative: string;
-  domains?: Domain[];  // Optional - backend may not provide
-  associated_paradigms?: string[];  // Optional - backend may not provide
-  is_ancestral_solution?: boolean;  // Optional
-  is_catch_all?: boolean;  // Optional
+  narrative?: string;  // Legacy field
+  statement?: string;  // Full statement of the hypothesis
+  truth_value_type?: TruthValueType;  // What this hypothesis claims
+  mechanism_if_true?: string;  // Causal mechanism if true
+  testable_predictions?: string[];  // Observable predictions
+  domains?: Domain[];  // Ontological domains covered
+  associated_paradigms?: string[];  // Associated paradigm IDs
+  is_ancestral_solution?: boolean;  // Informed by historical analogues
+  is_catch_all?: boolean;  // H0 catch-all hypothesis
+  is_paradigm_inversion?: boolean;  // Generated via paradigm inversion
+  inverted_from_paradigm?: string;  // Which paradigm's blind spot
 }
 
 export interface EvidenceItem {
