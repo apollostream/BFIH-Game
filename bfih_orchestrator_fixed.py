@@ -23,6 +23,12 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import httpx
 
+# Import structured output schemas
+from bfih_schemas import (
+    ParadigmList, HypothesesWithForcingFunctions, PriorsByParadigm,
+    EvidenceList, EvidenceClusterList, get_openai_schema
+)
+
 
 # ============================================================================
 # CONFIGURATION
@@ -648,6 +654,109 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
+    def _run_structured_phase(self, prompt: str, schema_name: str, phase_name: str,
+                               tools: List[Dict] = None, max_retries: int = 2) -> dict:
+        """
+        Run a phase with structured output (JSON Schema enforcement).
+
+        This method uses OpenAI's response_format parameter to guarantee
+        valid JSON output matching the specified schema.
+
+        Args:
+            prompt: The prompt to send to the model
+            schema_name: Name of schema from bfih_schemas (paradigms, hypotheses, priors, evidence, clusters)
+            phase_name: Human-readable name for logging
+            tools: Optional list of tools (file_search, web_search)
+            max_retries: Number of retry attempts on connection failure
+
+        Returns:
+            Parsed JSON dict matching the schema
+        """
+        import time
+
+        last_error = None
+        tools = tools or []
+
+        for attempt in range(max_retries + 1):
+            try:
+                logger.info(f"Starting {phase_name} (structured output)" +
+                           (f" (attempt {attempt + 1})" if attempt > 0 else ""))
+                print(f"\n{'='*60}\n{phase_name} [Structured Output]" +
+                      (f" (retry {attempt})" if attempt > 0 else "") + f"\n{'='*60}")
+
+                # Get the schema for this type
+                schema_map = {
+                    "paradigms": ParadigmList,
+                    "hypotheses": HypothesesWithForcingFunctions,
+                    "priors": PriorsByParadigm,
+                    "evidence": EvidenceList,
+                    "clusters": EvidenceClusterList
+                }
+
+                schema_class = schema_map.get(schema_name)
+                if not schema_class:
+                    raise ValueError(f"Unknown schema: {schema_name}")
+
+                # Build the request with proper Responses API format
+                request_params = {
+                    "model": self.model,
+                    "input": prompt,
+                    "max_output_tokens": 16000,
+                    "text": {
+                        "format": {
+                            "type": "json_schema",
+                            "name": schema_name,
+                            "schema": schema_class.model_json_schema(),
+                            "strict": True
+                        }
+                    }
+                }
+
+                # Add tools if provided
+                if tools:
+                    request_params["tools"] = tools
+                    if any(t.get("type") == "file_search" for t in tools):
+                        request_params["include"] = ["file_search_call.results"]
+
+                # Make the API call (non-streaming for structured output)
+                print(f"[Calling API with structured output schema: {schema_name}...]")
+
+                response = self.client.responses.create(**request_params)
+
+                # Extract the output
+                output_text = response.output_text
+                print(f"\n[Received structured output, parsing JSON...]")
+
+                # Parse JSON from output
+                try:
+                    # The output should be valid JSON due to schema enforcement
+                    result = json.loads(output_text)
+                    logger.info(f"{phase_name} complete with valid JSON")
+                    print(f"[{phase_name} complete - valid JSON parsed]")
+                    return result
+                except json.JSONDecodeError as e:
+                    # Fallback: try to extract JSON from the response
+                    logger.warning(f"Direct JSON parse failed: {e}, attempting extraction")
+                    json_match = re.search(r'[\[{].*[}\]]', output_text, re.DOTALL)
+                    if json_match:
+                        result = json.loads(json_match.group(0))
+                        logger.info(f"{phase_name} complete with extracted JSON")
+                        return result
+                    raise ValueError(f"Could not parse JSON from response: {output_text[:500]}")
+
+            except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                last_error = e
+                if attempt < max_retries:
+                    wait_time = (attempt + 1) * 5
+                    logger.warning(f"{phase_name} failed with {type(e).__name__}, retrying in {wait_time}s...")
+                    print(f"\n[Connection error, retrying in {wait_time}s...]")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    raise
+
+        raise last_error or RuntimeError(f"Failed to complete {phase_name}")
+
     def _run_phase_1_methodology(self, request: BFIHAnalysisRequest) -> str:
         """Phase 1: Retrieve BFIH methodology from vector store"""
         prompt = f"""
@@ -670,58 +779,79 @@ Focus on actionable steps for applying each forcing function.
         return self._run_phase(prompt, tools, "Phase 1: Retrieve Methodology")
 
     def _run_phase_2_evidence(self, request: BFIHAnalysisRequest, methodology: str) -> Tuple[str, List[Dict]]:
-        """Phase 2: Gather evidence via web search. Returns (markdown_text, structured_evidence)"""
+        """Phase 2: Gather evidence via web search using structured output.
+        Returns (markdown_text, structured_evidence)"""
         scenario_json = json.dumps(request.scenario_config, indent=2)
+
+        # Get hypothesis IDs
+        hypotheses = request.scenario_config.get("hypotheses", [])
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+
         prompt = f"""
 You are gathering evidence for a BFIH analysis.
 
 PROPOSITION: "{request.proposition}"
 
+HYPOTHESES: {hyp_ids}
+
 SCENARIO CONFIGURATION:
 {scenario_json}
 
 METHODOLOGY CONTEXT:
-{methodology[:4000]}
+{methodology[:3000]}
 
 YOUR TASK:
-For EACH hypothesis in the scenario, search for real-world evidence:
+For EACH hypothesis, search for real-world evidence:
 1. Generate 2-3 specific web search queries per hypothesis
 2. Execute web searches to find supporting or refuting evidence
-3. Organize evidence by hypothesis
-4. Record FULL source citations with URLs for all evidence
+3. Record FULL source citations with URLs for all evidence
 
-After your evidence summary, output a structured JSON block with ALL evidence items.
-Use this EXACT format with the markers:
+Return a JSON object with "evidence_items" array containing 15-25 evidence items.
+Each item needs: evidence_id, description, source_name, source_url, citation_apa, date_accessed, supports_hypotheses, refutes_hypotheses, evidence_type.
 
-EVIDENCE_JSON_START
-[
-  {{
-    "evidence_id": "E1",
-    "description": "Brief description of the evidence",
-    "source_name": "Publication or website name",
-    "source_url": "https://full.url/to/source",
-    "citation_apa": "Author/Publication. (Year). Title. URL",
-    "date_accessed": "2026-01-06",
-    "supports_hypotheses": ["H1"],
-    "refutes_hypotheses": [],
-    "evidence_type": "quantitative|qualitative|expert_testimony|historical_analogy"
-  }},
-  {{
-    "evidence_id": "E2",
-    ...
-  }}
-]
-EVIDENCE_JSON_END
-
-Include 15-25 evidence items total across all hypotheses.
+Evidence types: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional
 """
-        tools = [{"type": "web_search", "search_context_size": "medium"}]
-        result = self._run_phase(prompt, tools, "Phase 2: Evidence Gathering")
+        try:
+            tools = [{"type": "web_search", "search_context_size": "medium"}]
+            result = self._run_structured_phase(
+                prompt, "evidence", "Phase 2: Evidence Gathering",
+                tools=tools
+            )
+            evidence_items = result.get("evidence_items", [])
+            # Generate markdown summary from structured data
+            markdown_summary = self._generate_evidence_markdown(evidence_items)
+        except Exception as e:
+            logger.error(f"Structured output failed for evidence: {e}, falling back to text extraction")
+            # Fallback to old method
+            tools = [{"type": "web_search", "search_context_size": "medium"}]
+            markdown_summary = self._run_phase(prompt, tools, "Phase 2: Evidence Gathering (fallback)")
+            evidence_items = self._parse_evidence_json(markdown_summary)
 
-        # Parse structured evidence from response
-        evidence_items = self._parse_evidence_json(result)
+        logger.info(f"Gathered {len(evidence_items)} evidence items")
+        return markdown_summary, evidence_items
 
-        return result, evidence_items
+    def _generate_evidence_markdown(self, evidence_items: List[Dict]) -> str:
+        """Generate markdown summary from structured evidence items"""
+        lines = ["## Evidence Gathered\n"]
+        for item in evidence_items:
+            e_id = item.get("evidence_id", "E?")
+            desc = item.get("description", "No description")
+            source = item.get("source_name", "Unknown")
+            url = item.get("source_url", "")
+            supports = ", ".join(item.get("supports_hypotheses", []))
+            refutes = ", ".join(item.get("refutes_hypotheses", []))
+
+            lines.append(f"### {e_id}: {desc[:100]}")
+            lines.append(f"- **Source:** {source}")
+            if url:
+                lines.append(f"- **URL:** {url}")
+            if supports:
+                lines.append(f"- **Supports:** {supports}")
+            if refutes:
+                lines.append(f"- **Refutes:** {refutes}")
+            lines.append("")
+
+        return "\n".join(lines)
 
     def _parse_evidence_json(self, text: str) -> List[Dict]:
         """Extract structured evidence from EVIDENCE_JSON_START/END markers"""
@@ -751,7 +881,7 @@ Include 15-25 evidence items total across all hypotheses.
 
     def _run_phase_3_likelihoods(self, request: BFIHAnalysisRequest, evidence_text: str,
                                    evidence_items: List[Dict]) -> Tuple[str, List[Dict]]:
-        """Phase 3: Assign PARADIGM-SPECIFIC likelihoods to evidence.
+        """Phase 3: Assign PARADIGM-SPECIFIC likelihoods to evidence using structured output.
 
         Returns (markdown_text, structured_clusters) where likelihoods are P(E|H,K)
         - different for each paradigm-hypothesis combination.
@@ -762,77 +892,101 @@ Include 15-25 evidence items total across all hypotheses.
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
         paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
-        hypotheses_json = json.dumps(hypotheses, indent=2)
-        paradigms_json = json.dumps(paradigms, indent=2)
+        # Summarize evidence items
+        evidence_summary = json.dumps([{
+            "evidence_id": e.get("evidence_id"),
+            "description": e.get("description", "")[:200],
+            "supports": e.get("supports_hypotheses", []),
+            "refutes": e.get("refutes_hypotheses", [])
+        } for e in evidence_items], indent=2)
 
         prompt = f"""
 You are assigning PARADIGM-SPECIFIC likelihoods for a BFIH Bayesian analysis.
 
 PROPOSITION: "{request.proposition}"
 
-HYPOTHESES (propositional statements to evaluate):
-{hypotheses_json}
+HYPOTHESES: {hyp_ids}
+PARADIGMS: {paradigm_ids}
 
-PARADIGMS (epistemic viewpoints that affect likelihood assessment):
-{paradigms_json}
-
-EVIDENCE GATHERED:
-{evidence_text[:6000]}
+EVIDENCE ITEMS:
+{evidence_summary}
 
 CRITICAL CONCEPT: Likelihoods are P(E|H, K) - they depend on BOTH the hypothesis AND the paradigm!
 
 The SAME evidence can have DIFFERENT likelihoods under different paradigms because:
 - Different paradigms weight different types of evidence differently
 - A paradigm skeptical of economic explanations assigns lower P(E|H_economic, K_skeptic)
-- A paradigm trusting institutional data assigns higher P(E|H, K_institutional)
 
 YOUR TASK:
 1. Group evidence into 3-5 CLUSTERS based on thematic similarity
-2. For EACH cluster, assign likelihoods P(E|H, K) for:
-   - EACH hypothesis (H0, H1, H2, ...)
-   - UNDER EACH paradigm (K1, K2, K3, ...)
+2. For EACH cluster, assign likelihoods P(E|H, K) for EACH hypothesis under EACH paradigm
 3. Justify how paradigm viewpoint affects the likelihood assessment
 
-Output structured JSON with PARADIGM-SPECIFIC likelihoods:
-
-CLUSTERS_JSON_START
-[
-  {{
-    "cluster_id": "C1",
-    "cluster_name": "Short descriptive name",
-    "description": "What evidence this cluster contains",
-    "evidence_ids": ["E1", "E2", "E3"],
-    "likelihoods_by_paradigm": {{
-      "K1": {{
-        "H0": {{"probability": 0.3, "justification": "Under K1 viewpoint..."}},
-        "H1": {{"probability": 0.8, "justification": "K1 weights economic evidence highly..."}},
-        "H2": {{"probability": 0.4, "justification": "..."}}
-      }},
-      "K2": {{
-        "H0": {{"probability": 0.25, "justification": "Under K2 viewpoint..."}},
-        "H1": {{"probability": 0.5, "justification": "K2 is skeptical of pure economic explanations..."}},
-        "H2": {{"probability": 0.7, "justification": "K2 weights human factors more..."}}
-      }},
-      "K3": {{
-        ...
-      }}
-    }}
-  }}
-]
-CLUSTERS_JSON_END
-
-Hypotheses: {hyp_ids}
-Paradigms: {paradigm_ids}
-
-Create 3-5 clusters. Each cluster MUST have likelihoods for ALL paradigm-hypothesis combinations.
+Return a JSON object with "clusters" array. Each cluster needs:
+- cluster_id, cluster_name, description, evidence_ids (all required)
+- paradigm_likelihoods: array of {{paradigm_id, hypothesis_likelihoods: [{{hypothesis_id, probability, justification}}]}}
 """
-        tools = []  # No tools needed, pure reasoning
-        result = self._run_phase(prompt, tools, "Phase 3: Likelihood Assignment")
+        try:
+            result = self._run_structured_phase(
+                prompt, "clusters", "Phase 3: Likelihood Assignment"
+            )
+            raw_clusters = result.get("clusters", [])
+            # Convert array format to dict format for compatibility
+            clusters = []
+            for c in raw_clusters:
+                converted = {
+                    "cluster_id": c.get("cluster_id"),
+                    "cluster_name": c.get("cluster_name"),
+                    "description": c.get("description"),
+                    "evidence_ids": c.get("evidence_ids", []),
+                    "likelihoods_by_paradigm": {}
+                }
+                for pl in c.get("paradigm_likelihoods", []):
+                    paradigm_id = pl.get("paradigm_id")
+                    if paradigm_id:
+                        converted["likelihoods_by_paradigm"][paradigm_id] = {}
+                        for hl in pl.get("hypothesis_likelihoods", []):
+                            h_id = hl.get("hypothesis_id")
+                            if h_id:
+                                converted["likelihoods_by_paradigm"][paradigm_id][h_id] = {
+                                    "probability": hl.get("probability", 0.5),
+                                    "justification": hl.get("justification", "")
+                                }
+                clusters.append(converted)
+            # Generate markdown summary
+            markdown_summary = self._generate_clusters_markdown(clusters)
+        except Exception as e:
+            logger.error(f"Structured output failed for clusters: {e}, falling back to text extraction")
+            # Fallback to old method
+            markdown_summary = self._run_phase(prompt, [], "Phase 3: Likelihood Assignment (fallback)")
+            clusters = self._parse_clusters_json(markdown_summary)
 
-        # Parse structured clusters from response
-        clusters = self._parse_clusters_json(result)
+        logger.info(f"Created {len(clusters)} evidence clusters with paradigm-specific likelihoods")
+        return markdown_summary, clusters
 
-        return result, clusters
+    def _generate_clusters_markdown(self, clusters: List[Dict]) -> str:
+        """Generate markdown summary from structured clusters"""
+        lines = ["## Evidence Clusters with Likelihoods\n"]
+        for cluster in clusters:
+            c_id = cluster.get("cluster_id", "C?")
+            name = cluster.get("cluster_name", "Unknown")
+            desc = cluster.get("description", "")
+            evidence_ids = cluster.get("evidence_ids", [])
+
+            lines.append(f"### {c_id}: {name}")
+            lines.append(f"- **Description:** {desc}")
+            lines.append(f"- **Evidence:** {', '.join(evidence_ids)}")
+
+            # Show likelihoods by paradigm
+            lh_by_paradigm = cluster.get("likelihoods_by_paradigm", {})
+            for paradigm_id, hyp_likelihoods in lh_by_paradigm.items():
+                lines.append(f"\n**{paradigm_id} Likelihoods:**")
+                for hyp_id, lh_data in hyp_likelihoods.items():
+                    prob = lh_data.get("probability", 0.5) if isinstance(lh_data, dict) else lh_data
+                    lines.append(f"  - {hyp_id}: {prob:.2f}")
+            lines.append("")
+
+        return "\n".join(lines)
 
     def _parse_clusters_json(self, text: str) -> List[Dict]:
         """Extract structured clusters from CLUSTERS_JSON_START/END markers"""
@@ -1449,6 +1603,7 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
     def _generate_paradigms(self, proposition: str, domain: str) -> List[Dict]:
         """
         Phase 0a: Generate 2-4 paradigms relevant to the proposition.
+        Uses structured output for guaranteed valid JSON.
         """
         prompt = f"""
 You are generating paradigms for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
@@ -1469,44 +1624,38 @@ For each paradigm provide:
   - skeptical_of: List of factors this paradigm discounts
   - causal_preference: Primary causal mechanism this paradigm favors
 
-Output ONLY valid JSON array, no markdown:
-[
-  {{
-    "id": "K1",
-    "name": "...",
-    "description": "...",
-    "inverse_paradigm_id": "K2",
-    "characteristics": {{
-      "prefers_evidence_types": ["..."],
-      "skeptical_of": ["..."],
-      "causal_preference": "..."
-    }}
-  }}
-]
+Return the result as a JSON object with a "paradigms" array.
 """
-        result = self._run_phase(prompt, [], "Phase 0a: Generate Paradigms")
-
-        # Parse JSON from response
         try:
-            # Find JSON array in response
-            json_match = re.search(r'\[.*\]', result, re.DOTALL)
-            if json_match:
-                paradigms = json.loads(json_match.group(0))
-            else:
-                raise ValueError("No JSON array found in response")
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Failed to parse paradigms: {e}")
+            result = self._run_structured_phase(
+                prompt, "paradigms", "Phase 0a: Generate Paradigms"
+            )
+            paradigms = result.get("paradigms", [])
+        except Exception as e:
+            logger.error(f"Structured output failed for paradigms: {e}, using fallback")
             # Fallback to default paradigms
             paradigms = [
                 {"id": "K1", "name": "Secular-Rationalist", "description": "Material and measurable factors",
-                 "inverse_paradigm_id": "K2", "characteristics": {}},
+                 "inverse_paradigm_id": "K2", "characteristics": {
+                     "prefers_evidence_types": ["quantitative", "empirical"],
+                     "skeptical_of": ["faith-based claims"],
+                     "causal_preference": "material causation"
+                 }},
                 {"id": "K2", "name": "Religious-Communitarian", "description": "Faith, community, transcendent values",
-                 "inverse_paradigm_id": "K1", "characteristics": {}},
+                 "inverse_paradigm_id": "K1", "characteristics": {
+                     "prefers_evidence_types": ["testimonial", "traditional"],
+                     "skeptical_of": ["reductionist explanations"],
+                     "causal_preference": "providential or moral causation"
+                 }},
                 {"id": "K3", "name": "Economistic-Rationalist", "description": "Capital efficiency and incentives",
-                 "inverse_paradigm_id": None, "characteristics": {}}
+                 "inverse_paradigm_id": None, "characteristics": {
+                     "prefers_evidence_types": ["financial", "market data"],
+                     "skeptical_of": ["non-economic motivations"],
+                     "causal_preference": "incentive structures"
+                 }}
             ]
 
-        logger.info(f"Generated {len(paradigms)} paradigms: {[p['name'] for p in paradigms]}")
+        logger.info(f"Generated {len(paradigms)} paradigms: {[p.get('name', 'Unknown') for p in paradigms]}")
         return paradigms
 
     def _generate_hypotheses_with_forcing_functions(
@@ -1514,6 +1663,7 @@ Output ONLY valid JSON array, no markdown:
     ) -> Tuple[List[Dict], Dict]:
         """
         Phase 0b: Generate hypotheses with forcing functions and MECE synthesis.
+        Uses structured output for guaranteed valid JSON.
 
         IMPORTANT: Hypotheses are PROPOSITIONAL STATEMENTS about the world, NOT paradigm labels.
         All hypotheses should be evaluable from ANY paradigm's perspective.
@@ -1540,104 +1690,37 @@ GOOD HYPOTHESIS EXAMPLES (propositional statements):
 - "The 737 MAX crashes resulted primarily from Boeing prioritizing schedule over safety testing"
 - "Inadequate pilot training on MCAS system caused the crashes"
 - "Regulatory capture allowed insufficient FAA oversight"
-- "The single-sensor MCAS design was the primary technical failure"
 
 BAD HYPOTHESIS EXAMPLES (these are paradigm labels, NOT propositions):
 - "Economic and Psychological Drivers" ❌
 - "Techno-Economic Explanation" ❌
-- "Human-Centric Factors" ❌
 
 TARGET: Generate {num_hypotheses} hypotheses (including H0 catch-all)
 
 Execute these FORCING FUNCTIONS:
 
-## FORCING FUNCTION 1: ONTOLOGICAL SCAN
-Generate hypotheses covering relevant domains:
-- Economic (incentives, cost pressures, market competition)
-- Institutional (regulations, organizational structure, governance)
-- Psychological (human factors, decision-making, cognitive biases)
-- Cultural (organizational culture, industry norms)
-- Historical (precedent, path dependence)
-- Technical (engineering, design, systems)
-- Biological (if relevant to proposition)
+1. ONTOLOGICAL SCAN: Cover relevant domains (Economic, Institutional, Psychological, Cultural, Historical, Technical)
+2. ANCESTRAL CHECK: What historical analogues exist?
+3. MECE SYNTHESIS: Mutually exclusive, collectively exhaustive, propositional, paradigm-neutral naming
 
-## FORCING FUNCTION 2: ANCESTRAL CHECK
-What historical analogues exist? Include hypotheses reflecting time-tested failure modes.
-
-## FORCING FUNCTION 3: MECE SYNTHESIS
-Ensure hypotheses are:
-- MUTUALLY EXCLUSIVE: Only one can be the PRIMARY explanation
-- COLLECTIVELY EXHAUSTIVE: All plausible explanations covered
-- PROPOSITIONAL: Each is a clear claim about the world
-- PARADIGM-NEUTRAL in naming: Names describe the claim, not a viewpoint
-
-Output ONLY valid JSON:
-{{
-  "hypotheses": [
-    {{
-      "id": "H0",
-      "name": "Unknown or Combined Factors",
-      "statement": "The outcome resulted from factors not identified or a combination that cannot be isolated",
-      "domains": [],
-      "is_catch_all": true
-    }},
-    {{
-      "id": "H1",
-      "name": "[Descriptive name of the claim]",
-      "statement": "[Full propositional statement - what this hypothesis claims is true]",
-      "domains": ["Economic", "Institutional"],
-      "testable_predictions": ["If true, we would observe...", "..."],
-      "is_catch_all": false
-    }},
-    {{
-      "id": "H2",
-      "name": "[Another descriptive name]",
-      "statement": "[Another propositional claim]",
-      "domains": ["Technical", "Psychological"],
-      "testable_predictions": ["..."],
-      "is_catch_all": false
-    }}
-  ],
-  "forcing_functions_log": {{
-    "ontological_scan": {{
-      "Economic": {{"covered_by": "H1", "justification": "..."}},
-      "Institutional": {{"covered_by": "H1, H3", "justification": "..."}},
-      "Technical": {{"covered_by": "H2", "justification": "..."}},
-      "Psychological": {{"covered_by": "H2", "justification": "..."}},
-      "Cultural": {{"covered_by": "H3", "justification": "..."}},
-      "Historical": {{"covered_by": "H4", "justification": "..."}}
-    }},
-    "ancestral_check": {{
-      "historical_analogues": ["DC-10 cargo door failures", "Challenger O-ring decision"],
-      "lessons_applied": "..."
-    }},
-    "mece_verification": {{
-      "mutual_exclusivity": "Hypotheses identify different PRIMARY causes...",
-      "collective_exhaustiveness": "H0 catches any unexplained remainder..."
-    }}
-  }}
-}}
+Return the result as a JSON object with "hypotheses" array and "forcing_functions_log" object.
 """
-        # Use file_search to get forcing function methodology from treatise
-        tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
-        result = self._run_phase(prompt, tools, "Phase 0b: Generate Hypotheses + Forcing Functions")
-
-        # Parse JSON from response
         try:
-            json_match = re.search(r'\{.*\}', result, re.DOTALL)
-            if json_match:
-                data = json.loads(json_match.group(0))
-                hypotheses = data.get("hypotheses", [])
-                forcing_functions_log = data.get("forcing_functions_log", {})
-            else:
-                raise ValueError("No JSON object found in response")
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Failed to parse hypotheses: {e}")
+            # Use file_search to get forcing function methodology from treatise
+            tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
+            result = self._run_structured_phase(
+                prompt, "hypotheses", "Phase 0b: Generate Hypotheses + Forcing Functions",
+                tools=tools
+            )
+            hypotheses = result.get("hypotheses", [])
+            forcing_functions_log = result.get("forcing_functions_log", {})
+        except Exception as e:
+            logger.error(f"Structured output failed for hypotheses: {e}, using fallback")
             # Fallback
             hypotheses = [
-                {"id": "H0", "name": "Unknown/Combination", "narrative": "Unknown factors",
-                 "domains": [], "associated_paradigms": ["K1", "K2", "K3"],
-                 "is_ancestral_solution": False, "is_catch_all": True}
+                {"id": "H0", "name": "Unknown/Combination", "statement": "Unknown factors",
+                 "domains": [], "is_catch_all": True, "is_ancestral_solution": False,
+                 "testable_predictions": []}
             ]
             forcing_functions_log = {}
 
@@ -1647,9 +1730,14 @@ Output ONLY valid JSON:
     def _assign_priors(self, hypotheses: List[Dict], paradigms: List[Dict]) -> Dict:
         """
         Phase 0c: Each paradigm assigns priors to the UNIFIED MECE hypothesis set.
+        Uses structured output for guaranteed valid JSON.
         """
         hypotheses_json = json.dumps(hypotheses, indent=2)
         paradigms_json = json.dumps(paradigms, indent=2)
+
+        # Get IDs for reference
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+        paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
         prompt = f"""
 You are assigning prior probabilities for a BFIH analysis.
@@ -1660,47 +1748,45 @@ UNIFIED MECE HYPOTHESIS SET (all paradigms must use this same set):
 PARADIGMS:
 {paradigms_json}
 
+Hypothesis IDs: {hyp_ids}
+Paradigm IDs: {paradigm_ids}
+
 For EACH paradigm, assign prior probabilities P(H|K) to EACH hypothesis.
 
 RULES:
 1. Priors must sum to 1.0 for each paradigm
 2. Different paradigms should weight the SAME hypotheses differently
-3. A secular paradigm should assign LOW prior to theological hypotheses
-4. A religious paradigm should assign HIGH prior to faith-based hypotheses
-5. Provide brief justification for non-trivial priors
+3. Provide brief justification for each prior assignment
 
-Output ONLY valid JSON with this structure:
-{{
-  "K1": {{
-    "H0": {{"prior": 0.10, "justification": "Catch-all kept low"}},
-    "H1": {{"prior": 0.40, "justification": "..."}},
-    "H2": {{"prior": 0.30, "justification": "..."}},
-    "H3": {{"prior": 0.10, "justification": "..."}},
-    "H4": {{"prior": 0.10, "justification": "..."}}
-  }},
-  "K2": {{
-    "H0": {{"prior": 0.05, "justification": "..."}},
-    ...
-  }}
-}}
+Return as a JSON object with "paradigm_priors" array containing:
+- paradigm_id: the paradigm identifier
+- hypothesis_priors: array of {{hypothesis_id, prior, justification}}
 """
-        result = self._run_phase(prompt, [], "Phase 0c: Assign Priors")
-
-        # Parse JSON from response
         try:
-            json_match = re.search(r'\{.*\}', result, re.DOTALL)
-            if json_match:
-                priors_by_paradigm = json.loads(json_match.group(0))
-            else:
-                raise ValueError("No JSON object found in response")
-        except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Failed to parse priors: {e}")
+            result = self._run_structured_phase(
+                prompt, "priors", "Phase 0c: Assign Priors"
+            )
+            # Convert array format to dict format for compatibility
+            priors_by_paradigm = {}
+            for paradigm_set in result.get("paradigm_priors", []):
+                paradigm_id = paradigm_set.get("paradigm_id")
+                if paradigm_id:
+                    priors_by_paradigm[paradigm_id] = {}
+                    for hp in paradigm_set.get("hypothesis_priors", []):
+                        h_id = hp.get("hypothesis_id")
+                        if h_id:
+                            priors_by_paradigm[paradigm_id][h_id] = {
+                                "prior": hp.get("prior", 0.25),
+                                "justification": hp.get("justification", "")
+                            }
+        except Exception as e:
+            logger.error(f"Structured output failed for priors: {e}, using fallback")
             # Fallback: uniform priors
             priors_by_paradigm = {}
-            uniform_prior = 1.0 / len(hypotheses)
+            uniform_prior = 1.0 / len(hypotheses) if hypotheses else 0.25
             for p in paradigms:
-                priors_by_paradigm[p["id"]] = {
-                    h["id"]: {"prior": uniform_prior, "justification": "Uniform (fallback)"}
+                priors_by_paradigm[p.get("id", "K1")] = {
+                    h.get("id", "H0"): {"prior": uniform_prior, "justification": "Uniform (fallback)"}
                     for h in hypotheses
                 }
 
