@@ -241,16 +241,28 @@ async def store_scenario(scenario: Dict):
 async def get_scenario(scenario_id: str):
     """Retrieve stored scenario configuration"""
     try:
-        scenario = storage.retrieve_scenario_config(scenario_id)
-        
-        if not scenario:
+        data = storage.retrieve_scenario_config(scenario_id)
+
+        if not data:
             raise HTTPException(
                 status_code=404,
                 detail=f"Scenario not found: {scenario_id}"
             )
-        
-        return scenario
-        
+
+        # Handle wrapper format: unwrap scenario_config if present
+        # Old format: {scenario_id, title, scenario_config: {...}}
+        # New format: {scenario_metadata, scenario_narrative, paradigms, ...}
+        if 'scenario_config' in data:
+            scenario = data['scenario_config']
+            # Ensure scenario_id is set
+            if 'scenario_id' not in scenario and 'scenario_metadata' in scenario:
+                scenario['scenario_id'] = scenario['scenario_metadata'].get('scenario_id', scenario_id)
+            elif 'scenario_id' not in scenario:
+                scenario['scenario_id'] = scenario_id
+            return scenario
+
+        return data
+
     except HTTPException:
         raise
     except Exception as e:
