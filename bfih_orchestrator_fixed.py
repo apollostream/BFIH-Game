@@ -1767,49 +1767,43 @@ Return the result as a JSON object with a "paradigms" array.
 
         prompt = f"""
 You are generating HYPOTHESES for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
-Think deeply and carefully about what hypotheses would actually explain the proposition.
+Think deeply about WHETHER the proposition is true or false - NOT assuming it's true.
 
-PROPOSITION TO ANALYZE: "{proposition}"
+PROPOSITION TO EVALUATE: "{proposition}"
 
-PARADIGMS (these are VIEWPOINTS that will evaluate evidence, NOT the hypotheses):
+PARADIGMS (viewpoints that will weight evidence differently):
 {paradigm_json}
 
-CRITICAL CONCEPTUAL DISTINCTION - READ CAREFULLY:
-- HYPOTHESES are PROPOSITIONAL STATEMENTS about CAUSES/MECHANISMS - specific claims about WHY something is true or false
-- PARADIGMS are EPISTEMIC VIEWPOINTS that determine how we weight evidence
-- Hypotheses must DIRECTLY ADDRESS the proposition - they should be specific causal claims
-- ALL hypotheses will be evaluated from EVERY paradigm's perspective
+CRITICAL DISTINCTION - HYPOTHESES ARE ABOUT TRUTH, NOT MECHANISMS:
 
-GOOD HYPOTHESIS EXAMPLES (specific causal claims that address the proposition):
-For "Boeing 737 MAX crashes were preventable":
-- H1: "Boeing prioritized production schedule over safety testing" (specific cause)
-- H2: "FAA delegated certification to Boeing due to resource constraints" (specific cause)
-- H3: "MCAS system had fundamental design flaws" (specific technical cause)
+The hypotheses should be COMPETING ANSWERS to whether the proposition is TRUE or FALSE.
+Do NOT assume the proposition is true and then list mechanisms - instead, include hypotheses
+that AFFIRM the proposition and hypotheses that DENY or QUALIFY it.
 
-BAD HYPOTHESIS EXAMPLES (vague, tangential, or just paradigm labels):
-- "Economic and Psychological Drivers" ❌ (not a proposition)
-- "Techno-Economic Explanation" ❌ (label, not a claim)
-- "Multiple factors contributed" ❌ (too vague - save for H0)
+CORRECT HYPOTHESIS STRUCTURE for "Social media increases teen depression":
+- H1: "Yes - Social media causally increases depression/anxiety in teenagers" (affirms proposition)
+- H2: "No - The correlation is spurious; other factors explain both" (denies proposition)
+- H3: "Partial - Only excessive use (>3 hrs/day) causes harm" (qualifies proposition)
+- H4: "Reverse causation - Depressed teens use more social media, not vice versa" (alternative explanation)
+- H0: "Unknown - Insufficient evidence to determine causal relationship" (catch-all)
 
-TARGET: Generate exactly {num_hypotheses} hypotheses
+WRONG APPROACH (assumes proposition is true, only explores mechanisms):
+- "Algorithm addiction causes depression" ❌ (assumes truth, only mechanism)
+- "Peer comparison causes anxiety" ❌ (assumes truth, only mechanism)
 
-FORCING FUNCTIONS TO EXECUTE:
+TARGET: Generate {num_hypotheses} hypotheses that COMPETE on the proposition's truth value
 
-1. ONTOLOGICAL SCAN: Consider causes from these domains:
-   - Economic (financial incentives, costs, market pressures)
-   - Institutional (organizational structures, regulations, policies)
-   - Psychological (cognitive biases, human factors)
-   - Cultural (norms, values, traditions)
-   - Historical (precedents, path dependencies)
-   - Technical (engineering, scientific, technological factors)
+REQUIRED HYPOTHESIS TYPES:
+1. At least one hypothesis that AFFIRMS the proposition (with specific mechanism if relevant)
+2. At least one hypothesis that DENIES the proposition (explains away the correlation)
+3. At least one hypothesis that QUALIFIES the proposition (true only under certain conditions)
+4. H0 as catch-all for unknown/mixed factors
 
-2. ANCESTRAL CHECK: What historical analogues exist? What solutions worked before?
+FORCING FUNCTIONS:
 
-3. MECE SYNTHESIS: Ensure hypotheses are:
-   - Mutually exclusive (different primary causes)
-   - Collectively exhaustive (cover all major possibilities)
-   - Propositional (each is a testable claim)
-   - Directly relevant to the proposition
+1. ONTOLOGICAL SCAN: Consider explanations from different domains that could AFFIRM or DENY the claim
+2. ANCESTRAL CHECK: What does historical evidence suggest about similar claims?
+3. MECE SYNTHESIS: Hypotheses must be mutually exclusive on the TRUTH VALUE of the proposition
 
 OUTPUT FORMAT - Return ONLY valid JSON:
 ```json
@@ -1817,8 +1811,8 @@ OUTPUT FORMAT - Return ONLY valid JSON:
   "hypotheses": [
     {{
       "id": "H0",
-      "name": "Unknown/Combination factors",
-      "statement": "The proposition's truth/falsity results from unknown factors or complex combinations not captured by other hypotheses",
+      "name": "Unknown/Insufficient Evidence",
+      "statement": "The causal relationship cannot be determined from available evidence",
       "domains": [],
       "testable_predictions": [],
       "is_catch_all": true,
@@ -1826,38 +1820,47 @@ OUTPUT FORMAT - Return ONLY valid JSON:
     }},
     {{
       "id": "H1",
-      "name": "Brief descriptive name",
-      "statement": "Full propositional statement - the specific causal claim",
-      "domains": ["Economic", "Institutional"],
+      "name": "Proposition True - [Primary Mechanism]",
+      "statement": "The proposition is TRUE because [specific causal mechanism]",
+      "domains": ["Psychological"],
       "testable_predictions": ["If true, we would observe X", "If true, we would observe Y"],
+      "is_catch_all": false,
+      "is_ancestral_solution": false
+    }},
+    {{
+      "id": "H2",
+      "name": "Proposition False - [Alternative Explanation]",
+      "statement": "The proposition is FALSE because [the correlation is explained by...]",
+      "domains": ["Economic"],
+      "testable_predictions": ["If true, we would observe X"],
       "is_catch_all": false,
       "is_ancestral_solution": false
     }}
   ],
   "forcing_functions_log": {{
     "ontological_scan": {{
-      "Economic": {{"covered_by": "H1, H3", "justification": "..."}},
-      "Institutional": {{"covered_by": "H2", "justification": "..."}},
-      "Psychological": null,
+      "Economic": {{"covered_by": "H2", "justification": "..."}},
+      "Institutional": null,
+      "Psychological": {{"covered_by": "H1", "justification": "..."}},
       "Cultural": null,
-      "Historical": {{"covered_by": "H4", "justification": "..."}},
-      "Technical": {{"covered_by": "H3", "justification": "..."}},
+      "Historical": {{"covered_by": "H3", "justification": "..."}},
+      "Technical": null,
       "Biological": null,
       "Theological": null
     }},
     "ancestral_check": {{
-      "historical_analogues": ["Example 1", "Example 2"],
-      "lessons_applied": "How historical lessons inform our hypotheses"
+      "historical_analogues": ["TV panic of 1950s", "Video game violence debates"],
+      "lessons_applied": "Historical moral panics about new media often overstate causal effects"
     }},
     "mece_verification": {{
-      "mutual_exclusivity": "Explanation of why hypotheses identify different PRIMARY causes",
-      "collective_exhaustiveness": "Explanation of why all plausible explanations are covered"
+      "mutual_exclusivity": "Each hypothesis represents a different truth value for the proposition",
+      "collective_exhaustiveness": "Covers affirmation, denial, qualification, and unknown"
     }}
   }}
 }}
 ```
 
-Think step by step about what would ACTUALLY explain the proposition, then output the JSON.
+Think carefully: What are the competing answers to WHETHER this proposition is true?
 """
         try:
             # Use reasoning model for deeper analytical thinking
