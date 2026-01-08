@@ -2583,6 +2583,11 @@ if __name__ == "__main__":
         choices=["easy", "medium", "hard"],
         help="Difficulty level (default: medium)"
     )
+    parser.add_argument(
+        "--output", "-o",
+        type=str,
+        help="Output filename for report (without extension). Saves .md and .json"
+    )
 
     args = parser.parse_args()
 
@@ -2607,10 +2612,22 @@ if __name__ == "__main__":
         print(result.report[:1000] + "...")
         print("\nPosteriors:")
         print(json.dumps(result.posteriors, indent=2))
-        print("\nFull result saved to: analysis_result.json")
 
-        with open("analysis_result.json", "w") as f:
+        # Determine output filename
+        base_name = args.output if args.output else f"bfih_report_{result.scenario_id}"
+        json_file = f"{base_name}.json"
+        md_file = f"{base_name}.md"
+
+        # Save JSON result
+        with open(json_file, "w") as f:
             json.dump(result.to_dict(), f, indent=2)
+
+        # Save markdown report
+        with open(md_file, "w") as f:
+            f.write(result.report)
+
+        print(f"\nSaved: {json_file}")
+        print(f"Saved: {md_file}")
     else:
         # Run default example
         example_autonomous_analysis()
