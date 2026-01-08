@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { PageContainer } from '../../components/layout/PageContainer';
@@ -6,20 +6,66 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { ParadigmCard } from '../../components/game/ParadigmCard';
-import { useGameStore } from '../../stores';
+import { Skeleton } from '../../components/ui/Skeleton';
+import { useGameStore, useAnalysisStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
+import { getScenario, getAnalysis } from '../../api';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 
 export function ScenarioSetupPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const {
+    scenarioId: storeScenarioId,
     scenarioConfig,
     selectedParadigms,
     toggleParadigm,
     setPhase,
+    loadScenario,
   } = useGameStore();
+  const { setCurrentAnalysis } = useAnalysisStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
+
+  // Load scenario from API if not in store or different scenario
+  useEffect(() => {
+    async function fetchScenario() {
+      if (!scenarioId) return;
+
+      // Skip if we already have this scenario loaded
+      if (storeScenarioId === scenarioId && scenarioConfig) {
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        // Fetch scenario config
+        const config = await getScenario(scenarioId);
+        loadScenario(config);
+
+        // Try to fetch analysis result (may not exist)
+        try {
+          const analysis = await getAnalysis(scenarioId);
+          if (analysis && !('error' in analysis)) {
+            setCurrentAnalysis(analysis);
+          }
+        } catch {
+          // Analysis not found is OK - scenario can work without it
+          console.log('No analysis result for scenario:', scenarioId);
+        }
+      } catch (err) {
+        console.error('Failed to load scenario:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load scenario');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchScenario();
+  }, [scenarioId, storeScenarioId, scenarioConfig, loadScenario, setCurrentAnalysis]);
 
   useEffect(() => {
     setPhase('setup');
@@ -30,6 +76,53 @@ export function ScenarioSetupPage() {
       navigate(`/game/${scenarioId}/hypotheses`);
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <PageContainer>
+        <div className="mb-8">
+          <Skeleton className="h-16 w-full" />
+        </div>
+        <div className="text-center mb-8">
+          <Skeleton className="h-10 w-64 mx-auto mb-2" />
+          <Skeleton className="h-6 w-96 mx-auto" />
+        </div>
+        <Skeleton className="h-32 w-full mb-8" />
+        <div className="grid md:grid-cols-2 gap-4 mb-8">
+          <Skeleton className="h-48" />
+          <Skeleton className="h-48" />
+          <Skeleton className="h-48" />
+          <Skeleton className="h-48" />
+        </div>
+      </PageContainer>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <PageContainer className="flex items-center justify-center min-h-[60vh]">
+        <Card className="p-8 text-center max-w-md">
+          <div className="text-red-500 mb-4">
+            <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold text-text-primary mb-2">Failed to Load Scenario</h2>
+          <p className="text-text-secondary mb-4">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <Button variant="ghost" onClick={() => navigate('/library')}>
+              Back to Library
+            </Button>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </div>
+        </Card>
+      </PageContainer>
+    );
+  }
 
   if (!scenarioConfig) {
     return (
