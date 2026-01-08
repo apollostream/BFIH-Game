@@ -39,7 +39,10 @@ export function Header() {
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-2">
                 <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
                 <span className="text-sm text-text-secondary truncate max-w-[200px]">
-                  {scenarioConfig.scenario_metadata.title}
+                  {scenarioConfig.scenario_metadata?.title ||
+                   scenarioConfig.scenario_narrative?.research_question ||
+                   scenarioConfig.scenario_narrative?.title ||
+                   'Analysis in Progress'}
                 </span>
               </div>
             )}
