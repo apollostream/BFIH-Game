@@ -20,8 +20,38 @@ class StrictModel(BaseModel):
 
 
 # ============================================================================
+# SHARED TYPE DEFINITIONS
+# ============================================================================
+
+DomainType = Literal[
+    "Economic", "Institutional", "Psychological", "Cultural",
+    "Historical", "Technical", "Biological", "Theological"
+]
+
+BiasType = Literal["domain", "temporal", "ideological", "cognitive", "institutional"]
+
+TimeHorizon = Literal["short-term", "medium-term", "long-term", "intergenerational"]
+
+TruthValueType = Literal["other", "affirm", "deny", "qualify"]
+
+
+# ============================================================================
 # PARADIGM SCHEMAS (Phase 0a)
 # ============================================================================
+
+
+class ForcingFunctionCompliance(StrictModel):
+    """Compliance status for forcing functions"""
+    ontological_scan: str = Field(
+        description="'pass' or 'fail: [reason]' - whether paradigm covers all 7 domains"
+    )
+    ancestral_check: str = Field(
+        description="'pass' or 'fail: [reason]' - whether paradigm considers historical precedent"
+    )
+    paradigm_inversion: str = Field(
+        description="'pass' or 'fail: [reason]' - whether paradigm engages with inverse views"
+    )
+
 
 class ParadigmCharacteristics(StrictModel):
     """Characteristics that define how a paradigm evaluates evidence"""
@@ -34,23 +64,49 @@ class ParadigmCharacteristics(StrictModel):
     causal_preference: str = Field(
         description="Primary causal mechanism this paradigm favors"
     )
+    time_horizon: Union[TimeHorizon, None] = Field(
+        description="Temporal focus: short-term, medium-term, long-term, or intergenerational"
+    )
 
 
 class Paradigm(StrictModel):
-    """A paradigm represents an epistemic viewpoint/worldview"""
-    id: str = Field(description="Unique identifier like K1, K2, K3")
+    """A paradigm represents an epistemic viewpoint/worldview.
+
+    Following BFIH Paradigm Construction Manual:
+    - K0: Privileged paradigm (maximally intellectually honest, passes all forcing functions)
+    - K1-K5: Biased paradigms (realistically biased, fail >= 1 forcing function)
+    """
+    id: str = Field(description="Unique identifier: K0 for privileged, K1-K5 for biased")
     name: str = Field(description="Short descriptive name")
     description: str = Field(description="Epistemic stance and what counts as valid evidence")
+    is_privileged: bool = Field(
+        description="True only for K0 (maximally intellectually honest paradigm)"
+    )
+    bias_type: Union[BiasType, None] = Field(
+        description="Type of bias: domain, temporal, ideological, cognitive, institutional (null for K0)"
+    )
+    bias_description: Union[str, None] = Field(
+        description="Specific description of the bias (null for K0)"
+    )
     inverse_paradigm_id: Union[str, None] = Field(
         description="ID of the inverse/opposing paradigm if applicable, or null"
+    )
+    forcing_function_compliance: ForcingFunctionCompliance = Field(
+        description="How this paradigm handles forcing functions (K0 should pass all)"
+    )
+    domains_covered: List[DomainType] = Field(
+        description="Ontological domains this paradigm engages (K0 should have all 7)"
     )
     characteristics: ParadigmCharacteristics
 
 
 class ParadigmList(StrictModel):
-    """List of paradigms for analysis"""
+    """List of paradigms for analysis.
+
+    Must include K0 (privileged) + K1-K5 (3-5 biased paradigms).
+    """
     paradigms: List[Paradigm] = Field(
-        description="2-5 paradigms representing different worldviews"
+        description="K0 (privileged) + K1-K5 (biased) paradigms"
     )
 
 
@@ -58,17 +114,33 @@ class ParadigmList(StrictModel):
 # HYPOTHESIS SCHEMAS (Phase 0b)
 # ============================================================================
 
-DomainType = Literal[
-    "Economic", "Institutional", "Psychological", "Cultural",
-    "Historical", "Technical", "Biological", "Theological"
-]
-
 
 class Hypothesis(StrictModel):
-    """A hypothesis is a propositional statement about the world"""
+    """A hypothesis is a TRUTH-VALUE CLAIM about the proposition.
+
+    Following BFIH Paradigm Construction Manual:
+    - H0: Other/Unforeseen - catch-all for unspecified alternatives (truth_value_type = "other")
+    - H1: Affirms proposition is TRUE (truth_value_type = "affirm")
+    - H2: Denies proposition is FALSE (truth_value_type = "deny")
+    - H3: Qualifies proposition as PARTIAL (truth_value_type = "qualify")
+    - H4+: Additional domain-specific or inversion hypotheses
+
+    IMPORTANT: H0 is NOT "unknown/insufficient evidence". It captures unforeseen
+    factors or alternatives not covered by H1-H4+.
+    """
     id: str = Field(description="Unique identifier like H0, H1, H2")
-    name: str = Field(description="Descriptive name of the claim (NOT a paradigm label)")
-    statement: str = Field(description="Full propositional statement - what this hypothesis claims is true")
+    name: str = Field(
+        description="Format: '[TRUE/FALSE/PARTIAL] - [Mechanism]' e.g., 'TRUE - Safety Culture Degradation'"
+    )
+    truth_value_type: TruthValueType = Field(
+        description="What this hypothesis claims about the proposition: unknown, affirm, deny, or qualify"
+    )
+    statement: str = Field(
+        description="Full statement: 'The proposition is TRUE/FALSE/PARTIALLY TRUE because...'"
+    )
+    mechanism_if_true: Union[str, None] = Field(
+        description="The causal mechanism if this hypothesis is correct (null for H0)"
+    )
     domains: List[DomainType] = Field(
         description="Ontological domains this hypothesis touches"
     )
@@ -76,10 +148,16 @@ class Hypothesis(StrictModel):
         description="Observable predictions if this hypothesis is true"
     )
     is_catch_all: bool = Field(
-        description="True only for H0 (unknown/combination factors)"
+        description="True only for H0 (unforeseen/unspecified alternatives)"
     )
     is_ancestral_solution: bool = Field(
-        description="True if this reflects a historical/time-tested solution"
+        description="True if informed by historical analogues (Ancestral Check)"
+    )
+    is_paradigm_inversion: bool = Field(
+        description="True if this hypothesis captures a view that biased paradigms would dismiss"
+    )
+    inverted_from_paradigm: Union[str, None] = Field(
+        description="If is_paradigm_inversion, which paradigm's blind spot does this capture (e.g., 'K1')"
     )
 
 
@@ -109,22 +187,43 @@ class AncestralCheck(StrictModel):
     lessons_applied: str = Field(
         description="How historical lessons inform our hypotheses"
     )
+    hypothesis_informed: Union[str, None] = Field(
+        description="Which hypothesis was informed by ancestral check (e.g., 'H3')"
+    )
+
+
+class ParadigmInversionEntry(StrictModel):
+    """Record of a hypothesis generated through paradigm inversion"""
+    paradigm: str = Field(description="Which biased paradigm's blind spot this addresses (e.g., 'K1')")
+    dismissed_view: str = Field(description="What view this paradigm would dismiss")
+    captured_in: str = Field(description="Which hypothesis captures this dismissed view (e.g., 'H2')")
+
+
+class ParadigmInversionLog(StrictModel):
+    """Log of paradigm inversions applied"""
+    inversions_generated: List[ParadigmInversionEntry] = Field(
+        description="List of hypotheses generated by inverting biased paradigms"
+    )
 
 
 class MECEVerification(StrictModel):
-    """Forcing function: verify MECE property"""
+    """Forcing function: verify MECE property on truth values"""
     mutual_exclusivity: str = Field(
-        description="Explanation of why hypotheses identify different PRIMARY causes"
+        description="Explanation of why hypotheses represent different truth values (TRUE/FALSE/PARTIAL/UNKNOWN)"
     )
     collective_exhaustiveness: str = Field(
-        description="Explanation of why all plausible explanations are covered"
+        description="Explanation of why all truth values are covered (affirm + deny + qualify + unknown = complete)"
+    )
+    sum_to_one_possible: bool = Field(
+        description="Whether probabilities can sum to 1.0 (should be true for MECE)"
     )
 
 
 class ForcingFunctionsLog(StrictModel):
-    """Log of forcing functions applied"""
+    """Log of all three forcing functions applied"""
     ontological_scan: OntologicalScan
     ancestral_check: AncestralCheck
+    paradigm_inversion: ParadigmInversionLog
     mece_verification: MECEVerification
 
 

@@ -1322,7 +1322,7 @@ For EACH evidence item in the JSON above, create an entry with this EXACT format
 
 **Likelihood Assessment:**
 
-| Hypothesis | P(E\|H) | Reasoning |
+| Hypothesis | P(E|H) | Reasoning |
 |------------|---------|-----------|
 | H1 | 0.XX | [Brief justification for this likelihood] |
 | H2 | 0.XX | [Brief justification] |
@@ -1695,29 +1695,61 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
 
     def _generate_paradigms(self, proposition: str, domain: str) -> List[Dict]:
         """
-        Phase 0a: Generate 2-4 paradigms relevant to the proposition.
+        Phase 0a: Generate paradigm set with ONE privileged paradigm (K0) and 3-5 biased paradigms (K1-K5).
+
+        Following BFIH Paradigm Construction Manual:
+        - K0: Maximally intellectually honest, passes ALL forcing functions
+        - K1-K5: Realistically biased (not straw men), each fails ≥1 forcing function
+
         Uses structured output for guaranteed valid JSON.
         """
         prompt = f"""
-You are generating paradigms for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
+You are generating a PARADIGM SET for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
 
 PROPOSITION: "{proposition}"
 DOMAIN: {domain}
 
-Generate 2-4 paradigms that represent fundamentally different worldviews for analyzing this question.
-Include at least one inverse pair (e.g., Secular-Individualist ↔ Religious-Communitarian).
+## CRITICAL REQUIREMENT: One Privileged + Multiple Biased Paradigms
 
-For each paradigm provide:
-- id: K1, K2, K3, etc.
-- name: Short descriptive name (e.g., "Secular-Individualist")
-- description: Epistemic stance - what this paradigm treats as valid evidence and causal mechanisms
-- inverse_paradigm_id: ID of the inverse paradigm if applicable, or null
+You MUST generate:
+1. **K0 (Privileged Paradigm)**: Maximally intellectually honest
+   - Applies ALL forcing functions (Ontological Scan, Ancestral Check, Paradigm Inversion)
+   - Covers all 7 ontological domains (Biological, Economic, Cultural, Theological, Historical, Institutional, Psychological)
+   - Has explicit assumptions, limitations, and falsification criteria
+   - NOT neutral—has a perspective, but systematically interrogates its own blind spots
+
+2. **K1-K5 (Biased Paradigms)**: 3-5 realistically biased paradigms
+   - Each must fail ≥1 forcing function (document which one)
+   - Must be REALISTIC biases, not straw men (would an expert recognize themselves?)
+   - Types of bias to choose from:
+     * **Domain Bias**: Only sees one discipline (e.g., economists ignore theology)
+     * **Temporal Bias**: Short-term vs long-term focus
+     * **Ideological Bias**: Value commitment (libertarian, egalitarian, etc.)
+     * **Cognitive Bias**: Overconfidence, availability bias, confirmation bias
+     * **Institutional Bias**: Resource constraints, deadline pressure
+
+## OUTPUT FORMAT
+
+For EACH paradigm provide:
+- id: K0, K1, K2, K3, etc.
+- name: Short descriptive name
+- description: Epistemic stance - what this paradigm treats as valid evidence
+- is_privileged: true for K0, false for others
+- bias_type: null for K0, otherwise one of [domain, temporal, ideological, cognitive, institutional]
+- bias_description: null for K0, otherwise describe the specific bias
+- inverse_paradigm_id: ID of inverse paradigm if applicable, or null
+- forcing_function_compliance: Object with:
+  - ontological_scan: "pass" or "fail: [reason]"
+  - ancestral_check: "pass" or "fail: [reason]"
+  - paradigm_inversion: "pass" or "fail: [reason]"
+- domains_covered: List of domains this paradigm engages (K0 should have all 7)
 - characteristics: Object with:
   - prefers_evidence_types: List of evidence types this paradigm values
   - skeptical_of: List of factors this paradigm discounts
   - causal_preference: Primary causal mechanism this paradigm favors
+  - time_horizon: Short-term, medium-term, long-term, or intergenerational
 
-Return the result as a JSON object with a "paradigms" array.
+Return the result as a JSON object with a "paradigms" array starting with K0.
 """
         try:
             result = self._run_structured_phase(
@@ -1726,26 +1758,108 @@ Return the result as a JSON object with a "paradigms" array.
             paradigms = result.get("paradigms", [])
         except Exception as e:
             logger.error(f"Structured output failed for paradigms: {e}, using fallback")
-            # Fallback to default paradigms
+            # Fallback to default paradigms following the K0 + K1-K4 structure
             paradigms = [
-                {"id": "K1", "name": "Secular-Rationalist", "description": "Material and measurable factors",
-                 "inverse_paradigm_id": "K2", "characteristics": {
-                     "prefers_evidence_types": ["quantitative", "empirical"],
-                     "skeptical_of": ["faith-based claims"],
-                     "causal_preference": "material causation"
-                 }},
-                {"id": "K2", "name": "Religious-Communitarian", "description": "Faith, community, transcendent values",
-                 "inverse_paradigm_id": "K1", "characteristics": {
-                     "prefers_evidence_types": ["testimonial", "traditional"],
-                     "skeptical_of": ["reductionist explanations"],
-                     "causal_preference": "providential or moral causation"
-                 }},
-                {"id": "K3", "name": "Economistic-Rationalist", "description": "Capital efficiency and incentives",
-                 "inverse_paradigm_id": None, "characteristics": {
-                     "prefers_evidence_types": ["financial", "market data"],
-                     "skeptical_of": ["non-economic motivations"],
-                     "causal_preference": "incentive structures"
-                 }}
+                {
+                    "id": "K0", "name": "Integrated Multi-Domain Analysis",
+                    "description": "Intellectually honest synthesis across all domains with explicit uncertainty",
+                    "is_privileged": True,
+                    "bias_type": None,
+                    "bias_description": None,
+                    "inverse_paradigm_id": None,
+                    "forcing_function_compliance": {
+                        "ontological_scan": "pass",
+                        "ancestral_check": "pass",
+                        "paradigm_inversion": "pass"
+                    },
+                    "domains_covered": ["Biological", "Economic", "Cultural", "Theological", "Historical", "Institutional", "Psychological"],
+                    "characteristics": {
+                        "prefers_evidence_types": ["quantitative", "qualitative", "historical", "expert_testimony"],
+                        "skeptical_of": ["single-cause explanations", "unfalsifiable claims"],
+                        "causal_preference": "multi-causal with documented interactions",
+                        "time_horizon": "intergenerational"
+                    }
+                },
+                {
+                    "id": "K1", "name": "Techno-Economic Rationalist",
+                    "description": "Success/failure driven by measurable economic and technical factors",
+                    "is_privileged": False,
+                    "bias_type": "domain",
+                    "bias_description": "Ignores cultural/theological domains; over-weights quantitative metrics",
+                    "inverse_paradigm_id": "K2",
+                    "forcing_function_compliance": {
+                        "ontological_scan": "fail: ignores Theological and Cultural domains",
+                        "ancestral_check": "pass",
+                        "paradigm_inversion": "fail: dismisses non-economic explanations"
+                    },
+                    "domains_covered": ["Economic", "Institutional", "Psychological"],
+                    "characteristics": {
+                        "prefers_evidence_types": ["quantitative", "financial", "technical"],
+                        "skeptical_of": ["faith-based explanations", "cultural narratives"],
+                        "causal_preference": "incentive structures and market forces",
+                        "time_horizon": "short-term"
+                    }
+                },
+                {
+                    "id": "K2", "name": "Cultural-Historical Interpreter",
+                    "description": "Events shaped by deep cultural patterns, traditions, and historical precedent",
+                    "is_privileged": False,
+                    "bias_type": "temporal",
+                    "bias_description": "Over-weights historical patterns; may miss novel factors",
+                    "inverse_paradigm_id": "K1",
+                    "forcing_function_compliance": {
+                        "ontological_scan": "fail: under-weights Economic and Technical domains",
+                        "ancestral_check": "pass",
+                        "paradigm_inversion": "pass"
+                    },
+                    "domains_covered": ["Cultural", "Historical", "Theological", "Psychological"],
+                    "characteristics": {
+                        "prefers_evidence_types": ["historical_analogy", "qualitative", "testimonial"],
+                        "skeptical_of": ["techno-determinism", "ahistorical analysis"],
+                        "causal_preference": "path dependence and cultural momentum",
+                        "time_horizon": "long-term"
+                    }
+                },
+                {
+                    "id": "K3", "name": "Regulatory-Institutional Analyst",
+                    "description": "Outcomes determined by governance structures, rules, and institutional incentives",
+                    "is_privileged": False,
+                    "bias_type": "institutional",
+                    "bias_description": "Over-emphasizes formal rules; may miss informal dynamics",
+                    "inverse_paradigm_id": None,
+                    "forcing_function_compliance": {
+                        "ontological_scan": "fail: ignores Biological and Psychological domains",
+                        "ancestral_check": "pass",
+                        "paradigm_inversion": "fail: assumes institutional solutions always exist"
+                    },
+                    "domains_covered": ["Institutional", "Economic", "Historical"],
+                    "characteristics": {
+                        "prefers_evidence_types": ["policy", "regulatory", "institutional"],
+                        "skeptical_of": ["individual agency", "market self-correction"],
+                        "causal_preference": "regulatory frameworks and institutional design",
+                        "time_horizon": "medium-term"
+                    }
+                },
+                {
+                    "id": "K4", "name": "Individual Agency Advocate",
+                    "description": "Outcomes primarily reflect individual choices, leadership, and personal responsibility",
+                    "is_privileged": False,
+                    "bias_type": "ideological",
+                    "bias_description": "Over-weights individual action; under-weights structural constraints",
+                    "inverse_paradigm_id": "K3",
+                    "forcing_function_compliance": {
+                        "ontological_scan": "fail: ignores systemic/institutional factors",
+                        "ancestral_check": "fail: may ignore historical structural constraints",
+                        "paradigm_inversion": "pass"
+                    },
+                    "domains_covered": ["Psychological", "Economic"],
+                    "characteristics": {
+                        "prefers_evidence_types": ["biographical", "decision_analysis", "leadership"],
+                        "skeptical_of": ["deterministic explanations", "systemic blame"],
+                        "causal_preference": "individual decisions and leadership",
+                        "time_horizon": "short-term"
+                    }
+                }
             ]
 
         logger.info(f"Generated {len(paradigms)} paradigms: {[p.get('name', 'Unknown') for p in paradigms]}")
@@ -1755,112 +1869,167 @@ Return the result as a JSON object with a "paradigms" array.
         self, proposition: str, paradigms: List[Dict], difficulty: str
     ) -> Tuple[List[Dict], Dict]:
         """
-        Phase 0b: Generate hypotheses with forcing functions and MECE synthesis.
-        Uses REASONING MODEL for deeper analytical thinking about hypotheses.
+        Phase 0b: Generate MECE hypotheses with forcing functions.
 
-        IMPORTANT: Hypotheses are PROPOSITIONAL STATEMENTS about the world, NOT paradigm labels.
-        All hypotheses should be evaluable from ANY paradigm's perspective.
-        Paradigms determine priors and likelihoods, but hypotheses are paradigm-independent statements.
+        Following BFIH Paradigm Construction Manual:
+        - Hypotheses are TRUTH-VALUE CLAIMS about the proposition
+        - Not mechanism explanations assuming the proposition is true
+        - Structure: H0 (catch-all), H1 (affirm), H2 (deny), H3 (qualify), H4+ (domain-specific)
+
+        Uses REASONING MODEL for deeper analytical thinking about hypotheses.
         """
         num_hypotheses = {"easy": 4, "medium": 6, "hard": 8}.get(difficulty, 6)
         paradigm_json = json.dumps(paradigms, indent=2)
 
         prompt = f"""
 You are generating HYPOTHESES for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
-Think deeply about WHETHER the proposition is true or false - NOT assuming it's true.
 
 PROPOSITION TO EVALUATE: "{proposition}"
 
-PARADIGMS (viewpoints that will weight evidence differently):
+PARADIGMS (these determine priors and likelihood weighting, NOT the hypotheses):
 {paradigm_json}
 
-CRITICAL DISTINCTION - HYPOTHESES ARE ABOUT TRUTH, NOT MECHANISMS:
+## CRITICAL: HYPOTHESES ARE TRUTH-VALUE CLAIMS
 
-The hypotheses should be COMPETING ANSWERS to whether the proposition is TRUE or FALSE.
-Do NOT assume the proposition is true and then list mechanisms - instead, include hypotheses
-that AFFIRM the proposition and hypotheses that DENY or QUALIFY it.
+Hypotheses answer: "Is this proposition TRUE, FALSE, or CONDITIONALLY TRUE?"
 
-CORRECT HYPOTHESIS STRUCTURE for "Social media increases teen depression":
-- H1: "Yes - Social media causally increases depression/anxiety in teenagers" (affirms proposition)
-- H2: "No - The correlation is spurious; other factors explain both" (denies proposition)
-- H3: "Partial - Only excessive use (>3 hrs/day) causes harm" (qualifies proposition)
-- H4: "Reverse causation - Depressed teens use more social media, not vice versa" (alternative explanation)
-- H0: "Unknown - Insufficient evidence to determine causal relationship" (catch-all)
+**WRONG approach** (assumes proposition is true, explores mechanisms):
+- Proposition: "Boeing's 737 MAX crashed due to safety issues"
+- ❌ "MCAS software caused crashes" (mechanism, not truth-value)
+- ❌ "FAA deregulation contributed" (mechanism, not truth-value)
+- ❌ "Cost-cutting culture" (mechanism, not truth-value)
 
-WRONG APPROACH (assumes proposition is true, only explores mechanisms):
-- "Algorithm addiction causes depression" ❌ (assumes truth, only mechanism)
-- "Peer comparison causes anxiety" ❌ (assumes truth, only mechanism)
+**CORRECT approach** (competing truth-value claims):
+- H1: "TRUE - Boeing's safety culture degraded systematically, causing the crashes"
+- H2: "FALSE - The crashes were primarily due to pilot error, not Boeing's safety issues"
+- H3: "PARTIAL - Safety issues contributed, but comparable to industry norms"
+- H4: "FALSE - Regulatory capture, not Boeing's internal culture, was primary cause"
+- H0: "OTHER - Some unforeseen factor or combination not captured by H1-H4" (catch-all)
 
-TARGET: Generate {num_hypotheses} hypotheses that COMPETE on the proposition's truth value
+## REQUIRED HYPOTHESIS STRUCTURE
 
-REQUIRED HYPOTHESIS TYPES:
-1. At least one hypothesis that AFFIRMS the proposition (with specific mechanism if relevant)
-2. At least one hypothesis that DENIES the proposition (explains away the correlation)
-3. At least one hypothesis that QUALIFIES the proposition (true only under certain conditions)
-4. H0 as catch-all for unknown/mixed factors
+Generate exactly {num_hypotheses} hypotheses:
 
-FORCING FUNCTIONS:
+| ID | Type | Description | Required? |
+|----|------|-------------|-----------|
+| H0 | Catch-all | Unforeseen/unspecified alternative (NOT "unknown") | YES |
+| H1 | AFFIRM | Proposition is TRUE (with primary mechanism) | YES |
+| H2 | DENY | Proposition is FALSE (alternative explanation) | YES |
+| H3 | QUALIFY | Proposition is PARTIALLY true (conditions) | YES |
+| H4+ | Domain-specific | From Ontological Scan or Paradigm Inversion | As needed |
 
-1. ONTOLOGICAL SCAN: Consider explanations from different domains that could AFFIRM or DENY the claim
-2. ANCESTRAL CHECK: What does historical evidence suggest about similar claims?
-3. MECE SYNTHESIS: Hypotheses must be mutually exclusive on the TRUTH VALUE of the proposition
+IMPORTANT: H0 is NOT "we don't know" or "insufficient evidence". H0 captures any unforeseen or
+unspecified alternatives that might explain the observations but aren't covered by H1-H4+.
 
-OUTPUT FORMAT - Return ONLY valid JSON:
+## FORCING FUNCTIONS TO APPLY
+
+### 1. ONTOLOGICAL SCAN (7 Domains)
+Check if explanations from each domain could AFFIRM or DENY the proposition:
+- **Biological**: Physical, physiological, or health-related factors
+- **Economic**: Financial incentives, market forces, resource constraints
+- **Cultural**: Social norms, values, traditions, group identity
+- **Theological**: Religious beliefs, moral frameworks, transcendent values
+- **Historical**: Precedent, path dependence, lessons from similar cases
+- **Institutional**: Rules, regulations, organizational structures
+- **Psychological**: Individual cognition, motivation, decision-making
+
+### 2. ANCESTRAL CHECK
+- What historical analogues exist for this proposition?
+- What lessons do they suggest about likely truth value?
+- Does history suggest this type of claim tends to be true/false/overstated?
+
+### 3. PARADIGM INVERSION
+- For each biased paradigm (K1-K4), what hypothesis would they DISMISS?
+- Generate at least one hypothesis representing the "inverse" view
+
+## OUTPUT FORMAT - Return ONLY valid JSON:
+
 ```json
 {{
   "hypotheses": [
     {{
       "id": "H0",
-      "name": "Unknown/Insufficient Evidence",
-      "statement": "The causal relationship cannot be determined from available evidence",
+      "name": "Other/Unforeseen Alternatives",
+      "truth_value_type": "other",
+      "statement": "Some unforeseen factor, combination of factors, or alternative not captured by H1-H4+ explains the observations",
+      "mechanism_if_true": "Unspecified alternative mechanism",
       "domains": [],
-      "testable_predictions": [],
+      "testable_predictions": ["Evidence patterns don't fit H1-H4+ predictions", "Novel factors emerge during investigation"],
       "is_catch_all": true,
-      "is_ancestral_solution": false
+      "is_ancestral_solution": false,
+      "is_paradigm_inversion": false,
+      "inverted_from_paradigm": null
     }},
     {{
       "id": "H1",
-      "name": "Proposition True - [Primary Mechanism]",
-      "statement": "The proposition is TRUE because [specific causal mechanism]",
-      "domains": ["Psychological"],
-      "testable_predictions": ["If true, we would observe X", "If true, we would observe Y"],
+      "name": "[Proposition TRUE] - [Primary Mechanism]",
+      "truth_value_type": "affirm",
+      "statement": "The proposition is TRUE: [full statement of what is true and why]",
+      "mechanism_if_true": "[The specific causal mechanism]",
+      "domains": ["Institutional", "Economic"],
+      "testable_predictions": ["If H1, we would observe X", "If H1, metric Y would show Z"],
       "is_catch_all": false,
-      "is_ancestral_solution": false
+      "is_ancestral_solution": false,
+      "is_paradigm_inversion": false,
+      "inverted_from_paradigm": null
     }},
     {{
       "id": "H2",
-      "name": "Proposition False - [Alternative Explanation]",
-      "statement": "The proposition is FALSE because [the correlation is explained by...]",
-      "domains": ["Economic"],
-      "testable_predictions": ["If true, we would observe X"],
+      "name": "[Proposition FALSE] - [Alternative Explanation]",
+      "truth_value_type": "deny",
+      "statement": "The proposition is FALSE: [what is actually true instead]",
+      "mechanism_if_true": "[The actual causal mechanism that explains observations]",
+      "domains": ["Psychological"],
+      "testable_predictions": ["If H2, we would observe X instead of Y"],
       "is_catch_all": false,
-      "is_ancestral_solution": false
+      "is_ancestral_solution": false,
+      "is_paradigm_inversion": true,
+      "inverted_from_paradigm": "K1"
+    }},
+    {{
+      "id": "H3",
+      "name": "[Proposition PARTIAL] - [Conditions]",
+      "truth_value_type": "qualify",
+      "statement": "The proposition is PARTIALLY TRUE: [true under conditions A, false under B]",
+      "mechanism_if_true": "[The conditional mechanism]",
+      "domains": ["Historical"],
+      "testable_predictions": ["If H3, we would see effect only when condition A holds"],
+      "is_catch_all": false,
+      "is_ancestral_solution": true,
+      "is_paradigm_inversion": false,
+      "inverted_from_paradigm": null
     }}
   ],
   "forcing_functions_log": {{
     "ontological_scan": {{
-      "Economic": {{"covered_by": "H2", "justification": "..."}},
-      "Institutional": null,
-      "Psychological": {{"covered_by": "H1", "justification": "..."}},
+      "Biological": {{"covered_by": "H4", "justification": "..."}},
+      "Economic": {{"covered_by": "H1", "justification": "..."}},
       "Cultural": null,
+      "Theological": null,
       "Historical": {{"covered_by": "H3", "justification": "..."}},
-      "Technical": null,
-      "Biological": null,
-      "Theological": null
+      "Institutional": {{"covered_by": "H1", "justification": "..."}},
+      "Psychological": {{"covered_by": "H2", "justification": "..."}}
     }},
     "ancestral_check": {{
-      "historical_analogues": ["TV panic of 1950s", "Video game violence debates"],
-      "lessons_applied": "Historical moral panics about new media often overstate causal effects"
+      "historical_analogues": ["[Similar case 1]", "[Similar case 2]"],
+      "lessons_applied": "[What historical pattern suggests about truth value]",
+      "hypothesis_informed": "H3"
+    }},
+    "paradigm_inversion": {{
+      "inversions_generated": [
+        {{"paradigm": "K1", "dismissed_view": "[what K1 would dismiss]", "captured_in": "H2"}}
+      ]
     }},
     "mece_verification": {{
-      "mutual_exclusivity": "Each hypothesis represents a different truth value for the proposition",
-      "collective_exhaustiveness": "Covers affirmation, denial, qualification, and unknown"
+      "mutual_exclusivity": "Each hypothesis makes a distinct truth-value claim",
+      "collective_exhaustiveness": "TRUE (H1) + FALSE (H2) + PARTIAL (H3) + OTHER (H0) = complete",
+      "sum_to_one_possible": true
     }}
   }}
 }}
 ```
 
-Think carefully: What are the competing answers to WHETHER this proposition is true?
+Generate hypotheses that are COMPETING ANSWERS about whether the proposition is TRUE, FALSE, or CONDITIONALLY TRUE.
 """
         try:
             # Use reasoning model for deeper analytical thinking
@@ -1886,15 +2055,89 @@ Think carefully: What are the competing answers to WHETHER this proposition is t
                 forcing_functions_log = result.get("forcing_functions_log", {})
             except Exception as e2:
                 logger.error(f"Both reasoning and structured output failed: {e2}")
-                # Ultimate fallback
+                # Ultimate fallback with proper truth-value structure
                 hypotheses = [
-                    {"id": "H0", "name": "Unknown/Combination", "statement": "Unknown factors",
-                     "domains": [], "is_catch_all": True, "is_ancestral_solution": False,
-                     "testable_predictions": []}
+                    {
+                        "id": "H0",
+                        "name": "Other/Unforeseen Alternatives",
+                        "truth_value_type": "other",
+                        "statement": f"Some unforeseen factor or combination not captured by H1-H3 explains observations related to: {proposition}",
+                        "mechanism_if_true": "Unspecified alternative mechanism",
+                        "domains": [],
+                        "testable_predictions": ["Evidence patterns don't fit H1-H3 predictions", "Novel factors emerge"],
+                        "is_catch_all": True,
+                        "is_ancestral_solution": False,
+                        "is_paradigm_inversion": False,
+                        "inverted_from_paradigm": None
+                    },
+                    {
+                        "id": "H1",
+                        "name": "Proposition TRUE - Primary Mechanism",
+                        "truth_value_type": "affirm",
+                        "statement": f"The proposition is TRUE: {proposition}",
+                        "mechanism_if_true": "Primary causal mechanism (to be determined by evidence)",
+                        "domains": ["Economic", "Institutional"],
+                        "testable_predictions": ["Evidence would support the stated claim"],
+                        "is_catch_all": False,
+                        "is_ancestral_solution": False,
+                        "is_paradigm_inversion": False,
+                        "inverted_from_paradigm": None
+                    },
+                    {
+                        "id": "H2",
+                        "name": "Proposition FALSE - Alternative Explanation",
+                        "truth_value_type": "deny",
+                        "statement": f"The proposition is FALSE: An alternative explanation accounts for observations",
+                        "mechanism_if_true": "Alternative causal mechanism",
+                        "domains": ["Psychological", "Cultural"],
+                        "testable_predictions": ["Evidence would contradict the stated claim"],
+                        "is_catch_all": False,
+                        "is_ancestral_solution": False,
+                        "is_paradigm_inversion": True,
+                        "inverted_from_paradigm": "K1"
+                    },
+                    {
+                        "id": "H3",
+                        "name": "Proposition PARTIAL - Conditional Truth",
+                        "truth_value_type": "qualify",
+                        "statement": f"The proposition is PARTIALLY TRUE: True under some conditions, false under others",
+                        "mechanism_if_true": "Conditional mechanism dependent on context",
+                        "domains": ["Historical"],
+                        "testable_predictions": ["Effect varies systematically with conditions"],
+                        "is_catch_all": False,
+                        "is_ancestral_solution": True,
+                        "is_paradigm_inversion": False,
+                        "inverted_from_paradigm": None
+                    }
                 ]
-                forcing_functions_log = {}
+                forcing_functions_log = {
+                    "ontological_scan": {
+                        "Biological": None,
+                        "Economic": {"covered_by": "H1", "justification": "Economic factors in H1"},
+                        "Cultural": {"covered_by": "H2", "justification": "Cultural factors in H2"},
+                        "Theological": None,
+                        "Historical": {"covered_by": "H3", "justification": "Historical perspective in H3"},
+                        "Institutional": {"covered_by": "H1", "justification": "Institutional factors in H1"},
+                        "Psychological": {"covered_by": "H2", "justification": "Psychological factors in H2"}
+                    },
+                    "ancestral_check": {
+                        "historical_analogues": ["Fallback - no specific analogues identified"],
+                        "lessons_applied": "Historical context needed",
+                        "hypothesis_informed": "H3"
+                    },
+                    "paradigm_inversion": {
+                        "inversions_generated": [
+                            {"paradigm": "K1", "dismissed_view": "Non-economic factors", "captured_in": "H2"}
+                        ]
+                    },
+                    "mece_verification": {
+                        "mutual_exclusivity": "TRUE/FALSE/PARTIAL/OTHER are mutually exclusive truth-value claims",
+                        "collective_exhaustiveness": "H1 (affirm) + H2 (deny) + H3 (qualify) + H0 (other) = complete",
+                        "sum_to_one_possible": True
+                    }
+                }
 
-        logger.info(f"Generated {len(hypotheses)} MECE hypotheses")
+        logger.info(f"Generated {len(hypotheses)} MECE hypotheses with truth-value structure")
         return hypotheses, forcing_functions_log
 
     def _assign_priors(self, hypotheses: List[Dict], paradigms: List[Dict]) -> Dict:
