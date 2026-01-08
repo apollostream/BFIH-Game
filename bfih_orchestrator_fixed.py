@@ -171,16 +171,48 @@ class BFIHOrchestrator:
                 request, evidence_text, evidence_items
             )
 
-            # Phase 4: Run Bayesian computation
+            # Compute Bayesian metrics (P(E|¬H), LR, WoE) in Python - NOT by LLM
+            # Get priors for computation (use first paradigm's priors or average)
+            priors_by_paradigm = request.scenario_config.get(
+                "priors_by_paradigm", request.scenario_config.get("priors", {})
+            )
+            # Use first paradigm's priors for cluster metrics (or could average across paradigms)
+            first_paradigm = list(priors_by_paradigm.keys())[0] if priors_by_paradigm else None
+            computation_priors = {}
+            if first_paradigm:
+                for h_id, p in priors_by_paradigm[first_paradigm].items():
+                    computation_priors[h_id] = p if isinstance(p, (int, float)) else p.get("probability", 0.5)
+
+            enriched_clusters, joint_metrics = self._compute_cluster_bayesian_metrics(
+                evidence_clusters, computation_priors
+            )
+
+            # Format pre-computed tables for report
+            hyp_ids = [h.get("id") for h in request.scenario_config.get("hypotheses", [])]
+            precomputed_cluster_tables = []
+            for cluster in enriched_clusters:
+                cluster_name = cluster.get("cluster_id") or cluster.get("cluster_name", "Unknown")
+                table = self._format_cluster_metrics_table(cluster, hyp_ids)
+                precomputed_cluster_tables.append({
+                    "name": cluster_name,
+                    "description": cluster.get("description", ""),
+                    "evidence_ids": cluster.get("evidence_ids", []),
+                    "table": table
+                })
+
+            precomputed_joint_table = self._format_joint_metrics_table(joint_metrics, hyp_ids)
+
+            # Phase 4: Run Bayesian computation (for verification and additional outputs)
             computation = self._run_phase_4_computation(request, likelihoods_text)
 
             # Extract structured computation metrics (posteriors, cluster_metrics, confirmation_metrics)
             computation_metrics = self._extract_computation_metrics(computation)
 
-            # Phase 5: Generate final report (pass structured data for detailed tables)
+            # Phase 5: Generate final report (pass pre-computed Bayesian tables)
             bfih_report = self._run_phase_5_report(
                 request, methodology, evidence_text, likelihoods_text, computation,
-                evidence_items, evidence_clusters, computation_metrics
+                evidence_items, enriched_clusters, computation_metrics,
+                precomputed_cluster_tables, precomputed_joint_table
             )
 
             # Extract posteriors from computation output (Phase 4)
@@ -1233,7 +1265,9 @@ Print the final posteriors clearly labeled.
                            likelihoods: str, computation: str,
                            evidence_items: List[Dict] = None,
                            evidence_clusters: List[Dict] = None,
-                           computation_metrics: Dict = None) -> str:
+                           computation_metrics: Dict = None,
+                           precomputed_cluster_tables: List[Dict] = None,
+                           precomputed_joint_table: str = None) -> str:
         """Phase 5: Generate final BFIH report in multiple sub-phases for better quality.
 
         Generates report sections separately then concatenates them.
@@ -1241,6 +1275,8 @@ Print the final posteriors clearly labeled.
         Args:
             computation_metrics: Structured dict with posteriors, cluster_metrics, confirmation_metrics
                                  extracted from Phase 4 code_interpreter output
+            precomputed_cluster_tables: Pre-computed Bayesian metrics tables for each cluster
+            precomputed_joint_table: Pre-computed joint evidence metrics table
         """
         # Build context data
         paradigms = request.scenario_config.get("paradigms", [])
@@ -1258,14 +1294,16 @@ Print the final posteriors clearly labeled.
             request, paradigm_list, hypothesis_list, computation, priors
         )
 
-        # Phase 5b: Evidence Matrix (all evidence items with citations + cluster metrics)
+        # Phase 5b: Evidence Matrix (with PRE-COMPUTED Bayesian tables)
         section_b = self._run_phase_5b_evidence(
-            request, evidence_items, evidence_clusters, hypotheses, computation_metrics
+            request, evidence_items, evidence_clusters, hypotheses,
+            precomputed_cluster_tables or []
         )
 
-        # Phase 5c: Bayesian Results, Conclusions, Sensitivity (with structured metrics)
+        # Phase 5c: Bayesian Results (with PRE-COMPUTED joint metrics table)
         section_c = self._run_phase_5c_results(
-            request, computation, paradigms, hypotheses, priors, computation_metrics
+            request, computation, paradigms, hypotheses, priors,
+            precomputed_cluster_tables or [], precomputed_joint_table or ""
         )
 
         # Phase 5d: Bibliography
@@ -1366,13 +1404,28 @@ IMPORTANT MARKDOWN FORMATTING:
                                evidence_items: List[Dict],
                                evidence_clusters: List[Dict],
                                hypotheses: List[Dict],
-                               computation_metrics: Dict = None) -> str:
-        """Phase 5b: Generate Evidence Matrix with full citations and Bayesian metrics."""
+                               precomputed_cluster_tables: List[Dict] = None) -> str:
+        """Phase 5b: Generate Evidence Matrix with full citations and PRE-COMPUTED Bayesian metrics."""
         evidence_json = json.dumps(evidence_items or [], indent=2)
-        clusters_json = json.dumps(evidence_clusters or [], indent=2)
         hyp_ids = [h.get('id', f'H{i}') for i, h in enumerate(hypotheses)]
-        computation_metrics = computation_metrics or {}
-        cluster_metrics_json = json.dumps(computation_metrics.get("cluster_metrics", {}), indent=2)
+        precomputed_cluster_tables = precomputed_cluster_tables or []
+
+        # Build pre-computed cluster sections
+        cluster_sections = []
+        for ct in precomputed_cluster_tables:
+            cluster_section = f"""
+### Cluster: {ct['name']}
+
+**Description:** {ct.get('description', 'Evidence cluster')}
+**Evidence Items:** {', '.join(ct.get('evidence_ids', [])) or 'See items below'}
+
+**Bayesian Metrics (computed mathematically):**
+
+{ct['table']}
+"""
+            cluster_sections.append(cluster_section)
+
+        precomputed_clusters_text = "\n---\n".join(cluster_sections) if cluster_sections else "(No cluster metrics available)"
 
         prompt = f"""
 Write the EVIDENCE MATRIX section of a BFIH analysis report.
@@ -1384,29 +1437,32 @@ HYPOTHESES: {hyp_ids}
 STRUCTURED EVIDENCE ITEMS (you MUST include ALL of these):
 {evidence_json}
 
-EVIDENCE CLUSTERS WITH LIKELIHOODS:
-{clusters_json}
+## PRE-COMPUTED CLUSTER-LEVEL BAYESIAN METRICS
+The following tables were computed mathematically using:
+- P(E|¬H_i) = Σ P(E|H_j) × P(H_j)/(1-P(H_i)) for j≠i
+- LR = P(E|H) / P(E|¬H)
+- WoE = 10 × log₁₀(LR) decibans
 
-CLUSTER-LEVEL BAYESIAN METRICS (from computation):
-{cluster_metrics_json}
+YOU MUST COPY THESE TABLES EXACTLY - DO NOT MODIFY THE VALUES:
+
+{precomputed_clusters_text}
+
+---
 
 Generate this section in markdown:
 
 ## 3. Evidence Clusters
 
-First, define what evidence items belong to each cluster:
-
-| Cluster | Evidence Items | Description |
-|---------|---------------|-------------|
-| [cluster_name] | E1, E2, ... | [Why these are grouped - conditional independence justification] |
+Copy the PRE-COMPUTED cluster tables above EXACTLY as shown. For each cluster:
+1. Copy the cluster name, description, and evidence items
+2. Copy the Bayesian Metrics table EXACTLY (these are mathematically computed, DO NOT change values)
+3. Add 2-3 sentences interpreting what the LR and WoE values mean for each hypothesis
 
 ---
 
-## 4. Evidence Matrix
+## 4. Evidence Items Detail
 
-### Evidence Items
-
-For EACH evidence item in the JSON above, create an entry with this EXACT format:
+For EACH evidence item in the JSON above, create an entry with this format:
 
 ---
 
@@ -1417,51 +1473,44 @@ For EACH evidence item in the JSON above, create an entry with this EXACT format
 **Citation:** [citation_apa]
 **Date Accessed:** [date_accessed]
 **Evidence Type:** [evidence_type]
-**Cluster:** [cluster_name this evidence belongs to]
+**Cluster:** [which cluster this evidence belongs to]
 
 [Write 2-3 sentences analyzing what this evidence shows and why it matters]
 
-**Likelihood Assessment:**
+**P(E|H) Assessment:** (ONLY show P(E|H) here - LR/WoE are shown at cluster level)
 
-| Hypothesis | P(E|H) | P(E|¬H) | LR | WoE (dB) | Direction |
-|------------|--------|---------|-----|----------|-----------|
-| H1 | 0.XX | 0.XX | X.XX | +/-X.X | Supports/Refutes/Neutral |
-| H2 | 0.XX | 0.XX | X.XX | +/-X.X | Supports/Refutes/Neutral |
-| ... | | | | | |
-
-**Key interpretation:** [Which hypothesis does this evidence favor most strongly, and why based on LR]
+| Hypothesis | P(E|H) | Reasoning |
+|------------|--------|-----------|
+| H1 | 0.XX | [Brief justification for this likelihood] |
+| ... | | |
 
 ---
 
-CRITICAL BAYESIAN CONCEPTS:
-- P(E|H) = probability of observing this evidence IF hypothesis H is true
-- P(E|¬H) = probability of observing this evidence IF hypothesis H is false (weighted avg of other hypotheses)
-- LR (Likelihood Ratio) = P(E|H) / P(E|¬H) -- THIS determines support/refutation, NOT P(E|H) alone!
-  * LR > 1 means evidence SUPPORTS hypothesis (LR > 3 is moderate, LR > 10 is strong)
-  * LR < 1 means evidence REFUTES hypothesis (LR < 0.33 is moderate, LR < 0.1 is strong)
-  * LR ≈ 1 means evidence is NEUTRAL for this hypothesis
-- WoE = 10 * log₁₀(LR) in decibans -- positive supports, negative refutes
-
 IMPORTANT:
+- COPY the pre-computed Bayesian tables EXACTLY - do not recalculate or modify values
 - Include ALL {len(evidence_items or [])} evidence items from the JSON
 - Include the FULL URL for each source (not truncated)
-- Include the complete APA citation
-- Create FULL likelihood table with P(E|¬H), LR, and WoE for EACH evidence item
-- Use the cluster_metrics data if available for accurate P(E|¬H) values
+- Individual evidence items only show P(E|H) - the LR, WoE, Direction are at CLUSTER level
 
 MARKDOWN FORMATTING:
-- Always include a BLANK LINE before any table (between label and the table header row)
+- Always include a BLANK LINE before any table
 """
         return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
 
     def _run_phase_5c_results(self, request: BFIHAnalysisRequest,
                               computation: str, paradigms: List[Dict],
                               hypotheses: List[Dict], priors: Dict,
-                              computation_metrics: Dict = None) -> str:
+                              precomputed_cluster_tables: List[Dict] = None,
+                              precomputed_joint_table: str = None) -> str:
         """Phase 5c: Generate Bayesian Results, Paradigm Comparison, Conclusions."""
-        computation_metrics = computation_metrics or {}
-        cluster_metrics_json = json.dumps(computation_metrics.get("cluster_metrics", {}), indent=2)
-        confirmation_metrics_json = json.dumps(computation_metrics.get("confirmation_metrics", {}), indent=2)
+        precomputed_cluster_tables = precomputed_cluster_tables or []
+        precomputed_joint_table = precomputed_joint_table or ""
+
+        # Build cluster summary for reference
+        cluster_summary = []
+        for ct in precomputed_cluster_tables:
+            cluster_summary.append(f"- **{ct['name']}**: {ct.get('description', '')}")
+        cluster_summary_text = "\n".join(cluster_summary) if cluster_summary else "(No clusters)"
 
         prompt = f"""
 Write the RESULTS and CONCLUSIONS sections of a BFIH analysis report.
@@ -1475,46 +1524,32 @@ HYPOTHESES: {json.dumps([h.get('name') for h in hypotheses])}
 PRIORS BY PARADIGM:
 {json.dumps(priors, indent=2)}
 
-BAYESIAN COMPUTATION OUTPUT:
-{computation[:4000]}
+EVIDENCE CLUSTERS ANALYZED:
+{cluster_summary_text}
 
-CLUSTER-LEVEL METRICS (P(E|H), P(E|¬H), LR, WoE for each hypothesis at each cluster):
-{cluster_metrics_json}
+## PRE-COMPUTED JOINT EVIDENCE TABLE
+The following table was computed mathematically. YOU MUST COPY IT EXACTLY:
 
-CONFIRMATION METRICS (total LR and WoE from priors to posteriors):
-{confirmation_metrics_json}
+{precomputed_joint_table}
+
+---
 
 Generate these sections in markdown:
 
-## 5. Cluster-Level Bayesian Analysis
-
-For each evidence cluster, show the Bayesian impact:
-
-### Cluster: [cluster_name]
-
-| Hypothesis | P(E|H) | P(E|¬H) | LR | WoE (dB) | Impact |
-|------------|--------|---------|-----|----------|--------|
-| H1 | 0.XX | 0.XX | X.XX | +X.X | Strong/Moderate/Weak Support/Refutation |
-| H2 | ... | | | | |
-
-**Cluster interpretation:** [Which hypothesis benefited most from this cluster]
-
----
-
-## 6. Joint Evidence Computation
+## 5. Joint Evidence Computation
 
 **Cumulative Evidence Effect (all clusters combined):**
 
-| Hypothesis | Prior | Joint P(E|H) | Joint P(E|¬H) | Total LR | Total WoE (dB) | Posterior |
-|------------|-------|--------------|---------------|----------|----------------|-----------|
-| H1 | 0.XX | X.XXe-X | X.XXe-X | X.XX | +/-X.X | 0.XXX |
-| ... | | | | | | |
+COPY THE PRE-COMPUTED TABLE ABOVE EXACTLY:
+{precomputed_joint_table}
 
-**Normalization Check:** Sum of posteriors = [calculate] ≈ 1.0
+**Normalization Check:** Sum of posteriors ≈ 1.0
+
+**Interpretation:** [Explain which hypothesis has highest posterior and why based on Total LR/WoE]
 
 ---
 
-## 7. Paradigm Comparison
+## 6. Paradigm Comparison
 
 How do conclusions differ across paradigms? For each paradigm:
 - Which hypothesis dominates?
@@ -1523,7 +1558,7 @@ How do conclusions differ across paradigms? For each paradigm:
 
 ---
 
-## 8. Sensitivity Analysis
+## 7. Sensitivity Analysis
 
 Analyze what happens with ±20% prior variation:
 - Are conclusions stable?
@@ -1531,7 +1566,7 @@ Analyze what happens with ±20% prior variation:
 
 ---
 
-## 9. Conclusions
+## 8. Conclusions
 
 **Primary Finding:** [Clear statement of what the analysis concludes]
 
@@ -1543,18 +1578,21 @@ Analyze what happens with ±20% prior variation:
 
 **Recommendations:** What actions or further analysis might be warranted
 
+IMPORTANT:
+- COPY the pre-computed joint evidence table EXACTLY - these values are mathematically computed
+- The LR and WoE values determine which hypothesis the evidence supports, NOT just posteriors
+- Positive WoE = evidence supports hypothesis, Negative WoE = evidence refutes hypothesis
+
 MARKDOWN FORMATTING:
-- Always include a BLANK LINE before any table (between label and table header row)
-- Use DECIMAL format (0.XXX) for all probabilities
-- Use scientific notation (X.XXe-X) for very small likelihoods
-- Copy values from cluster_metrics and confirmation_metrics where available
+- Always include a BLANK LINE before any table
+- Use values from the pre-computed table exactly as shown
 """
         return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions")
 
     def _run_phase_5d_bibliography(self, evidence_items: List[Dict]) -> str:
         """Phase 5d: Generate Bibliography from evidence items."""
         if not evidence_items:
-            return "## 10. Bibliography\n\nNo sources available."
+            return "## 9. Bibliography\n\nNo sources available."
 
         # Build bibliography directly from evidence items
         bib_entries = []
@@ -1575,14 +1613,14 @@ MARKDOWN FORMATTING:
 
             bib_entries.append(f"{i}. {entry}")
 
-        bibliography = "## 10. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
+        bibliography = "## 9. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
 
         # Add intellectual honesty checklist
         bibliography += """
 
 ---
 
-## 11. Intellectual Honesty Checklist
+## 10. Intellectual Honesty Checklist
 
 | Forcing Function | Applied | Notes |
 |-----------------|---------|-------|
@@ -1717,6 +1755,187 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
             "confirmation_metrics": {},
             "cluster_metrics": {}
         }
+
+    def _compute_cluster_bayesian_metrics(
+        self, evidence_clusters: List[Dict], priors: Dict[str, float]
+    ) -> Tuple[List[Dict], Dict]:
+        """
+        Compute P(E|¬H), LR, and WoE for each cluster using MATHEMATICAL formulas.
+
+        This MUST be done in Python, not by LLM generation.
+
+        Formula for likelihood under negation:
+            P(E|¬H_i) = Σ P(E|H_j) × P(H_j|¬H_i)  for j ≠ i
+            where P(H_j|¬H_i) = P(H_j) / (1 - P(H_i))
+
+        Args:
+            evidence_clusters: List of clusters with 'likelihoods' dict {H_id: P(E|H)}
+            priors: Dict of {H_id: prior_probability}
+
+        Returns:
+            (enriched_clusters, summary_metrics) where:
+            - enriched_clusters: clusters with added 'bayesian_metrics' per hypothesis
+            - summary_metrics: aggregate metrics across all clusters
+        """
+        if not evidence_clusters or not priors:
+            logger.warning("Cannot compute Bayesian metrics: missing clusters or priors")
+            return evidence_clusters, {}
+
+        hyp_ids = list(priors.keys())
+        enriched_clusters = []
+
+        # Track cumulative likelihoods for joint computation
+        cumulative_likelihood = {h: 1.0 for h in hyp_ids}
+        cumulative_neg_likelihood = {h: 1.0 for h in hyp_ids}
+
+        for cluster in evidence_clusters:
+            cluster_name = cluster.get("cluster_id") or cluster.get("cluster_name", "Unknown")
+            likelihoods = cluster.get("likelihoods", {})
+
+            # Normalize likelihood format (may be {H: prob} or {H: {probability: prob}})
+            norm_likelihoods = {}
+            for h_id in hyp_ids:
+                lh = likelihoods.get(h_id, likelihoods.get(h_id.upper(), {}))
+                if isinstance(lh, dict):
+                    norm_likelihoods[h_id] = lh.get("probability", 0.5)
+                elif isinstance(lh, (int, float)):
+                    norm_likelihoods[h_id] = float(lh)
+                else:
+                    norm_likelihoods[h_id] = 0.5  # Default neutral
+
+            # Compute P(E|¬H), LR, WoE for each hypothesis
+            bayesian_metrics = {}
+            for h_i in hyp_ids:
+                p_e_h = norm_likelihoods.get(h_i, 0.5)
+                prior_i = priors.get(h_i, 1.0 / len(hyp_ids))
+                complement_prior = 1.0 - prior_i
+
+                # P(E|¬H_i) = Σ P(E|H_j) × P(H_j) / (1 - P(H_i)) for j ≠ i
+                if complement_prior > 0:
+                    p_e_not_h = sum(
+                        norm_likelihoods.get(h_j, 0.5) * (priors.get(h_j, 0) / complement_prior)
+                        for h_j in hyp_ids if h_j != h_i
+                    )
+                else:
+                    p_e_not_h = 0.5  # Fallback for edge case
+
+                # Likelihood Ratio
+                if p_e_not_h > 0:
+                    lr = p_e_h / p_e_not_h
+                else:
+                    lr = float('inf') if p_e_h > 0 else 1.0
+
+                # Weight of Evidence in decibans
+                if lr > 0 and lr != float('inf'):
+                    woe = 10 * math.log10(lr)
+                else:
+                    woe = float('inf') if lr == float('inf') else float('-inf')
+
+                # Direction based on LR
+                if lr > 3:
+                    direction = "Strong Support" if lr > 10 else "Moderate Support"
+                elif lr > 1.1:
+                    direction = "Weak Support"
+                elif lr < 0.33:
+                    direction = "Strong Refutation" if lr < 0.1 else "Moderate Refutation"
+                elif lr < 0.9:
+                    direction = "Weak Refutation"
+                else:
+                    direction = "Neutral"
+
+                bayesian_metrics[h_i] = {
+                    "P(E|H)": round(p_e_h, 4),
+                    "P(E|~H)": round(p_e_not_h, 4),
+                    "LR": round(lr, 4) if lr != float('inf') else "inf",
+                    "WoE_dB": round(woe, 2) if woe not in [float('inf'), float('-inf')] else str(woe),
+                    "direction": direction
+                }
+
+                # Update cumulative likelihoods
+                cumulative_likelihood[h_i] *= p_e_h
+                cumulative_neg_likelihood[h_i] *= p_e_not_h
+
+            # Add metrics to enriched cluster
+            enriched_cluster = dict(cluster)
+            enriched_cluster["bayesian_metrics"] = bayesian_metrics
+            enriched_clusters.append(enriched_cluster)
+
+            logger.debug(f"Cluster '{cluster_name}' metrics computed for {len(bayesian_metrics)} hypotheses")
+
+        # Compute joint/cumulative metrics
+        joint_metrics = {}
+        for h_i in hyp_ids:
+            prior_i = priors.get(h_i, 1.0 / len(hyp_ids))
+            joint_p_e_h = cumulative_likelihood[h_i]
+            joint_p_e_not_h = cumulative_neg_likelihood[h_i]
+
+            if joint_p_e_not_h > 0:
+                total_lr = joint_p_e_h / joint_p_e_not_h
+            else:
+                total_lr = float('inf') if joint_p_e_h > 0 else 1.0
+
+            if total_lr > 0 and total_lr != float('inf'):
+                total_woe = 10 * math.log10(total_lr)
+            else:
+                total_woe = float('inf') if total_lr == float('inf') else float('-inf')
+
+            # Compute posterior
+            unnorm_posterior = prior_i * joint_p_e_h
+            joint_metrics[h_i] = {
+                "prior": round(prior_i, 4),
+                "joint_P(E|H)": f"{joint_p_e_h:.4e}",
+                "joint_P(E|~H)": f"{joint_p_e_not_h:.4e}",
+                "total_LR": round(total_lr, 4) if total_lr != float('inf') else "inf",
+                "total_WoE_dB": round(total_woe, 2) if total_woe not in [float('inf'), float('-inf')] else str(total_woe),
+                "unnorm_posterior": unnorm_posterior
+            }
+
+        # Normalize posteriors
+        norm_const = sum(m["unnorm_posterior"] for m in joint_metrics.values())
+        if norm_const > 0:
+            for h_i in hyp_ids:
+                joint_metrics[h_i]["posterior"] = round(
+                    joint_metrics[h_i]["unnorm_posterior"] / norm_const, 6
+                )
+
+        logger.info(f"Computed Bayesian metrics for {len(enriched_clusters)} clusters, {len(hyp_ids)} hypotheses")
+        return enriched_clusters, joint_metrics
+
+    def _format_cluster_metrics_table(self, cluster: Dict, hyp_ids: List[str]) -> str:
+        """Format a single cluster's Bayesian metrics as a markdown table."""
+        metrics = cluster.get("bayesian_metrics", {})
+        if not metrics:
+            return ""
+
+        lines = [
+            "| Hypothesis | P(E|H) | P(E|¬H) | LR | WoE (dB) | Direction |",
+            "|------------|--------|---------|-----|----------|-----------|"
+        ]
+        for h_id in hyp_ids:
+            m = metrics.get(h_id, {})
+            lines.append(
+                f"| {h_id} | {m.get('P(E|H)', 'N/A')} | {m.get('P(E|~H)', 'N/A')} | "
+                f"{m.get('LR', 'N/A')} | {m.get('WoE_dB', 'N/A')} | {m.get('direction', 'N/A')} |"
+            )
+        return "\n".join(lines)
+
+    def _format_joint_metrics_table(self, joint_metrics: Dict, hyp_ids: List[str]) -> str:
+        """Format joint evidence metrics as a markdown table."""
+        if not joint_metrics:
+            return ""
+
+        lines = [
+            "| Hypothesis | Prior | Joint P(E|H) | Joint P(E|¬H) | Total LR | Total WoE (dB) | Posterior |",
+            "|------------|-------|--------------|---------------|----------|----------------|-----------|"
+        ]
+        for h_id in hyp_ids:
+            m = joint_metrics.get(h_id, {})
+            lines.append(
+                f"| {h_id} | {m.get('prior', 'N/A')} | {m.get('joint_P(E|H)', 'N/A')} | "
+                f"{m.get('joint_P(E|~H)', 'N/A')} | {m.get('total_LR', 'N/A')} | "
+                f"{m.get('total_WoE_dB', 'N/A')} | {m.get('posterior', 'N/A')} |"
+            )
+        return "\n".join(lines)
 
     def _parse_posterior_section(self, report: str) -> Dict[str, float]:
         """
