@@ -23,7 +23,7 @@ export function PriorAssignmentPage() {
     setActiveParadigm,
     setPhase,
   } = useGameStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('priors');
@@ -76,6 +76,8 @@ export function PriorAssignmentPage() {
         <PhaseIndicator
           currentPhase="priors"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />

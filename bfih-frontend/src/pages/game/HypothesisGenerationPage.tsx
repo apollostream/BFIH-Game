@@ -15,7 +15,7 @@ export function HypothesisGenerationPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const navigate = useNavigate();
   const { scenarioConfig, setPhase } = useGameStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('hypotheses');
@@ -46,6 +46,8 @@ export function HypothesisGenerationPage() {
         <PhaseIndicator
           currentPhase="hypotheses"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />

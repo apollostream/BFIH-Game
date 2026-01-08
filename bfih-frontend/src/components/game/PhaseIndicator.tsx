@@ -6,6 +6,8 @@ interface PhaseIndicatorProps {
   currentPhase: GamePhase;
   onPhaseClick?: (phase: GamePhase) => void;
   completedPhases?: GamePhase[];
+  isPhaseNavigable?: (phase: GamePhase) => boolean;
+  furthestPhase?: GamePhase;
   className?: string;
   variant?: 'full' | 'compact';
 }
@@ -14,23 +16,28 @@ export function PhaseIndicator({
   currentPhase,
   onPhaseClick,
   completedPhases = [],
+  isPhaseNavigable,
+  furthestPhase,
   className,
   variant = 'full',
 }: PhaseIndicatorProps) {
   const currentIndex = GAME_PHASES.indexOf(currentPhase);
+  const furthestIndex = furthestPhase ? GAME_PHASES.indexOf(furthestPhase) : currentIndex;
 
   if (variant === 'compact') {
     return (
       <div className={cn('flex items-center gap-2', className)}>
         {GAME_PHASES.map((phase, index) => {
-          const isCompleted = completedPhases.includes(phase) || index < currentIndex;
+          const isCompleted = completedPhases.includes(phase) || index < furthestIndex;
           const isCurrent = phase === currentPhase;
+          const isNavigable = isPhaseNavigable ? isPhaseNavigable(phase) : (isCompleted || isCurrent);
+          const isNextPhase = index === currentIndex + 1;
 
           return (
             <motion.button
               key={phase}
               onClick={() => onPhaseClick?.(phase)}
-              disabled={!onPhaseClick || (!isCompleted && !isCurrent)}
+              disabled={!onPhaseClick || !isNavigable}
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: index * 0.05 }}
@@ -38,8 +45,9 @@ export function PhaseIndicator({
                 'w-3 h-3 rounded-full transition-colors',
                 isCompleted && 'bg-success',
                 isCurrent && 'bg-accent animate-pulse',
-                !isCompleted && !isCurrent && 'bg-surface-3',
-                onPhaseClick && (isCompleted || isCurrent) && 'cursor-pointer hover:scale-110'
+                isNextPhase && !isCompleted && 'bg-accent/50 ring-2 ring-accent/30',
+                !isCompleted && !isCurrent && !isNextPhase && 'bg-surface-3',
+                onPhaseClick && isNavigable && 'cursor-pointer hover:scale-110'
               )}
               aria-label={PHASE_LABELS[phase]}
             />
@@ -56,9 +64,11 @@ export function PhaseIndicator({
     <div className={cn('w-full', className)}>
       <div className="flex items-center justify-between">
         {GAME_PHASES.map((phase, index) => {
-          const isCompleted = completedPhases.includes(phase) || index < currentIndex;
+          const isCompleted = completedPhases.includes(phase) || index < furthestIndex;
           const isCurrent = phase === currentPhase;
-          const isClickable = onPhaseClick && (isCompleted || isCurrent);
+          const isNavigable = isPhaseNavigable ? isPhaseNavigable(phase) : (isCompleted || isCurrent);
+          const isNextPhase = index === currentIndex + 1;
+          const isClickable = onPhaseClick && isNavigable;
 
           return (
             <div key={phase} className="flex items-center flex-1">
@@ -74,13 +84,14 @@ export function PhaseIndicator({
                   'w-10 h-10 rounded-full',
                   'text-sm font-semibold',
                   'transition-all duration-300',
-                  isCompleted && 'bg-success text-white',
+                  isCompleted && !isCurrent && 'bg-success text-white',
                   isCurrent && 'bg-accent text-white ring-4 ring-accent/30',
-                  !isCompleted && !isCurrent && 'bg-surface-2 text-text-muted',
+                  isNextPhase && !isCompleted && !isCurrent && 'bg-accent/50 text-white ring-2 ring-accent/30',
+                  !isCompleted && !isCurrent && !isNextPhase && 'bg-surface-2 text-text-muted',
                   isClickable && 'cursor-pointer hover:scale-110'
                 )}
               >
-                {isCompleted ? (
+                {isCompleted && !isCurrent ? (
                   <CheckIcon className="w-5 h-5" />
                 ) : (
                   index + 1
@@ -93,6 +104,14 @@ export function PhaseIndicator({
                     style={{ opacity: 0.3 }}
                   />
                 )}
+                {isNextPhase && !isCompleted && (
+                  <motion.div
+                    className="absolute inset-0 rounded-full bg-accent/50"
+                    animate={{ scale: [1, 1.1, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    style={{ opacity: 0.2 }}
+                  />
+                )}
               </motion.button>
 
               {/* Connector line */}
@@ -101,7 +120,7 @@ export function PhaseIndicator({
                   <motion.div
                     className={cn(
                       'h-full rounded-full',
-                      index < currentIndex ? 'bg-success' : 'bg-surface-3'
+                      index < furthestIndex ? 'bg-success' : 'bg-surface-3'
                     )}
                     initial={{ scaleX: 0 }}
                     animate={{ scaleX: 1 }}

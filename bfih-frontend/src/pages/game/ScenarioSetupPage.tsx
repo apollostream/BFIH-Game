@@ -19,7 +19,7 @@ export function ScenarioSetupPage() {
     toggleParadigm,
     setPhase,
   } = useGameStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('setup');
@@ -54,6 +54,8 @@ export function ScenarioSetupPage() {
         <PhaseIndicator
           currentPhase="setup"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />

@@ -7,24 +7,38 @@ import { GAME_PHASES, type GamePhase } from '../types';
 
 /**
  * Returns a handler for navigating to a game phase.
- * Only allows navigation to completed phases (not forward skipping).
+ * Allows navigation to:
+ * - Any phase up to and including furthestPhase (previously visited)
+ * - The next phase in sequence (one step forward from current)
  */
 export function usePhaseNavigation() {
   const navigate = useNavigate();
-  const { scenarioId, currentPhase } = useGameStore();
+  const { scenarioId, currentPhase, furthestPhase, setPhase } = useGameStore();
 
   const currentIndex = GAME_PHASES.indexOf(currentPhase);
+  const furthestIndex = GAME_PHASES.indexOf(furthestPhase);
 
-  // Build list of completed phases (all phases before current)
-  const completedPhases = GAME_PHASES.slice(0, currentIndex);
+  // Calculate which phases are navigable
+  const isPhaseNavigable = useCallback((phase: GamePhase) => {
+    const phaseIndex = GAME_PHASES.indexOf(phase);
+    // Can navigate to any phase up to furthestPhase
+    if (phaseIndex <= furthestIndex) return true;
+    // Can navigate to next phase (one step forward from current)
+    if (phaseIndex === currentIndex + 1) return true;
+    return false;
+  }, [currentIndex, furthestIndex]);
+
+  // Build list of completed phases (all phases before furthest)
+  const completedPhases = GAME_PHASES.slice(0, furthestIndex);
 
   const handlePhaseClick = useCallback((phase: GamePhase) => {
     if (!scenarioId) return;
 
-    const phaseIndex = GAME_PHASES.indexOf(phase);
+    // Check if navigation is allowed
+    if (!isPhaseNavigable(phase)) return;
 
-    // Only allow navigation to completed phases or current phase
-    if (phaseIndex > currentIndex) return;
+    // Update game state
+    setPhase(phase);
 
     // Map phase to route
     const phaseRoutes: Record<GamePhase, string> = {
@@ -39,11 +53,13 @@ export function usePhaseNavigation() {
     };
 
     navigate(phaseRoutes[phase]);
-  }, [scenarioId, currentIndex, navigate]);
+  }, [scenarioId, isPhaseNavigable, setPhase, navigate]);
 
   return {
     handlePhaseClick,
     completedPhases,
     currentPhase,
+    furthestPhase,
+    isPhaseNavigable,
   };
 }

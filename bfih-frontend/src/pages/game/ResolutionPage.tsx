@@ -25,7 +25,7 @@ export function ResolutionPage() {
   } = useGameStore();
   const { bets, calculatePayoff } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   const [showPayoffs, setShowPayoffs] = useState(false);
 
@@ -133,6 +133,8 @@ export function ResolutionPage() {
         <PhaseIndicator
           currentPhase="resolution"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />

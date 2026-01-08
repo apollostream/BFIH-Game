@@ -26,7 +26,7 @@ export function DebriefPage() {
   } = useGameStore();
   const { bets, budget, getTotalBet, betHistory, reset: resetBetting } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   const [showInsights, setShowInsights] = useState(false);
 
@@ -144,6 +144,8 @@ export function DebriefPage() {
         <PhaseIndicator
           currentPhase="debrief"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />

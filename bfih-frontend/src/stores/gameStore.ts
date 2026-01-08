@@ -19,6 +19,7 @@ interface GameState {
 
   // Game progression
   currentPhase: GamePhase;
+  furthestPhase: GamePhase; // Track the furthest phase visited for navigation
   currentEvidenceRound: number;
   totalEvidenceRounds: number;
   isGameActive: boolean;
@@ -69,6 +70,7 @@ export const useGameStore = create<GameState>()(
         scenarioConfig: null,
         analysisResult: null,
         currentPhase: 'setup',
+        furthestPhase: 'setup',
         currentEvidenceRound: 0,
         totalEvidenceRounds: 0,
         isGameActive: false,
@@ -131,6 +133,7 @@ export const useGameStore = create<GameState>()(
             scenarioConfig,
             analysisResult: analysisResult || null,
             currentPhase: 'setup',
+            furthestPhase: 'setup',
             currentEvidenceRound: 0,
             totalEvidenceRounds: totalRounds,
             isGameActive: true,
@@ -149,6 +152,7 @@ export const useGameStore = create<GameState>()(
             scenarioId: scenarioConfig.scenario_id,
             scenarioConfig,
             currentPhase: 'setup',
+            furthestPhase: 'setup',
             currentEvidenceRound: 0,
             totalEvidenceRounds: totalRounds,
             isGameActive: true,
@@ -163,15 +167,33 @@ export const useGameStore = create<GameState>()(
         },
 
         setPhase: (phase) => {
-          set({ currentPhase: phase });
+          const { furthestPhase } = get();
+          const phaseIndex = PHASE_ORDER.indexOf(phase);
+          const furthestIndex = PHASE_ORDER.indexOf(furthestPhase);
+
+          // Update furthestPhase if we're advancing beyond it
+          if (phaseIndex > furthestIndex) {
+            set({ currentPhase: phase, furthestPhase: phase });
+          } else {
+            set({ currentPhase: phase });
+          }
         },
 
         advancePhase: () => {
-          const { currentPhase } = get();
+          const { currentPhase, furthestPhase } = get();
           const currentIndex = PHASE_ORDER.indexOf(currentPhase);
+          const furthestIndex = PHASE_ORDER.indexOf(furthestPhase);
 
           if (currentIndex < PHASE_ORDER.length - 1) {
-            set({ currentPhase: PHASE_ORDER[currentIndex + 1] });
+            const nextPhase = PHASE_ORDER[currentIndex + 1];
+            const nextIndex = currentIndex + 1;
+
+            // Update furthestPhase if advancing beyond it
+            if (nextIndex > furthestIndex) {
+              set({ currentPhase: nextPhase, furthestPhase: nextPhase });
+            } else {
+              set({ currentPhase: nextPhase });
+            }
           }
         },
 
@@ -224,6 +246,7 @@ export const useGameStore = create<GameState>()(
             scenarioConfig: null,
             analysisResult: null,
             currentPhase: 'setup',
+            furthestPhase: 'setup',
             currentEvidenceRound: 0,
             totalEvidenceRounds: 0,
             isGameActive: false,
@@ -240,6 +263,7 @@ export const useGameStore = create<GameState>()(
           scenarioConfig: state.scenarioConfig,  // Persist full config
           analysisResult: state.analysisResult,  // Persist analysis result
           currentPhase: state.currentPhase,
+          furthestPhase: state.furthestPhase,  // Persist furthest visited phase
           currentEvidenceRound: state.currentEvidenceRound,
           totalEvidenceRounds: state.totalEvidenceRounds,
           isGameActive: state.isGameActive,

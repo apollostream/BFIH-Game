@@ -29,7 +29,7 @@ export function InitialBettingPage() {
     getTotalBet,
     hasBets,
   } = useBettingStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('betting');
@@ -86,6 +86,8 @@ export function InitialBettingPage() {
         <PhaseIndicator
           currentPhase="betting"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />

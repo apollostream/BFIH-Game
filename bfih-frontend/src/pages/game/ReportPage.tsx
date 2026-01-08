@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -8,16 +8,18 @@ import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { EvidenceMatrixHeatmap } from '../../components/visualizations/EvidenceMatrixHeatmap';
+import { EvidenceClusterReport, BayesianComputationTable } from '../../components/report';
 import { useGameStore, useAnalysisStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants } from '../../utils';
+import type { PosteriorsByParadigm } from '../../types';
 
 export function ReportPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const navigate = useNavigate();
   const { scenarioConfig, selectedParadigms, activeParadigm, setPhase } = useGameStore();
   const { currentAnalysis } = useAnalysisStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   useEffect(() => {
     setPhase('report');
@@ -97,6 +99,30 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
     || scenarioConfig.evidence_clusters
     || [];
 
+  // Get evidence items
+  const evidenceItems = currentAnalysis?.metadata?.evidence_items
+    || scenarioConfig?.evidence?.items
+    || [];
+
+  // Build priors data structure
+  const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+  const priors = useMemo(() => {
+    if (!priorsSource?.[activeParadigm]) return {};
+    const result: Record<string, number> = {};
+    for (const [hypId, prior] of Object.entries(priorsSource[activeParadigm])) {
+      result[hypId] = typeof prior === 'number' ? prior : (prior as { probability: number })?.probability || 0;
+    }
+    return result;
+  }, [priorsSource, activeParadigm]);
+
+  // Get posteriors from analysis result
+  const posteriors = useMemo(() => {
+    if (currentAnalysis?.posteriors?.[activeParadigm]) {
+      return currentAnalysis.posteriors[activeParadigm];
+    }
+    return priors;  // Fallback to priors
+  }, [currentAnalysis, activeParadigm, priors]);
+
   return (
     <motion.div
       variants={pageVariants}
@@ -109,6 +135,8 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
         <PhaseIndicator
           currentPhase="report"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />
@@ -137,8 +165,9 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
                     'Methodology',
                     'Paradigms',
                     'Hypotheses',
-                    'Evidence',
-                    'Posteriors',
+                    'Evidence Clusters',
+                    'Bayesian Computation',
+                    'Evidence Matrix',
                     'Conclusions',
                   ].map((section) => (
                     <a
@@ -230,7 +259,26 @@ The Bayesian analysis reveals how different epistemic paradigms lead to differen
               </Card>
             </motion.div>
 
-            {/* Evidence Matrix */}
+            {/* Evidence Clusters Detail */}
+            <motion.div variants={cardVariants} className="mt-6">
+              <EvidenceClusterReport
+                clusters={evidenceClusters}
+                evidenceItems={evidenceItems}
+              />
+            </motion.div>
+
+            {/* Bayesian Computation */}
+            <motion.div variants={cardVariants} className="mt-6">
+              <BayesianComputationTable
+                clusters={evidenceClusters}
+                hypotheses={scenarioConfig.hypotheses || []}
+                activeParadigm={activeParadigm}
+                priors={priors}
+                posteriors={posteriors}
+              />
+            </motion.div>
+
+            {/* Evidence Matrix Heatmap */}
             <motion.div variants={cardVariants} className="mt-6">
               <EvidenceMatrixHeatmap
                 hypotheses={scenarioConfig.hypotheses || []}

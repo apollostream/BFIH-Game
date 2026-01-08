@@ -26,7 +26,7 @@ export function EvidenceRoundPage() {
   } = useGameStore();
   const { bets, budget, getTotalBet, raiseBet } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
-  const { handlePhaseClick, completedPhases } = usePhaseNavigation();
+  const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   const [revealedClusters, setRevealedClusters] = useState<string[]>([]);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -115,6 +115,8 @@ export function EvidenceRoundPage() {
         <PhaseIndicator
           currentPhase="evidence"
           completedPhases={completedPhases}
+          furthestPhase={furthestPhase}
+          isPhaseNavigable={isPhaseNavigable}
           onPhaseClick={handlePhaseClick}
           className="mb-8"
         />
