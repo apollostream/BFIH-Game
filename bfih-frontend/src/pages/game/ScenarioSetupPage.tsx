@@ -30,14 +30,15 @@ export function ScenarioSetupPage() {
 
   // Load scenario from API if not in store or different scenario
   useEffect(() => {
+    // Skip if we already have this scenario loaded
+    if (storeScenarioId === scenarioId && scenarioConfig) {
+      return;
+    }
+
+    // Skip if no scenarioId or already loading
+    if (!scenarioId || loading) return;
+
     async function fetchScenario() {
-      if (!scenarioId) return;
-
-      // Skip if we already have this scenario loaded
-      if (storeScenarioId === scenarioId && scenarioConfig) {
-        return;
-      }
-
       setLoading(true);
       setError(null);
 
@@ -65,7 +66,8 @@ export function ScenarioSetupPage() {
     }
 
     fetchScenario();
-  }, [scenarioId, storeScenarioId, scenarioConfig, loadScenario, setCurrentAnalysis]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scenarioId, storeScenarioId]);
 
   useEffect(() => {
     setPhase('setup');
