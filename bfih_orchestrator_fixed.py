@@ -43,22 +43,23 @@ LOG_FILE = os.getenv("BFIH_LOG_FILE", "bfih_analysis.log")
 # Create logger
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+logger.propagate = False  # Prevent duplicate logs from propagating to root
 
 # Console handler (stdout/stderr)
 console_handler = logging.StreamHandler()
 console_handler.setLevel(logging.INFO)
 console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 
-# File handler (persisted logs)
-file_handler = logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8')
+# File handler (overwrite each run - scenario_config.json preserves analysis data)
+file_handler = logging.FileHandler(LOG_FILE, mode='w', encoding='utf-8')
 file_handler.setLevel(logging.INFO)
 file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
 
-# Add handlers to logger
+# Add handlers to our logger
 logger.addHandler(console_handler)
 logger.addHandler(file_handler)
 
-# Also configure root logger for any library logs
+# Configure root logger for library logs (httpx, etc.)
 logging.basicConfig(
     level=logging.INFO,
     format=LOG_FORMAT,
