@@ -236,9 +236,6 @@ ${hypotheses.map((h) => {
 `;
   }, [scenarioConfig, currentAnalysis, evidenceClusters, evidenceItems, evidenceMap, priors, posteriors, activeParadigm]);
 
-  // Get hypotheses for passing to components
-  const hypotheses = scenarioConfig.hypotheses || [];
-
   return (
     <motion.div
       variants={pageVariants}

@@ -122,7 +122,7 @@ function ClusterCard({
                 className="p-3 bg-surface-1 rounded-lg border border-border"
               >
                 <div className="flex items-start gap-3">
-                  <Badge variant="outline" className="shrink-0 text-xs">
+                  <Badge variant="secondary" className="shrink-0 text-xs">
                     {item.evidence_id}
                   </Badge>
                   <div className="flex-1 min-w-0">

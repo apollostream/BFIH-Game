@@ -1,11 +1,10 @@
 // Bayesian Computation Table - displays LR and WoE metrics per cluster/hypothesis
 
-import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '../ui/Card';
 import { Badge } from '../ui/Badge';
 import { cn, formatPercent } from '../../utils';
-import type { EvidenceCluster, Hypothesis, ClusterLikelihood } from '../../types';
+import type { EvidenceCluster, Hypothesis } from '../../types';
 
 interface BayesianComputationTableProps {
   clusters: EvidenceCluster[];
