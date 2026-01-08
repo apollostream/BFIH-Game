@@ -313,7 +313,7 @@ Generate comprehensive markdown report with EXACTLY these sections:
    - Implicit assumptions
 
 4. **Forcing Functions Application**
-   - Ontological Scan: table showing all 7 domains covered/justified
+   - Ontological Scan: table showing relevant domains covered/justified (9 total, with Constitutional/Legal and Democratic mandatory for political topics)
    - Ancestral Check: historical solution identified
    - Paradigm Inversion: inverse hypotheses generated
    - Split-Brain: key disagreements between paradigms
@@ -964,7 +964,7 @@ Use file_search to retrieve the following from the BFIH treatise:
 1. "Forcing functions" methodology
 2. "Paradigm inversion" methods
 3. Key sections on:
-   - Ontological scan (7 domains)
+   - Ontological scan (9 domains including Constitutional/Legal and Democratic)
    - Ancestral check
    - Split-brain technique
 
@@ -1624,7 +1624,7 @@ MARKDOWN FORMATTING:
 
 | Forcing Function | Applied | Notes |
 |-----------------|---------|-------|
-| Ontological Scan (7 domains) | ✓ | Multiple domains covered |
+| Ontological Scan (9 domains) | ✓ | Multiple domains covered (Constitutional/Legal and Democratic for political topics) |
 | Ancestral Check | ✓ | Historical baselines examined |
 | Paradigm Inversion | ✓ | Alternative paradigms generated |
 | MECE Verification | ✓ | Hypotheses are mutually exclusive and collectively exhaustive |
@@ -2096,9 +2096,10 @@ DOMAIN: {domain}
 You MUST generate:
 1. **K0 (Privileged Paradigm)**: Maximally intellectually honest
    - Applies ALL forcing functions (Ontological Scan, Ancestral Check, Paradigm Inversion)
-   - Covers all 7 ontological domains (Biological, Economic, Cultural, Theological, Historical, Institutional, Psychological)
+   - Covers all 9 ontological domains (Biological, Economic, Cultural, Theological, Historical, Institutional, Psychological, Constitutional/Legal, Democratic)
    - Has explicit assumptions, limitations, and falsification criteria
    - NOT neutral—has a perspective, but systematically interrogates its own blind spots
+   - For POLITICAL propositions: MUST explicitly address Constitutional/Legal and Democratic domains
 
 2. **K1-K5 (Biased Paradigms)**: 3-5 realistically biased paradigms
    - Each must fail ≥1 forcing function (document which one)
@@ -2159,7 +2160,7 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                         "ancestral_check": "pass",
                         "paradigm_inversion": "pass"
                     },
-                    "domains_covered": ["Biological", "Economic", "Cultural", "Theological", "Historical", "Institutional", "Psychological"],
+                    "domains_covered": ["Biological", "Economic", "Cultural", "Theological", "Historical", "Institutional", "Psychological", "Constitutional_Legal", "Democratic"],
                     "characteristics": {
                         "prefers_evidence_types": ["quantitative", "qualitative", "historical", "expert_testimony"],
                         "skeptical_of": ["single-cause explanations", "unfalsifiable claims"],
@@ -2317,6 +2318,44 @@ Example: "Tom Brady is the NFL GOAT"
 - Name specific alternatives in DENY hypotheses to drive comparative evidence search
 - Consider whether the superlative claim's category matters (position, era, metric)
 
+## SPECIAL CASE: POLITICAL/GOVERNANCE PROPOSITIONS
+
+For propositions about political leaders, administrations, governments, policies, or national direction:
+
+**You MUST include hypotheses addressing Constitutional/Legal and Democratic dimensions:**
+
+1. **Constitutional/Legal Domain** (REQUIRED for political propositions):
+   - Separation of powers (executive, legislative, judicial balance)
+   - Rule of law (equal application, judicial independence)
+   - Constitutional norms and precedents
+   - Legal challenges to policies/actions
+
+2. **Democratic Domain** (REQUIRED for political propositions):
+   - Civil liberties (speech, press, assembly, due process)
+   - Electoral integrity
+   - Democratic backsliding indicators
+   - Press freedom and institutional independence
+
+**Example: "America's greatness is increasing under [Administration X]"**
+  - H1 (AFFIRM): "TRUE - Economic growth and policy achievements demonstrate increasing greatness"
+  - H2 (DENY): "FALSE - Constitutional erosion: checks and balances weakened, executive overreach"
+  - H3 (DENY): "FALSE - Democratic backsliding: civil liberties restricted, press freedom declined"
+  - H4 (QUALIFY): "PARTIAL - Economic metrics improved but democratic institutions weakened"
+  - H5 (DENY): "FALSE - International standing declined despite domestic claims"
+
+**CRITICAL: Do NOT reduce political analysis to economics alone.**
+- Economic metrics are ONE dimension, not the whole picture
+- Constitutional structure and democratic health are equally important
+- Evidence should include: court rulings, civil liberties reports, democracy indices (V-Dem, Freedom House), press freedom rankings
+
+**Evidence to actively search for in political propositions:**
+- Constitutional/legal challenges and court rulings
+- Civil liberties organization reports (ACLU, Human Rights Watch)
+- Democracy indices (V-Dem, Freedom House, EIU Democracy Index)
+- Press freedom rankings (RSF, CPJ)
+- Separation of powers analyses
+- Inspector General and oversight body reports
+
 ## REQUIRED HYPOTHESIS STRUCTURE
 
 Generate exactly {num_hypotheses} hypotheses:
@@ -2340,10 +2379,25 @@ Use domains as a COMPLETENESS CHECK, not as hypothesis generators:
 - DO ensure relevant domains are covered by your substantive hypotheses
 - Tag each hypothesis with which domains it touches
 
-Domains: Biological, Economic, Cultural, Theological, Historical, Institutional, Psychological
+**9 Ontological Domains:**
+1. **Biological** - Physical, health, biological factors
+2. **Economic** - Markets, finance, trade, employment
+3. **Cultural** - Social norms, values, identity, media narratives
+4. **Theological** - Religious, spiritual, moral frameworks
+5. **Historical** - Precedents, trends, era comparisons
+6. **Institutional** - Bureaucratic, administrative, organizational
+7. **Psychological** - Individual/group cognition, behavior, motivation
+8. **Constitutional/Legal** - Rule of law, separation of powers, judicial independence, legal challenges
+9. **Democratic** - Civil liberties, electoral integrity, press freedom, democratic norms
 
-For a sports GOAT debate, relevant domains are Historical (era comparison), Cultural (media narrative),
-Psychological (clutch performance) - NOT all 7 domains equally.
+**Domain Relevance by Proposition Type:**
+- Sports/performance: Historical, Cultural, Psychological, Biological
+- Business/corporate: Economic, Institutional, Legal
+- Political/governance: Constitutional/Legal, Democratic, Institutional, Economic, Historical
+- Scientific claims: Biological, Institutional, Historical
+- Social issues: Cultural, Psychological, Democratic, Historical
+
+**For POLITICAL propositions, Constitutional/Legal and Democratic domains are MANDATORY.**
 
 ### 2. ANCESTRAL CHECK
 - What historical analogues exist for this proposition?
@@ -2420,7 +2474,9 @@ Psychological (clutch performance) - NOT all 7 domains equally.
       "Theological": null,
       "Historical": {{"covered_by": "H3", "justification": "..."}},
       "Institutional": {{"covered_by": "H1", "justification": "..."}},
-      "Psychological": {{"covered_by": "H2", "justification": "..."}}
+      "Psychological": {{"covered_by": "H2", "justification": "..."}},
+      "Constitutional_Legal": {{"covered_by": "H2", "justification": "For political propositions: rule of law, separation of powers"}},
+      "Democratic": {{"covered_by": "H3", "justification": "For political propositions: civil liberties, press freedom, electoral integrity"}}
     }},
     "ancestral_check": {{
       "historical_analogues": ["[Similar case 1]", "[Similar case 2]"],

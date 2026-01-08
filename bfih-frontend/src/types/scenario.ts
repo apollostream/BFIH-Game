@@ -42,7 +42,9 @@ export type Domain =
   | 'Historical'
   | 'Institutional'
   | 'Psychological'
-  | 'Technological';
+  | 'Technological'
+  | 'Constitutional_Legal'
+  | 'Democratic';
 
 export type TruthValueType = 'affirm' | 'deny' | 'qualify' | 'other';
 
