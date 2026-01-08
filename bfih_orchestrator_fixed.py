@@ -1996,16 +1996,25 @@ Hypotheses answer: "Is this proposition TRUE, FALSE, or CONDITIONALLY TRUE?"
 
 For propositions claiming something is "the best", "the greatest", "the worst", "GOAT", etc.:
 
-- **DENY hypotheses MUST name specific alternatives**
-- Example: "Tom Brady is the NFL GOAT"
-  - H1 (TRUE): "Brady IS the GOAT based on championships (7), longevity, and clutch performance"
-  - H2 (DENY): "Joe Montana has stronger case - perfect 4-0 Super Bowl record, no interceptions"
-  - H3 (DENY): "Peyton Manning has better individual stats and changed offensive football"
-  - H4 (PARTIAL): "GOAT is era-dependent; Brady dominated his era but cross-era comparison is invalid"
-  - H5 (DENY): "Patrick Mahomes' trajectory suggests he may surpass Brady's achievements"
+**You MUST include at least ONE substantive "FALSE, someone/something else is better" hypothesis**
+- This drives evidence search for COMPARATIVE data (stats, achievements, records of alternatives)
+- Without this, the analysis can only find evidence about the subject, not about competitors
+- You don't need to enumerate every candidate - ONE or TWO well-chosen alternatives suffice
 
-- DO NOT generate abstract domain-based denials like "Biological factors insufficient"
-- Generate SUBSTANTIVE alternatives that engage with the actual debate
+Example: "Tom Brady is the NFL GOAT"
+  - H1 (AFFIRM): "Brady IS the GOAT - 7 championships, longevity, and clutch performance"
+  - H2 (DENY): "Another player is the GOAT" - Name 1-2 top alternatives (Montana's perfect Super Bowl record, or a case from another position like Lawrence Taylor's defensive dominance)
+  - H3 (QUALIFY): "GOAT is era/position-dependent; cross-era comparison is fundamentally flawed"
+  - H4 (DENY): "Career trajectory of current players (e.g., Mahomes) projects to surpass Brady"
+
+**DO NOT:**
+- Generate abstract domain-based denials like "Biological factors don't support GOAT status"
+- Create separate hypothesis for every possible candidate
+- Ignore other positions/categories (for "NFL GOAT", consider non-QBs too)
+
+**DO:**
+- Name specific alternatives in DENY hypotheses to drive comparative evidence search
+- Consider whether the superlative claim's category matters (position, era, metric)
 
 ## REQUIRED HYPOTHESIS STRUCTURE
 
