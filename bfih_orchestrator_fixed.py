@@ -36,11 +36,36 @@ from bfih_schemas import (
 
 load_dotenv(override=True)
 
+# Configure logging to both console and file
+LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+LOG_FILE = os.getenv("BFIH_LOG_FILE", "bfih_analysis.log")
+
+# Create logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Console handler (stdout/stderr)
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+console_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+
+# File handler (persisted logs)
+file_handler = logging.FileHandler(LOG_FILE, mode='a', encoding='utf-8')
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+
+# Add handlers to logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
+
+# Also configure root logger for any library logs
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    format=LOG_FORMAT,
+    handlers=[console_handler, file_handler]
 )
-logger = logging.getLogger(__name__)
+
+logger.info(f"Logging to console and file: {LOG_FILE}")
 
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
