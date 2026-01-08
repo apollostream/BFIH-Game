@@ -174,10 +174,13 @@ class BFIHOrchestrator:
             # Phase 4: Run Bayesian computation
             computation = self._run_phase_4_computation(request, likelihoods_text)
 
+            # Extract structured computation metrics (posteriors, cluster_metrics, confirmation_metrics)
+            computation_metrics = self._extract_computation_metrics(computation)
+
             # Phase 5: Generate final report (pass structured data for detailed tables)
             bfih_report = self._run_phase_5_report(
                 request, methodology, evidence_text, likelihoods_text, computation,
-                evidence_items, evidence_clusters
+                evidence_items, evidence_clusters, computation_metrics
             )
 
             # Extract posteriors from computation output (Phase 4)
@@ -1229,15 +1232,21 @@ Print the final posteriors clearly labeled.
                            methodology: str, evidence: str,
                            likelihoods: str, computation: str,
                            evidence_items: List[Dict] = None,
-                           evidence_clusters: List[Dict] = None) -> str:
+                           evidence_clusters: List[Dict] = None,
+                           computation_metrics: Dict = None) -> str:
         """Phase 5: Generate final BFIH report in multiple sub-phases for better quality.
 
         Generates report sections separately then concatenates them.
+
+        Args:
+            computation_metrics: Structured dict with posteriors, cluster_metrics, confirmation_metrics
+                                 extracted from Phase 4 code_interpreter output
         """
         # Build context data
         paradigms = request.scenario_config.get("paradigms", [])
         hypotheses = request.scenario_config.get("hypotheses", [])
         priors = request.scenario_config.get("priors_by_paradigm", request.scenario_config.get("priors", {}))
+        computation_metrics = computation_metrics or {}
 
         paradigm_list = "\n".join([f"- {p.get('id', 'K?')}: {p.get('name', 'Unknown')} - {p.get('description', '')}" for p in paradigms])
         hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
@@ -1249,14 +1258,14 @@ Print the final posteriors clearly labeled.
             request, paradigm_list, hypothesis_list, computation, priors
         )
 
-        # Phase 5b: Evidence Matrix (all evidence items with citations)
+        # Phase 5b: Evidence Matrix (all evidence items with citations + cluster metrics)
         section_b = self._run_phase_5b_evidence(
-            request, evidence_items, evidence_clusters, hypotheses
+            request, evidence_items, evidence_clusters, hypotheses, computation_metrics
         )
 
-        # Phase 5c: Bayesian Results, Conclusions, Sensitivity
+        # Phase 5c: Bayesian Results, Conclusions, Sensitivity (with structured metrics)
         section_c = self._run_phase_5c_results(
-            request, computation, paradigms, hypotheses, priors
+            request, computation, paradigms, hypotheses, priors, computation_metrics
         )
 
         # Phase 5d: Bibliography
@@ -1356,11 +1365,14 @@ IMPORTANT MARKDOWN FORMATTING:
     def _run_phase_5b_evidence(self, request: BFIHAnalysisRequest,
                                evidence_items: List[Dict],
                                evidence_clusters: List[Dict],
-                               hypotheses: List[Dict]) -> str:
-        """Phase 5b: Generate Evidence Matrix with full citations."""
+                               hypotheses: List[Dict],
+                               computation_metrics: Dict = None) -> str:
+        """Phase 5b: Generate Evidence Matrix with full citations and Bayesian metrics."""
         evidence_json = json.dumps(evidence_items or [], indent=2)
         clusters_json = json.dumps(evidence_clusters or [], indent=2)
         hyp_ids = [h.get('id', f'H{i}') for i, h in enumerate(hypotheses)]
+        computation_metrics = computation_metrics or {}
+        cluster_metrics_json = json.dumps(computation_metrics.get("cluster_metrics", {}), indent=2)
 
         prompt = f"""
 Write the EVIDENCE MATRIX section of a BFIH analysis report.
@@ -1375,9 +1387,22 @@ STRUCTURED EVIDENCE ITEMS (you MUST include ALL of these):
 EVIDENCE CLUSTERS WITH LIKELIHOODS:
 {clusters_json}
 
+CLUSTER-LEVEL BAYESIAN METRICS (from computation):
+{cluster_metrics_json}
+
 Generate this section in markdown:
 
-## 3. Evidence Matrix
+## 3. Evidence Clusters
+
+First, define what evidence items belong to each cluster:
+
+| Cluster | Evidence Items | Description |
+|---------|---------------|-------------|
+| [cluster_name] | E1, E2, ... | [Why these are grouped - conditional independence justification] |
+
+---
+
+## 4. Evidence Matrix
 
 ### Evidence Items
 
@@ -1392,38 +1417,52 @@ For EACH evidence item in the JSON above, create an entry with this EXACT format
 **Citation:** [citation_apa]
 **Date Accessed:** [date_accessed]
 **Evidence Type:** [evidence_type]
-**Supports:** [supports_hypotheses] | **Refutes:** [refutes_hypotheses]
+**Cluster:** [cluster_name this evidence belongs to]
 
 [Write 2-3 sentences analyzing what this evidence shows and why it matters]
 
 **Likelihood Assessment:**
 
-| Hypothesis | P(E|H) | Reasoning |
-|------------|---------|-----------|
-| H1 | 0.XX | [Brief justification for this likelihood] |
-| H2 | 0.XX | [Brief justification] |
-| H3 | 0.XX | [Brief justification] |
-| H4 | 0.XX | [Brief justification] |
-| H5 | 0.XX | [Brief justification] |
-| H0 | 0.XX | [Brief justification] |
+| Hypothesis | P(E|H) | P(E|¬H) | LR | WoE (dB) | Direction |
+|------------|--------|---------|-----|----------|-----------|
+| H1 | 0.XX | 0.XX | X.XX | +/-X.X | Supports/Refutes/Neutral |
+| H2 | 0.XX | 0.XX | X.XX | +/-X.X | Supports/Refutes/Neutral |
+| ... | | | | | |
+
+**Key interpretation:** [Which hypothesis does this evidence favor most strongly, and why based on LR]
 
 ---
+
+CRITICAL BAYESIAN CONCEPTS:
+- P(E|H) = probability of observing this evidence IF hypothesis H is true
+- P(E|¬H) = probability of observing this evidence IF hypothesis H is false (weighted avg of other hypotheses)
+- LR (Likelihood Ratio) = P(E|H) / P(E|¬H) -- THIS determines support/refutation, NOT P(E|H) alone!
+  * LR > 1 means evidence SUPPORTS hypothesis (LR > 3 is moderate, LR > 10 is strong)
+  * LR < 1 means evidence REFUTES hypothesis (LR < 0.33 is moderate, LR < 0.1 is strong)
+  * LR ≈ 1 means evidence is NEUTRAL for this hypothesis
+- WoE = 10 * log₁₀(LR) in decibans -- positive supports, negative refutes
 
 IMPORTANT:
 - Include ALL {len(evidence_items or [])} evidence items from the JSON
 - Include the FULL URL for each source (not truncated)
 - Include the complete APA citation
-- Create likelihood table for EACH evidence item
+- Create FULL likelihood table with P(E|¬H), LR, and WoE for EACH evidence item
+- Use the cluster_metrics data if available for accurate P(E|¬H) values
 
 MARKDOWN FORMATTING:
-- Always include a BLANK LINE before any table (between label like **Likelihood Assessment:** and the table header row)
+- Always include a BLANK LINE before any table (between label and the table header row)
 """
         return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
 
     def _run_phase_5c_results(self, request: BFIHAnalysisRequest,
                               computation: str, paradigms: List[Dict],
-                              hypotheses: List[Dict], priors: Dict) -> str:
+                              hypotheses: List[Dict], priors: Dict,
+                              computation_metrics: Dict = None) -> str:
         """Phase 5c: Generate Bayesian Results, Paradigm Comparison, Conclusions."""
+        computation_metrics = computation_metrics or {}
+        cluster_metrics_json = json.dumps(computation_metrics.get("cluster_metrics", {}), indent=2)
+        confirmation_metrics_json = json.dumps(computation_metrics.get("confirmation_metrics", {}), indent=2)
+
         prompt = f"""
 Write the RESULTS and CONCLUSIONS sections of a BFIH analysis report.
 
@@ -1436,30 +1475,46 @@ HYPOTHESES: {json.dumps([h.get('name') for h in hypotheses])}
 PRIORS BY PARADIGM:
 {json.dumps(priors, indent=2)}
 
-BAYESIAN COMPUTATION OUTPUT (use these EXACT values):
-{computation}
+BAYESIAN COMPUTATION OUTPUT:
+{computation[:4000]}
+
+CLUSTER-LEVEL METRICS (P(E|H), P(E|¬H), LR, WoE for each hypothesis at each cluster):
+{cluster_metrics_json}
+
+CONFIRMATION METRICS (total LR and WoE from priors to posteriors):
+{confirmation_metrics_json}
 
 Generate these sections in markdown:
 
-## 4. Evidence Clusters Summary
+## 5. Cluster-Level Bayesian Analysis
 
-Summarize how evidence was clustered and the joint likelihoods.
+For each evidence cluster, show the Bayesian impact:
+
+### Cluster: [cluster_name]
+
+| Hypothesis | P(E|H) | P(E|¬H) | LR | WoE (dB) | Impact |
+|------------|--------|---------|-----|----------|--------|
+| H1 | 0.XX | 0.XX | X.XX | +X.X | Strong/Moderate/Weak Support/Refutation |
+| H2 | ... | | | | |
+
+**Cluster interpretation:** [Which hypothesis benefited most from this cluster]
 
 ---
 
-## 5. Bayesian Computation Results
+## 6. Joint Evidence Computation
 
-**Final Posterior Probabilities:**
+**Cumulative Evidence Effect (all clusters combined):**
 
-| Hypothesis | Prior | Posterior | Change | LR | WoE (dB) |
-|------------|-------|-----------|--------|-----|----------|
-[Fill in with EXACT values from computation output above]
+| Hypothesis | Prior | Joint P(E|H) | Joint P(E|¬H) | Total LR | Total WoE (dB) | Posterior |
+|------------|-------|--------------|---------------|----------|----------------|-----------|
+| H1 | 0.XX | X.XXe-X | X.XXe-X | X.XX | +/-X.X | 0.XXX |
+| ... | | | | | | |
 
 **Normalization Check:** Sum of posteriors = [calculate] ≈ 1.0
 
 ---
 
-## 6. Paradigm Comparison
+## 7. Paradigm Comparison
 
 How do conclusions differ across paradigms? For each paradigm:
 - Which hypothesis dominates?
@@ -1468,7 +1523,7 @@ How do conclusions differ across paradigms? For each paradigm:
 
 ---
 
-## 7. Sensitivity Analysis
+## 8. Sensitivity Analysis
 
 Analyze what happens with ±20% prior variation:
 - Are conclusions stable?
@@ -1476,7 +1531,7 @@ Analyze what happens with ±20% prior variation:
 
 ---
 
-## 8. Conclusions
+## 9. Conclusions
 
 **Primary Finding:** [Clear statement of what the analysis concludes]
 
@@ -1490,15 +1545,16 @@ Analyze what happens with ±20% prior variation:
 
 MARKDOWN FORMATTING:
 - Always include a BLANK LINE before any table (between label and table header row)
-- Use DECIMAL format (0.XXX) for all probabilities.
-- Copy posterior values EXACTLY from the computation output.
+- Use DECIMAL format (0.XXX) for all probabilities
+- Use scientific notation (X.XXe-X) for very small likelihoods
+- Copy values from cluster_metrics and confirmation_metrics where available
 """
         return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions")
 
     def _run_phase_5d_bibliography(self, evidence_items: List[Dict]) -> str:
         """Phase 5d: Generate Bibliography from evidence items."""
         if not evidence_items:
-            return "## 9. Bibliography\n\nNo sources available."
+            return "## 10. Bibliography\n\nNo sources available."
 
         # Build bibliography directly from evidence items
         bib_entries = []
@@ -1519,14 +1575,14 @@ MARKDOWN FORMATTING:
 
             bib_entries.append(f"{i}. {entry}")
 
-        bibliography = "## 9. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
+        bibliography = "## 10. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
 
         # Add intellectual honesty checklist
         bibliography += """
 
 ---
 
-## 10. Intellectual Honesty Checklist
+## 11. Intellectual Honesty Checklist
 
 | Forcing Function | Applied | Notes |
 |-----------------|---------|-------|
@@ -1635,6 +1691,32 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
     cm = confirmation_metrics[h]
     print(f"{h}: {posteriors[h]:.4f} (LR: {cm['total_LR']}, WoE: {cm['total_WoE_dB']} dB)")
 '''
+
+    def _extract_computation_metrics(self, computation_output: str) -> Dict:
+        """
+        Extract full Bayesian computation metrics from Phase 4 output.
+        Returns dict with: posteriors, priors, confirmation_metrics, cluster_metrics
+        """
+        # Try to extract JSON output
+        json_pattern = r"BFIH_JSON_OUTPUT_START\s*(\{.*?\})\s*BFIH_JSON_OUTPUT_END"
+        json_match = re.search(json_pattern, computation_output, re.DOTALL)
+
+        if json_match:
+            try:
+                result = json.loads(json_match.group(1))
+                logger.info(f"Extracted full computation metrics: posteriors={list(result.get('posteriors', {}).keys())}, "
+                           f"cluster_metrics={len(result.get('cluster_metrics', {}))} hypotheses")
+                return result
+            except json.JSONDecodeError as e:
+                logger.warning(f"Failed to parse computation JSON: {e}")
+
+        # Return empty structure if parsing fails
+        return {
+            "posteriors": {},
+            "priors": {},
+            "confirmation_metrics": {},
+            "cluster_metrics": {}
+        }
 
     def _parse_posterior_section(self, report: str) -> Dict[str, float]:
         """
