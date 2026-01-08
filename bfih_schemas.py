@@ -91,9 +91,8 @@ class Paradigm(StrictModel):
     inverse_paradigm_id: Union[str, None] = Field(
         description="ID of the inverse/opposing paradigm if applicable, or null"
     )
-    forcing_function_compliance: ForcingFunctionCompliance = Field(
-        description="How this paradigm handles forcing functions (K0 should pass all)"
-    )
+    # Note: nested model fields cannot have description with $ref in strict mode
+    forcing_function_compliance: ForcingFunctionCompliance
     domains_covered: List[DomainType] = Field(
         description="Ontological domains this paradigm engages (K0 should have all 7)"
     )
