@@ -46,6 +46,8 @@ logger = logging.getLogger(__name__)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
 MODEL = "gpt-4o"
+# Reasoning model for hypothesis generation (better at complex analytical tasks)
+REASONING_MODEL = os.getenv("BFIH_REASONING_MODEL", "o3-mini")
 
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable not set")
@@ -103,6 +105,8 @@ class BFIHOrchestrator:
         self.client = client
         self.vector_store_id = vector_store_id or TREATISE_VECTOR_STORE_ID
         self.model = MODEL
+        self.reasoning_model = REASONING_MODEL
+        logger.info(f"Using reasoning model: {self.reasoning_model} for hypothesis generation")
         
     def conduct_analysis(self, request: BFIHAnalysisRequest) -> BFIHAnalysisResult:
         """
@@ -748,6 +752,95 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 last_error = e
                 if attempt < max_retries:
                     wait_time = (attempt + 1) * 5
+                    logger.warning(f"{phase_name} failed with {type(e).__name__}, retrying in {wait_time}s...")
+                    print(f"\n[Connection error, retrying in {wait_time}s...]")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    raise
+
+        raise last_error or RuntimeError(f"Failed to complete {phase_name}")
+
+    def _run_reasoning_phase(self, prompt: str, phase_name: str, max_retries: int = 2) -> dict:
+        """
+        Run a phase with a reasoning model (o1, o3, etc.) for deep analytical thinking.
+
+        Reasoning models don't support structured output format, so we:
+        1. Instruct the model to output JSON
+        2. Parse and validate the response
+
+        Args:
+            prompt: The prompt to send to the reasoning model
+            phase_name: Human-readable name for logging
+            max_retries: Number of retry attempts on connection failure
+
+        Returns:
+            Parsed JSON dict from the model's reasoning output
+        """
+        import time
+
+        last_error = None
+
+        for attempt in range(max_retries + 1):
+            try:
+                logger.info(f"Starting {phase_name} (reasoning model: {self.reasoning_model})" +
+                           (f" (attempt {attempt + 1})" if attempt > 0 else ""))
+                print(f"\n{'='*60}\n{phase_name} [Reasoning Model: {self.reasoning_model}]" +
+                      (f" (retry {attempt})" if attempt > 0 else "") + f"\n{'='*60}")
+
+                # Build the request for reasoning model
+                request_params = {
+                    "model": self.reasoning_model,
+                    "input": prompt,
+                }
+
+                # Make the API call
+                print(f"[Calling reasoning model for deep analysis...]")
+
+                response = self.client.responses.create(**request_params)
+
+                # Extract the output
+                output_text = response.output_text
+                print(f"\n[Received reasoning output, extracting JSON...]")
+
+                # Parse JSON from output - reasoning models may include explanation before/after JSON
+                try:
+                    # Try to find JSON object or array in the response
+                    # Look for the main JSON block (usually starts with { and ends with })
+                    json_patterns = [
+                        r'```json\s*([\s\S]*?)```',  # JSON in code block
+                        r'```\s*([\s\S]*?)```',      # Any code block
+                        r'(\{[\s\S]*"hypotheses"[\s\S]*\})',  # Object with hypotheses key
+                        r'(\{[\s\S]*\})',            # Any JSON object
+                    ]
+
+                    result = None
+                    for pattern in json_patterns:
+                        match = re.search(pattern, output_text, re.DOTALL)
+                        if match:
+                            try:
+                                result = json.loads(match.group(1))
+                                break
+                            except json.JSONDecodeError:
+                                continue
+
+                    if result is None:
+                        # Try direct parse as last resort
+                        result = json.loads(output_text)
+
+                    logger.info(f"{phase_name} complete with valid JSON from reasoning model")
+                    print(f"[{phase_name} complete - JSON extracted from reasoning output]")
+                    return result
+
+                except json.JSONDecodeError as e:
+                    logger.warning(f"Could not parse JSON from reasoning output: {e}")
+                    # Return a partial result if we can extract anything useful
+                    raise ValueError(f"Could not parse JSON from reasoning response: {output_text[:500]}")
+
+            except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+                last_error = e
+                if attempt < max_retries:
+                    wait_time = (attempt + 1) * 10  # Longer wait for reasoning models
                     logger.warning(f"{phase_name} failed with {type(e).__name__}, retrying in {wait_time}s...")
                     print(f"\n[Connection error, retrying in {wait_time}s...]")
                     time.sleep(wait_time)
@@ -1663,7 +1756,7 @@ Return the result as a JSON object with a "paradigms" array.
     ) -> Tuple[List[Dict], Dict]:
         """
         Phase 0b: Generate hypotheses with forcing functions and MECE synthesis.
-        Uses structured output for guaranteed valid JSON.
+        Uses REASONING MODEL for deeper analytical thinking about hypotheses.
 
         IMPORTANT: Hypotheses are PROPOSITIONAL STATEMENTS about the world, NOT paradigm labels.
         All hypotheses should be evaluable from ANY paradigm's perspective.
@@ -1674,55 +1767,129 @@ Return the result as a JSON object with a "paradigms" array.
 
         prompt = f"""
 You are generating HYPOTHESES for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
+Think deeply and carefully about what hypotheses would actually explain the proposition.
 
-PROPOSITION: "{proposition}"
+PROPOSITION TO ANALYZE: "{proposition}"
 
-PARADIGMS (these are VIEWPOINTS, not hypotheses):
+PARADIGMS (these are VIEWPOINTS that will evaluate evidence, NOT the hypotheses):
 {paradigm_json}
 
-CRITICAL CONCEPTUAL DISTINCTION:
-- HYPOTHESES are PROPOSITIONAL STATEMENTS about the world - claims that could be true or false
-- PARADIGMS are EPISTEMIC VIEWPOINTS that determine how we assess evidence and assign probabilities
-- Hypotheses do NOT map 1-to-1 to paradigms!
+CRITICAL CONCEPTUAL DISTINCTION - READ CAREFULLY:
+- HYPOTHESES are PROPOSITIONAL STATEMENTS about CAUSES/MECHANISMS - specific claims about WHY something is true or false
+- PARADIGMS are EPISTEMIC VIEWPOINTS that determine how we weight evidence
+- Hypotheses must DIRECTLY ADDRESS the proposition - they should be specific causal claims
 - ALL hypotheses will be evaluated from EVERY paradigm's perspective
 
-GOOD HYPOTHESIS EXAMPLES (propositional statements):
-- "The 737 MAX crashes resulted primarily from Boeing prioritizing schedule over safety testing"
-- "Inadequate pilot training on MCAS system caused the crashes"
-- "Regulatory capture allowed insufficient FAA oversight"
+GOOD HYPOTHESIS EXAMPLES (specific causal claims that address the proposition):
+For "Boeing 737 MAX crashes were preventable":
+- H1: "Boeing prioritized production schedule over safety testing" (specific cause)
+- H2: "FAA delegated certification to Boeing due to resource constraints" (specific cause)
+- H3: "MCAS system had fundamental design flaws" (specific technical cause)
 
-BAD HYPOTHESIS EXAMPLES (these are paradigm labels, NOT propositions):
-- "Economic and Psychological Drivers" ❌
-- "Techno-Economic Explanation" ❌
+BAD HYPOTHESIS EXAMPLES (vague, tangential, or just paradigm labels):
+- "Economic and Psychological Drivers" ❌ (not a proposition)
+- "Techno-Economic Explanation" ❌ (label, not a claim)
+- "Multiple factors contributed" ❌ (too vague - save for H0)
 
-TARGET: Generate {num_hypotheses} hypotheses (including H0 catch-all)
+TARGET: Generate exactly {num_hypotheses} hypotheses
 
-Execute these FORCING FUNCTIONS:
+FORCING FUNCTIONS TO EXECUTE:
 
-1. ONTOLOGICAL SCAN: Cover relevant domains (Economic, Institutional, Psychological, Cultural, Historical, Technical)
-2. ANCESTRAL CHECK: What historical analogues exist?
-3. MECE SYNTHESIS: Mutually exclusive, collectively exhaustive, propositional, paradigm-neutral naming
+1. ONTOLOGICAL SCAN: Consider causes from these domains:
+   - Economic (financial incentives, costs, market pressures)
+   - Institutional (organizational structures, regulations, policies)
+   - Psychological (cognitive biases, human factors)
+   - Cultural (norms, values, traditions)
+   - Historical (precedents, path dependencies)
+   - Technical (engineering, scientific, technological factors)
 
-Return the result as a JSON object with "hypotheses" array and "forcing_functions_log" object.
+2. ANCESTRAL CHECK: What historical analogues exist? What solutions worked before?
+
+3. MECE SYNTHESIS: Ensure hypotheses are:
+   - Mutually exclusive (different primary causes)
+   - Collectively exhaustive (cover all major possibilities)
+   - Propositional (each is a testable claim)
+   - Directly relevant to the proposition
+
+OUTPUT FORMAT - Return ONLY valid JSON:
+```json
+{{
+  "hypotheses": [
+    {{
+      "id": "H0",
+      "name": "Unknown/Combination factors",
+      "statement": "The proposition's truth/falsity results from unknown factors or complex combinations not captured by other hypotheses",
+      "domains": [],
+      "testable_predictions": [],
+      "is_catch_all": true,
+      "is_ancestral_solution": false
+    }},
+    {{
+      "id": "H1",
+      "name": "Brief descriptive name",
+      "statement": "Full propositional statement - the specific causal claim",
+      "domains": ["Economic", "Institutional"],
+      "testable_predictions": ["If true, we would observe X", "If true, we would observe Y"],
+      "is_catch_all": false,
+      "is_ancestral_solution": false
+    }}
+  ],
+  "forcing_functions_log": {{
+    "ontological_scan": {{
+      "Economic": {{"covered_by": "H1, H3", "justification": "..."}},
+      "Institutional": {{"covered_by": "H2", "justification": "..."}},
+      "Psychological": null,
+      "Cultural": null,
+      "Historical": {{"covered_by": "H4", "justification": "..."}},
+      "Technical": {{"covered_by": "H3", "justification": "..."}},
+      "Biological": null,
+      "Theological": null
+    }},
+    "ancestral_check": {{
+      "historical_analogues": ["Example 1", "Example 2"],
+      "lessons_applied": "How historical lessons inform our hypotheses"
+    }},
+    "mece_verification": {{
+      "mutual_exclusivity": "Explanation of why hypotheses identify different PRIMARY causes",
+      "collective_exhaustiveness": "Explanation of why all plausible explanations are covered"
+    }}
+  }}
+}}
+```
+
+Think step by step about what would ACTUALLY explain the proposition, then output the JSON.
 """
         try:
-            # Use file_search to get forcing function methodology from treatise
-            tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
-            result = self._run_structured_phase(
-                prompt, "hypotheses", "Phase 0b: Generate Hypotheses + Forcing Functions",
-                tools=tools
+            # Use reasoning model for deeper analytical thinking
+            result = self._run_reasoning_phase(
+                prompt, "Phase 0b: Generate Hypotheses + Forcing Functions (reasoning)"
             )
             hypotheses = result.get("hypotheses", [])
             forcing_functions_log = result.get("forcing_functions_log", {})
+
+            # Validate we got actual hypotheses
+            if len(hypotheses) < 2:
+                raise ValueError(f"Reasoning model only returned {len(hypotheses)} hypotheses")
+
         except Exception as e:
-            logger.error(f"Structured output failed for hypotheses: {e}, using fallback")
-            # Fallback
-            hypotheses = [
-                {"id": "H0", "name": "Unknown/Combination", "statement": "Unknown factors",
-                 "domains": [], "is_catch_all": True, "is_ancestral_solution": False,
-                 "testable_predictions": []}
-            ]
-            forcing_functions_log = {}
+            logger.warning(f"Reasoning model failed for hypotheses: {e}, falling back to structured output")
+            # Fallback to structured output with gpt-4o
+            try:
+                fallback_prompt = prompt.replace("Think step by step", "").replace("```json", "").replace("```", "")
+                result = self._run_structured_phase(
+                    fallback_prompt, "hypotheses", "Phase 0b: Generate Hypotheses (fallback)"
+                )
+                hypotheses = result.get("hypotheses", [])
+                forcing_functions_log = result.get("forcing_functions_log", {})
+            except Exception as e2:
+                logger.error(f"Both reasoning and structured output failed: {e2}")
+                # Ultimate fallback
+                hypotheses = [
+                    {"id": "H0", "name": "Unknown/Combination", "statement": "Unknown factors",
+                     "domains": [], "is_catch_all": True, "is_ancestral_solution": False,
+                     "testable_predictions": []}
+                ]
+                forcing_functions_log = {}
 
         logger.info(f"Generated {len(hypotheses)} MECE hypotheses")
         return hypotheses, forcing_functions_log

@@ -35,24 +35,39 @@ export function EvidenceMatrixHeatmap({
     clusterId: string;
   } | null>(null);
 
-  // Build matrix data
+  // Helper to get likelihoods for a cluster, supporting both formats
+  const getClusterLikelihoods = (cluster: EvidenceCluster, paradigmId: string) => {
+    // Try paradigm-specific likelihoods first (backend format)
+    if (cluster.likelihoods_by_paradigm?.[paradigmId]) {
+      return cluster.likelihoods_by_paradigm[paradigmId];
+    }
+    // Fall back to flat likelihoods
+    return cluster.likelihoods || {};
+  };
+
+  // Build matrix data - now paradigm-aware
   const matrixData = useMemo(() => {
     return hypotheses.map((hypothesis) => {
       const row: Record<string, { woe: number; likelihood: number; justification?: string }> = {};
 
       clusters.forEach((cluster) => {
-        const likelihood = cluster.likelihoods?.[hypothesis.id]?.probability || 0.5;
+        const clusterLikelihoods = getClusterLikelihoods(cluster, activeParadigm);
+        const likelihoodData = clusterLikelihoods[hypothesis.id];
+        const likelihood = likelihoodData?.probability ?? 0.5;
+
         // Calculate WoE (simplified - in real implementation would need P(E|not H))
         // Here we approximate with likelihood vs average
-        const avgLikelihood = Object.values(cluster.likelihoods || {})
-          .reduce((sum, l) => sum + l.probability, 0) / hypotheses.length;
+        const likelihoodValues = Object.values(clusterLikelihoods);
+        const avgLikelihood = likelihoodValues.length > 0
+          ? likelihoodValues.reduce((sum, l) => sum + (l?.probability ?? 0.5), 0) / likelihoodValues.length
+          : 0.5;
         const lr = likelihood / Math.max(avgLikelihood, 0.01);
         const woe = calculateWoE(lr);
 
         row[cluster.cluster_id] = {
           woe: isFinite(woe) ? woe : 0,
           likelihood,
-          justification: cluster.likelihoods?.[hypothesis.id]?.justification,
+          justification: likelihoodData?.justification,
         };
       });
 
@@ -62,7 +77,7 @@ export function EvidenceMatrixHeatmap({
         data: row,
       };
     });
-  }, [hypotheses, clusters]);
+  }, [hypotheses, clusters, activeParadigm]);
 
   // Calculate max absolute WoE for scaling (reserved for future dynamic scaling)
   const _maxWoE = useMemo(() => {

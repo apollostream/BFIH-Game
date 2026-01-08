@@ -44,6 +44,13 @@ export function EvidenceRoundPage() {
       || [];
   }, [currentAnalysis, scenarioConfig]);
 
+  // Get evidence items to pass to cluster cards
+  const evidenceItems = useMemo(() => {
+    return currentAnalysis?.metadata?.evidence_items
+      || scenarioConfig?.evidence?.items
+      || [];
+  }, [currentAnalysis, scenarioConfig]);
+
   // Build posteriors data (using priors initially, would be updated after evidence)
   // Support both 'priors' and 'priors_by_paradigm' field names
   const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
@@ -181,6 +188,7 @@ export function EvidenceRoundPage() {
                     >
                       <EvidenceClusterCard
                         cluster={cluster}
+                        evidenceItems={evidenceItems}
                         revealed={isRevealed}
                         hypotheses={scenarioConfig.hypotheses || []}
                         onClick={() => {
