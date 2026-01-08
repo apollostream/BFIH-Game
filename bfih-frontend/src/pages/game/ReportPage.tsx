@@ -194,7 +194,7 @@ ${tableRows}
 
 ## Executive Summary
 
-This analysis examined the proposition: "${scenarioConfig.proposition || scenarioConfig.narrative}"
+This analysis examined the proposition: "${scenarioConfig.proposition || scenarioConfig.scenario_narrative?.research_question || scenarioConfig.scenario_narrative?.title || scenarioConfig.narrative}"
 
 ### Paradigms Analyzed
 ${scenarioConfig.paradigms?.map((p) => `- **${p.id}**: ${p.name} — ${p.description || ''}`).join('\n') || 'No paradigms'}

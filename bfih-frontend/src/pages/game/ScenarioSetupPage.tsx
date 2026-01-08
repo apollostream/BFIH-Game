@@ -173,20 +173,20 @@ export function ScenarioSetupPage() {
               Proposition Under Analysis
             </h2>
             <p className="text-xl text-text-primary font-medium">
-              "{scenarioConfig.proposition || scenarioConfig.narrative}"
+              "{scenarioConfig.proposition || scenarioConfig.scenario_narrative?.research_question || scenarioConfig.scenario_narrative?.title || scenarioConfig.narrative}"
             </p>
           </Card>
         </motion.div>
 
         {/* Narrative Context */}
-        {scenarioConfig.narrative && scenarioConfig.proposition && (
+        {scenarioConfig.scenario_narrative?.background && (
           <motion.div variants={cardVariants}>
             <Card className="p-6 mb-8">
               <h2 className="text-sm font-medium text-text-muted uppercase tracking-wide mb-2">
                 Context
               </h2>
               <p className="text-text-secondary leading-relaxed">
-                {scenarioConfig.narrative}
+                {scenarioConfig.scenario_narrative.background}
               </p>
             </Card>
           </motion.div>
