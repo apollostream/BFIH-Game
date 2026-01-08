@@ -761,18 +761,21 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
-    def _run_reasoning_phase(self, prompt: str, phase_name: str, max_retries: int = 2) -> dict:
+    def _run_reasoning_phase(self, prompt: str, phase_name: str, max_retries: int = 2,
+                              schema_name: str = None) -> dict:
         """
         Run a phase with a reasoning model (o1, o3, etc.) for deep analytical thinking.
 
         Reasoning models don't support structured output format, so we:
         1. Instruct the model to output JSON
         2. Parse and validate the response
+        3. If schema_name provided and JSON parsing fails, fall back to structured output with gpt-4o
 
         Args:
             prompt: The prompt to send to the reasoning model
             phase_name: Human-readable name for logging
             max_retries: Number of retry attempts on connection failure
+            schema_name: Optional schema name for structured output fallback
 
         Returns:
             Parsed JSON dict from the model's reasoning output
@@ -834,7 +837,11 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 except json.JSONDecodeError as e:
                     logger.warning(f"Could not parse JSON from reasoning output: {e}")
-                    # Return a partial result if we can extract anything useful
+                    # Fall back to structured output if schema_name provided
+                    if schema_name:
+                        logger.info(f"Falling back to structured output with schema '{schema_name}'")
+                        print(f"[JSON parse failed, falling back to structured output...]")
+                        return self._run_structured_phase(prompt, schema_name, f"{phase_name} (structured fallback)")
                     raise ValueError(f"Could not parse JSON from reasoning response: {output_text[:500]}")
 
             except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
@@ -846,7 +853,19 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     time.sleep(wait_time)
                 else:
                     logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    # Fall back to structured output if schema_name provided
+                    if schema_name:
+                        logger.info(f"Falling back to structured output after connection failures")
+                        return self._run_structured_phase(prompt, schema_name, f"{phase_name} (structured fallback)")
                     raise
+
+            except Exception as e:
+                # For any other error, try structured fallback if available
+                if schema_name:
+                    logger.warning(f"Reasoning model error: {e}, falling back to structured output")
+                    print(f"[Reasoning model error, falling back to structured output...]")
+                    return self._run_structured_phase(prompt, schema_name, f"{phase_name} (structured fallback)")
+                raise
 
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
@@ -1023,8 +1042,10 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for likelihood assessment (requires careful evidence-paradigm analysis)
+            # Falls back to structured output (gpt-4o) if JSON parsing fails
             result = self._run_reasoning_phase(
-                prompt, "Phase 3: Likelihood Assignment (reasoning)"
+                prompt, "Phase 3: Likelihood Assignment (reasoning)",
+                schema_name="clusters"  # Enables structured output fallback
             )
             raw_clusters = result.get("clusters", [])
             # Convert array format to dict format for compatibility
@@ -1758,8 +1779,10 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for paradigm construction (cognitively demanding task)
+            # Falls back to structured output (gpt-4o) if JSON parsing fails
             result = self._run_reasoning_phase(
-                prompt, "Phase 0a: Generate Paradigms (reasoning)"
+                prompt, "Phase 0a: Generate Paradigms (reasoning)",
+                schema_name="paradigms"  # Enables structured output fallback
             )
             paradigms = result.get("paradigms", [])
         except Exception as e:
@@ -2036,11 +2059,15 @@ Check if explanations from each domain could AFFIRM or DENY the proposition:
 ```
 
 Generate hypotheses that are COMPETING ANSWERS about whether the proposition is TRUE, FALSE, or CONDITIONALLY TRUE.
+
+IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
         try:
             # Use reasoning model for deeper analytical thinking
+            # Falls back to structured output (gpt-4o) if JSON parsing fails
             result = self._run_reasoning_phase(
-                prompt, "Phase 0b: Generate Hypotheses + Forcing Functions (reasoning)"
+                prompt, "Phase 0b: Generate Hypotheses + Forcing Functions (reasoning)",
+                schema_name="hypotheses"  # Enables structured output fallback
             )
             hypotheses = result.get("hypotheses", [])
             forcing_functions_log = result.get("forcing_functions_log", {})
@@ -2226,8 +2253,10 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for prior assignment (requires careful paradigm-aware reasoning)
+            # Falls back to structured output (gpt-4o) if JSON parsing fails
             result = self._run_reasoning_phase(
-                prompt, "Phase 0c: Assign Priors (reasoning)"
+                prompt, "Phase 0c: Assign Priors (reasoning)",
+                schema_name="priors"  # Enables structured output fallback
             )
             # Convert array format to dict format for compatibility
             priors_by_paradigm = {}
