@@ -7,8 +7,6 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Badge } from '../../components/ui/Badge';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
-import { EvidenceMatrixHeatmap } from '../../components/visualizations/EvidenceMatrixHeatmap';
-import { EvidenceClusterReport, BayesianComputationTable } from '../../components/report';
 import { useGameStore, useAnalysisStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants, formatPercent } from '../../utils';
@@ -25,7 +23,7 @@ function calculateWoE(likelihood: number, prior: number): number {
 export function ReportPage() {
   const { scenarioId } = useParams<{ scenarioId: string }>();
   const navigate = useNavigate();
-  const { scenarioConfig, selectedParadigms, activeParadigm, setPhase } = useGameStore();
+  const { scenarioConfig, activeParadigm, setPhase } = useGameStore();
   const { currentAnalysis } = useAnalysisStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
@@ -43,10 +41,6 @@ export function ReportPage() {
       </PageContainer>
     );
   }
-
-  const paradigms = scenarioConfig.paradigms?.filter(
-    (p) => selectedParadigms.includes(p.id)
-  ) || [];
 
   // Get evidence clusters from analysis metadata (where they actually live)
   // Fall back to scenarioConfig for backwards compatibility
@@ -165,6 +159,37 @@ ${tableRows}
       return `| ${hyp.id} | ${hyp.name.slice(0, 50)}${hyp.name.length > 50 ? '...' : ''} | ${formatPercent(prior)} | ${formatPercent(posterior)} | ${changeSign}${formatPercent(change)} |`;
     }).join('\n');
 
+    // Build evidence matrix section
+    const buildEvidenceMatrix = () => {
+      if (evidenceClusters.length === 0) return '*No evidence clusters available*';
+
+      // Build header row
+      const clusterHeaders = evidenceClusters.map((_, i) => `C${i + 1}`).join(' | ');
+      const headerRow = `| Hypothesis | ${clusterHeaders} |`;
+      const separatorRow = `|------------|${evidenceClusters.map(() => '------').join('|')}|`;
+
+      // Build data rows
+      const dataRows = hypotheses.map((hyp) => {
+        const woeValues = evidenceClusters.map((cluster) => {
+          const likelihoods = cluster.likelihoods_by_paradigm?.[activeParadigm] || cluster.likelihoods || {};
+          const likelihoodData = likelihoods[hyp.id];
+          const prob = typeof likelihoodData === 'number'
+            ? likelihoodData
+            : (likelihoodData as ClusterLikelihood)?.probability ?? 0.5;
+          const prior = priors[hyp.id] ?? 0.5;
+          const woe = calculateWoE(prob, prior);
+          const sign = woe >= 0 ? '+' : '';
+          return `${sign}${woe.toFixed(1)}`;
+        }).join(' | ');
+        return `| ${hyp.id} | ${woeValues} |`;
+      }).join('\n');
+
+      const legend = evidenceClusters.map((c, i) => `C${i + 1}=${c.cluster_name}`).join(', ');
+      return `${headerRow}\n${separatorRow}\n${dataRows}\n\n**Legend**: ${legend}`;
+    };
+
+    const evidenceMatrixSection = buildEvidenceMatrix();
+
     return `# BFIH Analysis Report
 
 ## Executive Summary
@@ -213,6 +238,14 @@ ${bayesianSection}
 | Hypothesis | Description | Prior | Posterior | Change |
 |------------|-------------|-------|-----------|--------|
 ${posteriorRows}
+
+---
+
+## Evidence Matrix
+
+The following matrix shows the Weight of Evidence (WoE) in decibans for each hypothesis across all evidence clusters under paradigm **${activeParadigm}**.
+
+${evidenceMatrixSection}
 
 ---
 
@@ -370,35 +403,6 @@ ${hypotheses.map((h) => {
                   <ReactMarkdown>{reportContent}</ReactMarkdown>
                 </article>
               </Card>
-            </motion.div>
-
-            {/* Evidence Clusters Detail */}
-            <motion.div variants={cardVariants} className="mt-6">
-              <EvidenceClusterReport
-                clusters={evidenceClusters}
-                evidenceItems={evidenceItems}
-              />
-            </motion.div>
-
-            {/* Bayesian Computation */}
-            <motion.div variants={cardVariants} className="mt-6">
-              <BayesianComputationTable
-                clusters={evidenceClusters}
-                hypotheses={scenarioConfig.hypotheses || []}
-                activeParadigm={activeParadigm}
-                priors={priors}
-                posteriors={posteriors}
-              />
-            </motion.div>
-
-            {/* Evidence Matrix Heatmap */}
-            <motion.div variants={cardVariants} className="mt-6">
-              <EvidenceMatrixHeatmap
-                hypotheses={scenarioConfig.hypotheses || []}
-                clusters={evidenceClusters}
-                paradigms={paradigms}
-                activeParadigm={activeParadigm}
-              />
             </motion.div>
           </div>
         </div>
