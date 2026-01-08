@@ -1992,6 +1992,21 @@ Hypotheses answer: "Is this proposition TRUE, FALSE, or CONDITIONALLY TRUE?"
 - H4: "FALSE - Regulatory capture, not Boeing's internal culture, was primary cause"
 - H0: "OTHER - Some unforeseen factor or combination not captured by H1-H4" (catch-all)
 
+## SPECIAL CASE: SUPERLATIVE/COMPARATIVE CLAIMS
+
+For propositions claiming something is "the best", "the greatest", "the worst", "GOAT", etc.:
+
+- **DENY hypotheses MUST name specific alternatives**
+- Example: "Tom Brady is the NFL GOAT"
+  - H1 (TRUE): "Brady IS the GOAT based on championships (7), longevity, and clutch performance"
+  - H2 (DENY): "Joe Montana has stronger case - perfect 4-0 Super Bowl record, no interceptions"
+  - H3 (DENY): "Peyton Manning has better individual stats and changed offensive football"
+  - H4 (PARTIAL): "GOAT is era-dependent; Brady dominated his era but cross-era comparison is invalid"
+  - H5 (DENY): "Patrick Mahomes' trajectory suggests he may surpass Brady's achievements"
+
+- DO NOT generate abstract domain-based denials like "Biological factors insufficient"
+- Generate SUBSTANTIVE alternatives that engage with the actual debate
+
 ## REQUIRED HYPOTHESIS STRUCTURE
 
 Generate exactly {num_hypotheses} hypotheses:
@@ -2009,15 +2024,16 @@ unspecified alternatives that might explain the observations but aren't covered 
 
 ## FORCING FUNCTIONS TO APPLY
 
-### 1. ONTOLOGICAL SCAN (7 Domains)
-Check if explanations from each domain could AFFIRM or DENY the proposition:
-- **Biological**: Physical, physiological, or health-related factors
-- **Economic**: Financial incentives, market forces, resource constraints
-- **Cultural**: Social norms, values, traditions, group identity
-- **Theological**: Religious beliefs, moral frameworks, transcendent values
-- **Historical**: Precedent, path dependence, lessons from similar cases
-- **Institutional**: Rules, regulations, organizational structures
-- **Psychological**: Individual cognition, motivation, decision-making
+### 1. ONTOLOGICAL SCAN (Quality Check, NOT Template)
+Use domains as a COMPLETENESS CHECK, not as hypothesis generators:
+- DO NOT create one hypothesis per domain
+- DO ensure relevant domains are covered by your substantive hypotheses
+- Tag each hypothesis with which domains it touches
+
+Domains: Biological, Economic, Cultural, Theological, Historical, Institutional, Psychological
+
+For a sports GOAT debate, relevant domains are Historical (era comparison), Cultural (media narrative),
+Psychological (clutch performance) - NOT all 7 domains equally.
 
 ### 2. ANCESTRAL CHECK
 - What historical analogues exist for this proposition?
