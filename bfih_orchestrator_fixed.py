@@ -9,6 +9,7 @@ This module coordinates:
 4. BFIH report generation and storage
 """
 
+import argparse
 import json
 import math
 import os
@@ -2561,5 +2562,55 @@ def example_autonomous_analysis():
 
 
 if __name__ == "__main__":
-    # Run autonomous analysis (generates everything from just the proposition)
-    example_autonomous_analysis()
+    parser = argparse.ArgumentParser(
+        description="BFIH Autonomous Analysis - Bayesian Framework for Intellectual Honesty"
+    )
+    parser.add_argument(
+        "--topic", "-t",
+        type=str,
+        help="The proposition/topic to analyze"
+    )
+    parser.add_argument(
+        "--domain", "-d",
+        type=str,
+        default="general",
+        help="Domain of analysis (default: general)"
+    )
+    parser.add_argument(
+        "--difficulty",
+        type=str,
+        default="medium",
+        choices=["easy", "medium", "hard"],
+        help="Difficulty level (default: medium)"
+    )
+
+    args = parser.parse_args()
+
+    if args.topic:
+        # Run with provided topic
+        orchestrator = BFIHOrchestrator()
+        result = orchestrator.analyze_topic(
+            proposition=args.topic,
+            domain=args.domain,
+            difficulty=args.difficulty
+        )
+
+        # Print results
+        print("\n" + "="*80)
+        print("AUTONOMOUS BFIH ANALYSIS RESULT")
+        print("="*80)
+        print(f"Analysis ID: {result.analysis_id}")
+        print(f"Scenario: {result.scenario_id}")
+        print(f"Proposition: {result.proposition}")
+        print(f"\nAutonomous: {result.metadata.get('autonomous', False)}")
+        print("\nReport Preview (first 1000 chars):")
+        print(result.report[:1000] + "...")
+        print("\nPosteriors:")
+        print(json.dumps(result.posteriors, indent=2))
+        print("\nFull result saved to: analysis_result.json")
+
+        with open("analysis_result.json", "w") as f:
+            json.dump(result.to_dict(), f, indent=2)
+    else:
+        # Run default example
+        example_autonomous_analysis()
