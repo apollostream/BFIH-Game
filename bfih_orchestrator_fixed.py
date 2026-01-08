@@ -46,8 +46,11 @@ logger = logging.getLogger(__name__)
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
 MODEL = "gpt-4o"
-# Reasoning model for hypothesis generation (better at complex analytical tasks)
+# Reasoning model for cognitively demanding tasks (paradigm/hypothesis/prior/likelihood)
+# Options: o3-mini (default), o3, o4-mini, gpt-5, gpt-5.2
 REASONING_MODEL = os.getenv("BFIH_REASONING_MODEL", "o3-mini")
+# Whether reasoning model supports structured output (o3-mini and newer do as of 2026)
+REASONING_MODEL_SUPPORTS_STRUCTURED = os.getenv("BFIH_REASONING_STRUCTURED", "true").lower() == "true"
 
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable not set")
@@ -659,7 +662,8 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
     def _run_structured_phase(self, prompt: str, schema_name: str, phase_name: str,
-                               tools: List[Dict] = None, max_retries: int = 2) -> dict:
+                               tools: List[Dict] = None, max_retries: int = 2,
+                               model: str = None) -> dict:
         """
         Run a phase with structured output (JSON Schema enforcement).
 
@@ -672,6 +676,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
             phase_name: Human-readable name for logging
             tools: Optional list of tools (file_search, web_search)
             max_retries: Number of retry attempts on connection failure
+            model: Optional model override (default: self.model)
 
         Returns:
             Parsed JSON dict matching the schema
@@ -680,12 +685,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         last_error = None
         tools = tools or []
+        model = model or self.model
 
         for attempt in range(max_retries + 1):
             try:
-                logger.info(f"Starting {phase_name} (structured output)" +
+                logger.info(f"Starting {phase_name} (structured output, model: {model})" +
                            (f" (attempt {attempt + 1})" if attempt > 0 else ""))
-                print(f"\n{'='*60}\n{phase_name} [Structured Output]" +
+                print(f"\n{'='*60}\n{phase_name} [Structured Output: {model}]" +
                       (f" (retry {attempt})" if attempt > 0 else "") + f"\n{'='*60}")
 
                 # Get the schema for this type
@@ -703,7 +709,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 # Build the request with proper Responses API format
                 request_params = {
-                    "model": self.model,
+                    "model": model,
                     "input": prompt,
                     "max_output_tokens": 16000,
                     "text": {
@@ -761,27 +767,43 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
+    def _run_structured_phase_with_model(self, prompt: str, schema_name: str, phase_name: str,
+                                          model: str, max_retries: int = 2) -> dict:
+        """
+        Convenience wrapper for _run_structured_phase with custom model.
+        Used when reasoning models support structured output.
+        """
+        return self._run_structured_phase(prompt, schema_name, phase_name,
+                                          tools=None, max_retries=max_retries, model=model)
+
     def _run_reasoning_phase(self, prompt: str, phase_name: str, max_retries: int = 2,
                               schema_name: str = None) -> dict:
         """
-        Run a phase with a reasoning model (o1, o3, etc.) for deep analytical thinking.
+        Run a phase with a reasoning model (o3-mini, o3, o4-mini, gpt-5, etc.) for deep analytical thinking.
 
-        Reasoning models don't support structured output format, so we:
-        1. Instruct the model to output JSON
-        2. Parse and validate the response
-        3. If schema_name provided and JSON parsing fails, fall back to structured output with gpt-4o
+        As of 2026, most reasoning models (o3-mini and newer) support structured output.
+        If REASONING_MODEL_SUPPORTS_STRUCTURED is True and schema_name is provided,
+        we use structured output directly. Otherwise, we parse JSON from the response.
 
         Args:
             prompt: The prompt to send to the reasoning model
             phase_name: Human-readable name for logging
             max_retries: Number of retry attempts on connection failure
-            schema_name: Optional schema name for structured output fallback
+            schema_name: Schema name for structured output (recommended for reliability)
 
         Returns:
-            Parsed JSON dict from the model's reasoning output
+            Parsed JSON dict from the model's output
         """
         import time
 
+        # If structured output is supported and schema provided, use it directly
+        if REASONING_MODEL_SUPPORTS_STRUCTURED and schema_name:
+            logger.info(f"Using reasoning model with structured output: {self.reasoning_model}")
+            return self._run_structured_phase_with_model(
+                prompt, schema_name, phase_name, self.reasoning_model, max_retries
+            )
+
+        # Otherwise, fall back to JSON extraction from response
         last_error = None
 
         for attempt in range(max_retries + 1):
