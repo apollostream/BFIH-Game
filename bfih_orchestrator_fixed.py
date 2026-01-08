@@ -1018,10 +1018,13 @@ YOUR TASK:
 Return a JSON object with "clusters" array. Each cluster needs:
 - cluster_id, cluster_name, description, evidence_ids (all required)
 - paradigm_likelihoods: array of {{paradigm_id, hypothesis_likelihoods: [{{hypothesis_id, probability, justification}}]}}
+
+IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
         try:
-            result = self._run_structured_phase(
-                prompt, "clusters", "Phase 3: Likelihood Assignment"
+            # Use reasoning model for likelihood assessment (requires careful evidence-paradigm analysis)
+            result = self._run_reasoning_phase(
+                prompt, "Phase 3: Likelihood Assignment (reasoning)"
             )
             raw_clusters = result.get("clusters", [])
             # Convert array format to dict format for compatibility
@@ -1651,8 +1654,8 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
             proposition, paradigms, difficulty
         )
 
-        # Phase 0c: Assign priors per paradigm
-        priors_by_paradigm = self._assign_priors(hypotheses, paradigms)
+        # Phase 0c: Assign priors per paradigm (BEFORE evidence, based only on background context)
+        priors_by_paradigm = self._assign_priors(hypotheses, paradigms, proposition)
 
         # Build scenario_config dynamically
         scenario_config = self._build_scenario_config(
@@ -1750,10 +1753,13 @@ For EACH paradigm provide:
   - time_horizon: Short-term, medium-term, long-term, or intergenerational
 
 Return the result as a JSON object with a "paradigms" array starting with K0.
+
+IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
         try:
-            result = self._run_structured_phase(
-                prompt, "paradigms", "Phase 0a: Generate Paradigms"
+            # Use reasoning model for paradigm construction (cognitively demanding task)
+            result = self._run_reasoning_phase(
+                prompt, "Phase 0a: Generate Paradigms (reasoning)"
             )
             paradigms = result.get("paradigms", [])
         except Exception as e:
@@ -2140,9 +2146,22 @@ Generate hypotheses that are COMPETING ANSWERS about whether the proposition is 
         logger.info(f"Generated {len(hypotheses)} MECE hypotheses with truth-value structure")
         return hypotheses, forcing_functions_log
 
-    def _assign_priors(self, hypotheses: List[Dict], paradigms: List[Dict]) -> Dict:
+    def _assign_priors(self, hypotheses: List[Dict], paradigms: List[Dict], proposition: str = "") -> Dict:
         """
         Phase 0c: Each paradigm assigns priors to the UNIFIED MECE hypothesis set.
+
+        CRITICAL: Priors are based ONLY on background knowledge (K₀) - the shared
+        "universe of analysis" that all paradigms agree on BEFORE seeing evidence.
+
+        DO NOT incorporate:
+        - Web search evidence (comes in Phase 2)
+        - External studies or data (likelihood assignment is Phase 3)
+
+        Priors reflect each paradigm's initial beliefs given ONLY:
+        - The proposition statement itself
+        - General domain knowledge that forms the shared background context
+        - The paradigm's characteristic biases and worldview
+
         Uses structured output for guaranteed valid JSON.
         """
         hypotheses_json = json.dumps(hypotheses, indent=2)
@@ -2153,31 +2172,62 @@ Generate hypotheses that are COMPETING ANSWERS about whether the proposition is 
         paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
         prompt = f"""
-You are assigning prior probabilities for a BFIH analysis.
+You are assigning PRIOR probabilities for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
 
-UNIFIED MECE HYPOTHESIS SET (all paradigms must use this same set):
+PROPOSITION: "{proposition}"
+
+## CRITICAL DISTINCTION: PRIORS vs LIKELIHOODS
+
+Priors P(H|K) represent INITIAL BELIEFS about hypotheses BEFORE seeing evidence.
+You are assigning priors NOW. Evidence gathering and likelihood assignment come LATER.
+
+DO NOT:
+- Look up or reference any external evidence, studies, or data
+- Consider what evidence might exist on the internet
+- Use knowledge of specific research findings or statistics
+- Let evidence-based reasoning influence prior assignment
+
+DO:
+- Assign priors based ONLY on the paradigm's worldview and the proposition text
+- Use the paradigm's characteristic assumptions about causation
+- Reflect how each paradigm would weigh hypotheses BEFORE any investigation
+- Consider the paradigm's domains_covered and bias_type when assigning priors
+
+## HYPOTHESIS SET (all paradigms use this same MECE set):
 {hypotheses_json}
 
-PARADIGMS:
+## PARADIGMS:
 {paradigms_json}
 
 Hypothesis IDs: {hyp_ids}
 Paradigm IDs: {paradigm_ids}
 
-For EACH paradigm, assign prior probabilities P(H|K) to EACH hypothesis.
+## ASSIGNMENT RULES:
 
-RULES:
-1. Priors must sum to 1.0 for each paradigm
-2. Different paradigms should weight the SAME hypotheses differently
-3. Provide brief justification for each prior assignment
+1. **Priors must sum to 1.0** for each paradigm (MECE requirement)
+2. **K0 (privileged paradigm)** should have more balanced priors reflecting uncertainty
+3. **K1-K5 (biased paradigms)** should have priors that reflect their specific biases:
+   - Domain bias: Higher priors for hypotheses in favored domains
+   - Temporal bias: Higher priors for hypotheses matching time horizon preference
+   - Ideological bias: Higher priors for hypotheses aligned with values
+4. **H0 (catch-all)** should generally receive 5-20% prior (room for unforeseen alternatives)
+5. **Justifications** should reference paradigm assumptions, NOT external evidence
+
+## OUTPUT FORMAT
 
 Return as a JSON object with "paradigm_priors" array containing:
 - paradigm_id: the paradigm identifier
 - hypothesis_priors: array of {{hypothesis_id, prior, justification}}
+
+Example justification (GOOD): "K1's economic focus naturally assigns higher prior to market-based explanations"
+Example justification (BAD): "Studies show that economic factors account for 60% of such outcomes" (uses evidence!)
+
+IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
         try:
-            result = self._run_structured_phase(
-                prompt, "priors", "Phase 0c: Assign Priors"
+            # Use reasoning model for prior assignment (requires careful paradigm-aware reasoning)
+            result = self._run_reasoning_phase(
+                prompt, "Phase 0c: Assign Priors (reasoning)"
             )
             # Convert array format to dict format for compatibility
             priors_by_paradigm = {}
