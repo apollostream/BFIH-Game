@@ -155,16 +155,53 @@ class FileStorageBackend(StorageBackend):
             return None
     
     def list_scenarios(self, limit: int = 50, offset: int = 0) -> List[Dict]:
-        """List all stored scenarios"""
+        """List all stored scenarios with summary information"""
         try:
-            files = sorted(self.scenario_dir.glob("*.json"))
+            files = sorted(self.scenario_dir.glob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True)
             files = files[offset:offset+limit]
-            
+
             scenarios = []
             for f in files:
                 with open(f, 'r') as file:
-                    scenarios.append(json.load(file))
-            
+                    data = json.load(file)
+
+                    # Handle two formats:
+                    # 1. Wrapper format: {scenario_id, title, scenario_config: {...}}
+                    # 2. Direct format: {scenario_metadata: {...}, scenario_narrative: {...}}
+                    if 'scenario_config' in data:
+                        # Wrapper format - extract from nested config
+                        config = data.get('scenario_config', {})
+                        metadata = config.get('scenario_metadata', {})
+                        narrative = config.get('scenario_narrative', {})
+                        wrapper_id = data.get('scenario_id')
+                    else:
+                        # Direct format
+                        config = data
+                        metadata = config.get('scenario_metadata', {})
+                        narrative = config.get('scenario_narrative', {})
+                        wrapper_id = None
+
+                    # Get title from multiple possible locations (prefer research_question as it's the proposition)
+                    title = (
+                        narrative.get('research_question') or
+                        narrative.get('title') or
+                        metadata.get('title') or
+                        config.get('proposition') or
+                        f"Analysis {metadata.get('scenario_id', f.stem)}"
+                    )
+
+                    # Get scenario_id
+                    scenario_id = wrapper_id or metadata.get('scenario_id') or config.get('scenario_id') or f.stem
+
+                    summary = {
+                        'scenario_id': scenario_id,
+                        'title': title,
+                        'domain': metadata.get('domain', 'general'),
+                        'difficulty_level': metadata.get('difficulty_level', 'medium'),
+                        'created_date': metadata.get('created_date', ''),
+                    }
+                    scenarios.append(summary)
+
             return scenarios
         except Exception as e:
             logger.error(f"Error listing scenarios: {str(e)}")
