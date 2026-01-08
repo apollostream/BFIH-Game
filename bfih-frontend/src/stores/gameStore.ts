@@ -148,11 +148,22 @@ export const useGameStore = create<GameState>()(
           const paradigmIds = scenarioConfig.paradigms?.map((p) => p.id) || [];
           const firstParadigm = paradigmIds[0] || 'K1';
 
+          // Determine furthestPhase based on available data
+          // For completed scenarios from library, allow navigation to all phases
+          const hasEvidence = totalRounds > 0 || (scenarioConfig.evidence?.items?.length || 0) > 0;
+          const hasPriors = Object.keys(scenarioConfig.priors_by_paradigm || {}).length > 0;
+          const hasHypotheses = (scenarioConfig.hypotheses?.length || 0) > 0;
+
+          let furthestPhase: GamePhase = 'setup';
+          if (hasHypotheses) furthestPhase = 'hypotheses';
+          if (hasPriors) furthestPhase = 'priors';
+          if (hasEvidence) furthestPhase = 'report'; // Allow jumping to report for completed scenarios
+
           set({
             scenarioId: scenarioConfig.scenario_id,
             scenarioConfig,
             currentPhase: 'setup',
-            furthestPhase: 'setup',
+            furthestPhase,
             currentEvidenceRound: 0,
             totalEvidenceRounds: totalRounds,
             isGameActive: true,
