@@ -1342,11 +1342,14 @@ For EACH hypothesis:
 [3-4 sentence description of what this hypothesis claims]
 
 **Prior Probabilities:**
+
 | Paradigm | Prior P(H) | Rationale |
 |----------|------------|-----------|
 [Table showing prior for each paradigm with brief justification]
 
-Use DECIMAL format (0.XXX) for all probabilities.
+IMPORTANT MARKDOWN FORMATTING:
+- Always include a BLANK LINE before any table (between label and table header)
+- Use DECIMAL format (0.XXX) for all probabilities.
 """
         return self._run_phase(prompt, [], "Phase 5a: Introduction Sections")
 
@@ -1411,6 +1414,9 @@ IMPORTANT:
 - Include the FULL URL for each source (not truncated)
 - Include the complete APA citation
 - Create likelihood table for EACH evidence item
+
+MARKDOWN FORMATTING:
+- Always include a BLANK LINE before any table (between label like **Likelihood Assessment:** and the table header row)
 """
         return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
 
@@ -1482,8 +1488,10 @@ Analyze what happens with ±20% prior variation:
 
 **Recommendations:** What actions or further analysis might be warranted
 
-Use DECIMAL format (0.XXX) for all probabilities.
-Copy posterior values EXACTLY from the computation output.
+MARKDOWN FORMATTING:
+- Always include a BLANK LINE before any table (between label and table header row)
+- Use DECIMAL format (0.XXX) for all probabilities.
+- Copy posterior values EXACTLY from the computation output.
 """
         return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions")
 
