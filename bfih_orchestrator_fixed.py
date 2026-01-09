@@ -1438,13 +1438,18 @@ Print the final posteriors clearly labeled.
                 return f"{prefix}{h_id} ({short_name}){suffix}"
             return match.group(0)
 
-        # Process line by line to add short names
+        # Process line by line to add short names and escape conditional probability bars
         lines = report.split('\n')
         enriched_lines = []
 
         for line in lines:
             # Only process table rows (start with |) and skip separator rows
             if line.strip().startswith('|') and not re.match(r'^\|[-\s|]+\|$', line.strip()):
+                # Escape vertical bars in conditional probability notation: P(E|H) -> P(E\|H)
+                # Match P(...|...) patterns where | is not already escaped
+                # Handles: P(E|H), P(E|¬H), P(H|E), P(H|K), etc.
+                line = re.sub(r'P\(([^)|]+)(?<!\\)\|([^)]+)\)', r'P(\1\\|\2)', line)
+
                 # Replace hypothesis IDs at start of table cell: "| H0 |" or "| H0 " (first column)
                 # Pattern: | H0 | or | H0 followed by space and other content
                 for h_id, short_name in hypothesis_names.items():
