@@ -4,6 +4,43 @@
 
 ---
 
+## 🚀 One-Click Deploy
+
+Deploy your own BFIH Analysis backend in minutes:
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/YOUR_USERNAME/bfih-analysis)
+
+### What You'll Need
+
+1. **OpenAI API Key** - Get one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. **Vector Store ID** - Create one using the setup instructions below
+
+### Deploy Steps
+
+1. Click the "Deploy on Railway" button above
+2. Connect your GitHub account (if prompted)
+3. Set the required environment variables:
+   - `OPENAI_API_KEY` - Your OpenAI API key
+   - `TREATISE_VECTOR_STORE_ID` - Your vector store ID (see [Vector Store Setup](#2-initialize-vector-store))
+4. Click "Deploy"
+5. Your API will be live at `https://your-app.railway.app`
+
+### After Deployment
+
+Test your deployment:
+```bash
+curl https://your-app.railway.app/api/health
+```
+
+Submit an analysis:
+```bash
+curl -X POST https://your-app.railway.app/api/bfih-analysis \
+  -H "Content-Type: application/json" \
+  -d '{"scenario_id": "test", "proposition": "Why is the sky blue?", "scenario_config": {}}'
+```
+
+---
+
 ## 📋 Table of Contents
 
 1. [Overview](#overview)
@@ -442,18 +479,48 @@ print(report["report"])
 
 ## Deployment
 
+### Railway (Recommended)
+
+The fastest way to deploy is using Railway:
+
+1. **One-Click Deploy**: Use the button at the top of this README
+2. **Manual Deploy**:
+   ```bash
+   # Install Railway CLI
+   npm install -g @railway/cli
+
+   # Login
+   railway login
+
+   # Initialize project
+   railway init
+
+   # Set environment variables
+   railway variables set OPENAI_API_KEY=sk-proj-xxx
+   railway variables set TREATISE_VECTOR_STORE_ID=vs_xxx
+
+   # Deploy
+   railway up
+   ```
+
+**Railway Configuration** (already included):
+- `railway.json` - Build and deploy settings
+- `railway.toml` - Runtime configuration
+- Health check endpoint at `/api/health`
+- Auto-scaling and HTTPS included
+
 ### Production Checklist
 
 - [ ] Set `DEBUG=False` in environment
 - [ ] Use strong, unique database password
 - [ ] Configure CORS origins to specific domains
 - [ ] Set up monitoring and alerting
-- [ ] Enable HTTPS/TLS
+- [ ] Enable HTTPS/TLS (automatic on Railway)
 - [ ] Set up automated backups
 - [ ] Configure rate limiting
 - [ ] Use environment-specific .env files
 
-### Deploy to Production
+### Deploy with Docker
 
 ```bash
 # 1. Build Docker image

@@ -22,12 +22,13 @@ COPY setup_vector_store.py ./
 # Create data directory
 RUN mkdir -p ./data/analyses ./data/scenarios ./data/status ./logs
 
-# Expose port
-EXPOSE 8000
+# Default port (Railway overrides with $PORT)
+ENV PORT=8000
+EXPOSE $PORT
 
-# Health check
+# Health check (uses PORT env variable)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/api/health')"
+    CMD python -c "import os; import requests; requests.get(f'http://localhost:{os.environ.get(\"PORT\", 8000)}/api/health')"
 
-# Run server
-CMD ["python", "-m", "uvicorn", "bfih_api_server:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run server (Railway provides PORT, defaults to 8000 locally)
+CMD python -m uvicorn bfih_api_server:app --host 0.0.0.0 --port $PORT
