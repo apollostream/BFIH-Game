@@ -8,7 +8,7 @@
 
 Deploy your own BFIH Analysis backend in minutes:
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/YOUR_USERNAME/bfih-analysis)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/apollostream/BFIH-Game)
 
 ### What You'll Need
 
