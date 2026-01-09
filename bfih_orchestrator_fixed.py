@@ -1375,7 +1375,94 @@ Print the final posteriors clearly labeled.
 
 **End of BFIH Analysis Report**
 """
+        # Post-process report to add short names next to Ki/Hj symbols
+        full_report = self._enrich_report_with_short_names(full_report, request.scenario_config)
         return full_report
+
+    def _enrich_report_with_short_names(self, report: str, scenario_config: Dict) -> str:
+        """
+        Post-process the report to add short names next to paradigm (Ki) and hypothesis (Hj) symbols.
+
+        Uses regex to find standalone Ki/Hj patterns in tables and adds abbreviated names.
+        This improves readability without requiring the LLM to generate extra tokens.
+        """
+        paradigms = scenario_config.get("paradigms", [])
+        hypotheses = scenario_config.get("hypotheses", [])
+
+        # Build lookup dictionaries with abbreviated names (max ~25 chars)
+        paradigm_names = {}
+        for p in paradigms:
+            p_id = p.get("id", "")
+            name = p.get("name", "")
+            # Abbreviate long names
+            if len(name) > 25:
+                short_name = name[:22] + "..."
+            else:
+                short_name = name
+            paradigm_names[p_id] = short_name
+
+        hypothesis_names = {}
+        for h in hypotheses:
+            h_id = h.get("id", "")
+            name = h.get("name", "")
+            # Abbreviate long names
+            if len(name) > 30:
+                short_name = name[:27] + "..."
+            else:
+                short_name = name
+            hypothesis_names[h_id] = short_name
+
+        # Pattern to match Ki or Hj in table cells (after | or at start of cell)
+        # Matches: "| K0 |" or "| H1 |" or "K0:" or "H1:" etc.
+        # Excludes already-annotated entries like "K0 (name)"
+
+        def replace_paradigm(match):
+            """Replace Ki with Ki (short-name) if not already annotated."""
+            prefix = match.group(1)  # | or space or start
+            p_id = match.group(2)    # K0, K1, etc.
+            suffix = match.group(3)  # | or : or space
+
+            if p_id in paradigm_names:
+                short_name = paradigm_names[p_id]
+                return f"{prefix}{p_id} ({short_name}){suffix}"
+            return match.group(0)
+
+        def replace_hypothesis(match):
+            """Replace Hj with Hj (short-name) if not already annotated."""
+            prefix = match.group(1)
+            h_id = match.group(2)    # H0, H1, etc.
+            suffix = match.group(3)
+
+            if h_id in hypothesis_names:
+                short_name = hypothesis_names[h_id]
+                return f"{prefix}{h_id} ({short_name}){suffix}"
+            return match.group(0)
+
+        # Process line by line to add short names
+        lines = report.split('\n')
+        enriched_lines = []
+
+        for line in lines:
+            # Only process table rows (start with |) and skip separator rows
+            if line.strip().startswith('|') and not re.match(r'^\|[-\s|]+\|$', line.strip()):
+                # Replace hypothesis IDs at start of table cell: "| H0 |" or "| H0 " (first column)
+                # Pattern: | H0 | or | H0 followed by space and other content
+                for h_id, short_name in hypothesis_names.items():
+                    # Match "| H0 |" or "| H0 " at cell boundaries, not already annotated
+                    pattern = rf'(\| ){h_id}( \||\s+(?!\())'
+                    if re.search(pattern, line) and f"{h_id} (" not in line:
+                        line = re.sub(pattern, rf'\1{h_id} ({short_name})\2', line, count=1)
+
+                # Replace paradigm IDs: "| K0 |" or "K0 Posterior" etc.
+                for p_id, short_name in paradigm_names.items():
+                    # Match paradigm ID at cell boundaries
+                    pattern = rf'(\| ){p_id}( \||\s+(?!\())'
+                    if re.search(pattern, line) and f"{p_id} (" not in line:
+                        line = re.sub(pattern, rf'\1{p_id} ({short_name})\2', line, count=1)
+
+            enriched_lines.append(line)
+
+        return '\n'.join(enriched_lines)
 
     def _run_phase_5a_intro(self, request: BFIHAnalysisRequest,
                             paradigm_list: str, hypothesis_list: str,
