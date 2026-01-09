@@ -79,6 +79,38 @@ REASONING_MODEL = os.getenv("BFIH_REASONING_MODEL", "o3-mini")
 # Whether reasoning model supports structured output (o3-mini and newer do as of 2026)
 REASONING_MODEL_SUPPORTS_STRUCTURED = os.getenv("BFIH_REASONING_STRUCTURED", "true").lower() == "true"
 
+# Persistent BFIH system context prepended to all phase prompts
+# This ensures the model maintains awareness of the BFIH methodology throughout the analysis
+def get_bfih_system_context(phase_name: str, phase_number: str) -> str:
+    """Generate BFIH system context for a specific phase."""
+    return f"""
+================================================================================
+BFIH (BAYESIAN FRAMEWORK FOR INTELLECTUAL HONESTY) ANALYSIS
+================================================================================
+
+You are an expert analyst performing a rigorous BFIH analysis. This framework
+ensures intellectual honesty through systematic Bayesian reasoning.
+
+CURRENT PHASE: {phase_number} - {phase_name}
+
+CORE BFIH PRINCIPLES:
+1. **Paradigm Plurality**: Analyze from multiple epistemic stances (K0 privileged + K1-Kn biased)
+2. **Forcing Functions**: Apply Ontological Scan, Ancestral Check, Paradigm Inversion
+3. **MECE Hypotheses**: Ensure Mutually Exclusive, Collectively Exhaustive hypothesis sets
+4. **Bayesian Updating**: Update beliefs via P(H|E) = P(E|H)×P(H) / P(E)
+5. **Transparent Uncertainty**: Quantify confidence, acknowledge limitations
+
+INTELLECTUAL HONESTY REQUIREMENTS:
+- State assumptions explicitly
+- Consider evidence that challenges your conclusions
+- Distinguish strong evidence (high LR) from weak evidence (LR ≈ 1)
+- Flag paradigm-dependent vs robust conclusions
+
+Maintain maximum intellectual rigor throughout this phase.
+================================================================================
+
+"""
+
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY environment variable not set")
 
@@ -955,9 +987,8 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
     def _run_phase_1_methodology(self, request: BFIHAnalysisRequest) -> str:
         """Phase 1: Retrieve BFIH methodology from vector store"""
-        prompt = f"""
-You are retrieving methodology for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
-
+        bfih_context = get_bfih_system_context("Methodology Retrieval", "1")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 Use file_search to retrieve the following from the BFIH treatise:
@@ -983,9 +1014,8 @@ Focus on actionable steps for applying each forcing function.
         hypotheses = request.scenario_config.get("hypotheses", [])
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
 
-        prompt = f"""
-You are gathering evidence for a BFIH analysis.
-
+        bfih_context = get_bfih_system_context("Evidence Gathering", "2")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 HYPOTHESES: {hyp_ids}
@@ -1096,9 +1126,8 @@ Evidence types: quantitative, qualitative, expert_testimony, historical_analogy,
             "refutes": e.get("refutes_hypotheses", [])
         } for e in evidence_items], indent=2)
 
-        prompt = f"""
-You are assigning PARADIGM-SPECIFIC likelihoods for a BFIH Bayesian analysis.
-
+        bfih_context = get_bfih_system_context("Likelihood Assignment", "3")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 HYPOTHESES: {hyp_ids}
@@ -1222,9 +1251,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         # Build the Python code template
         python_code = self._build_bayesian_code_template()
 
-        prompt = f"""
-You are computing Bayesian posteriors for a BFIH analysis.
-
+        bfih_context = get_bfih_system_context("Bayesian Computation", "4")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 SCENARIO CONFIGURATION:
@@ -1340,9 +1368,8 @@ Print the final posteriors clearly labeled.
                             paradigm_list: str, hypothesis_list: str,
                             computation: str, priors: Dict) -> str:
         """Phase 5a: Generate Executive Summary, Paradigms, and Hypotheses sections."""
-        prompt = f"""
-Write the INTRODUCTION sections of a BFIH analysis report.
-
+        bfih_context = get_bfih_system_context("Report Generation - Introduction", "5a")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 PARADIGMS:
@@ -1427,9 +1454,8 @@ IMPORTANT MARKDOWN FORMATTING:
 
         precomputed_clusters_text = "\n---\n".join(cluster_sections) if cluster_sections else "(No cluster metrics available)"
 
-        prompt = f"""
-Write the EVIDENCE MATRIX section of a BFIH analysis report.
-
+        bfih_context = get_bfih_system_context("Report Generation - Evidence Matrix", "5b")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 HYPOTHESES: {hyp_ids}
@@ -1512,9 +1538,8 @@ MARKDOWN FORMATTING:
             cluster_summary.append(f"- **{ct['name']}**: {ct.get('description', '')}")
         cluster_summary_text = "\n".join(cluster_summary) if cluster_summary else "(No clusters)"
 
-        prompt = f"""
-Write the RESULTS and CONCLUSIONS sections of a BFIH analysis report.
-
+        bfih_context = get_bfih_system_context("Report Generation - Results & Conclusions", "5c")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
 PARADIGMS: {json.dumps([p.get('name') for p in paradigms])}
@@ -2137,9 +2162,8 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
 
         Uses structured output for guaranteed valid JSON.
         """
-        prompt = f"""
-You are generating a PARADIGM SET for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
-
+        bfih_context = get_bfih_system_context("Paradigm Generation", "0a")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{proposition}"
 DOMAIN: {domain}
 
@@ -2321,9 +2345,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         num_hypotheses = {"easy": 4, "medium": 6, "hard": 8}.get(difficulty, 6)
         paradigm_json = json.dumps(paradigms, indent=2)
 
-        prompt = f"""
-You are generating HYPOTHESES for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
-
+        bfih_context = get_bfih_system_context("Hypothesis Generation with Forcing Functions", "0b")
+        prompt = f"""{bfih_context}
 PROPOSITION TO EVALUATE: "{proposition}"
 
 PARADIGMS (these determine priors and likelihood weighting, NOT the hypotheses):
@@ -2689,9 +2712,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
         paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
-        prompt = f"""
-You are assigning PRIOR probabilities for a BFIH (Bayesian Framework for Intellectual Honesty) analysis.
-
+        bfih_context = get_bfih_system_context("Prior Probability Assignment", "0c")
+        prompt = f"""{bfih_context}
 PROPOSITION: "{proposition}"
 
 ## CRITICAL DISTINCTION: PRIORS vs LIKELIHOODS
