@@ -240,18 +240,26 @@ class BFIHOrchestrator:
             # Extract structured computation metrics (posteriors, cluster_metrics, confirmation_metrics)
             computation_metrics = self._extract_computation_metrics(computation)
 
-            # Phase 5: Generate final report (pass pre-computed Bayesian tables)
+            # Compute paradigm-specific posteriors BEFORE Phase 5 report generation
+            posteriors_by_paradigm = self._extract_posteriors_from_report(
+                computation, request.scenario_config, evidence_clusters
+            )
+
+            # Build paradigm comparison table for Phase 5c
+            paradigm_comparison_table = self._format_paradigm_comparison_table(
+                posteriors_by_paradigm, request.scenario_config
+            )
+
+            # Phase 5: Generate final report (pass pre-computed Bayesian tables AND paradigm posteriors)
             bfih_report = self._run_phase_5_report(
                 request, methodology, evidence_text, likelihoods_text, computation,
                 evidence_items, enriched_clusters, computation_metrics,
-                precomputed_cluster_tables, precomputed_joint_table
+                precomputed_cluster_tables, precomputed_joint_table,
+                posteriors_by_paradigm, paradigm_comparison_table
             )
 
-            # Extract posteriors from computation output (Phase 4)
-            # Pass evidence_clusters to compute paradigm-specific posteriors
-            posteriors = self._extract_posteriors_from_report(
-                computation, request.scenario_config, evidence_clusters
-            )
+            # Use already-computed posteriors
+            posteriors = posteriors_by_paradigm
 
             # Create result object
             analysis_id = str(uuid.uuid4())
@@ -1295,7 +1303,9 @@ Print the final posteriors clearly labeled.
                            evidence_clusters: List[Dict] = None,
                            computation_metrics: Dict = None,
                            precomputed_cluster_tables: List[Dict] = None,
-                           precomputed_joint_table: str = None) -> str:
+                           precomputed_joint_table: str = None,
+                           posteriors_by_paradigm: Dict = None,
+                           paradigm_comparison_table: str = None) -> str:
         """Phase 5: Generate final BFIH report in multiple sub-phases for better quality.
 
         Generates report sections separately then concatenates them.
@@ -1305,6 +1315,8 @@ Print the final posteriors clearly labeled.
                                  extracted from Phase 4 code_interpreter output
             precomputed_cluster_tables: Pre-computed Bayesian metrics tables for each cluster
             precomputed_joint_table: Pre-computed joint evidence metrics table
+            posteriors_by_paradigm: Dict mapping paradigm_id -> {hypothesis_id -> posterior}
+            paradigm_comparison_table: Pre-formatted markdown comparing K0 vs biased paradigms
         """
         # Build context data
         paradigms = request.scenario_config.get("paradigms", [])
@@ -1328,10 +1340,11 @@ Print the final posteriors clearly labeled.
             precomputed_cluster_tables or []
         )
 
-        # Phase 5c: Bayesian Results (with PRE-COMPUTED joint metrics table)
+        # Phase 5c: Bayesian Results (with PRE-COMPUTED joint metrics table AND paradigm comparison)
         section_c = self._run_phase_5c_results(
             request, computation, paradigms, hypotheses, priors,
-            precomputed_cluster_tables or [], precomputed_joint_table or ""
+            precomputed_cluster_tables or [], precomputed_joint_table or "",
+            paradigm_comparison_table or ""
         )
 
         # Phase 5d: Bibliography
@@ -1527,10 +1540,12 @@ MARKDOWN FORMATTING:
                               computation: str, paradigms: List[Dict],
                               hypotheses: List[Dict], priors: Dict,
                               precomputed_cluster_tables: List[Dict] = None,
-                              precomputed_joint_table: str = None) -> str:
+                              precomputed_joint_table: str = None,
+                              paradigm_comparison_table: str = None) -> str:
         """Phase 5c: Generate Bayesian Results, Paradigm Comparison, Conclusions."""
         precomputed_cluster_tables = precomputed_cluster_tables or []
         precomputed_joint_table = precomputed_joint_table or ""
+        paradigm_comparison_table = paradigm_comparison_table or ""
 
         # Build cluster summary for reference
         cluster_summary = []
@@ -1559,11 +1574,20 @@ The following table was computed mathematically. YOU MUST COPY IT EXACTLY:
 
 ---
 
+## PRE-COMPUTED PARADIGM COMPARISON TABLE
+The following comparison shows posteriors under each paradigm, contrasting biased paradigms (K1-Kn)
+with the privileged paradigm K0 (designed to be maximally intellectually honest).
+COPY THIS SECTION EXACTLY - values are mathematically computed:
+
+{paradigm_comparison_table}
+
+---
+
 Generate these sections in markdown:
 
 ## 5. Joint Evidence Computation
 
-**Cumulative Evidence Effect (all clusters combined):**
+**Cumulative Evidence Effect (all clusters combined under K0):**
 
 COPY THE PRE-COMPUTED TABLE ABOVE EXACTLY:
 {precomputed_joint_table}
@@ -1576,10 +1600,12 @@ COPY THE PRE-COMPUTED TABLE ABOVE EXACTLY:
 
 ## 6. Paradigm Comparison
 
-How do conclusions differ across paradigms? For each paradigm:
-- Which hypothesis dominates?
-- What posterior probability?
-- Key differences in reasoning?
+COPY THE PRE-COMPUTED PARADIGM COMPARISON TABLE ABOVE EXACTLY.
+
+Then add a brief discussion (2-3 paragraphs) addressing:
+1. **Robustness**: Which conclusions hold across ALL paradigms vs which are paradigm-dependent?
+2. **Bias Effects**: How do the biased paradigms' blind spots affect their conclusions?
+3. **K0 Advantage**: Why K0's multi-domain, forcing-function-compliant analysis is more reliable
 
 ---
 
@@ -2013,6 +2039,102 @@ for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
                 f"{m.get('total_WoE_dB', 'N/A')} | {m.get('posterior', 'N/A')} |"
             )
         return "\n".join(lines)
+
+    def _format_paradigm_comparison_table(
+        self, posteriors_by_paradigm: Dict[str, Dict[str, float]], scenario_config: Dict
+    ) -> str:
+        """
+        Format a paradigm comparison showing K0 (privileged) vs each biased paradigm.
+
+        For each paradigm, shows:
+        - Posteriors under that paradigm
+        - Difference from K0 posteriors
+        - Which hypothesis "wins" under each paradigm
+        """
+        paradigms = scenario_config.get("paradigms", [])
+        hypotheses = scenario_config.get("hypotheses", [])
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+
+        if not posteriors_by_paradigm or not paradigms:
+            return "(Paradigm comparison not available)"
+
+        # Get K0 posteriors as baseline
+        k0_posteriors = posteriors_by_paradigm.get("K0", {})
+        if not k0_posteriors:
+            # Use first paradigm as baseline if K0 not found
+            k0_posteriors = list(posteriors_by_paradigm.values())[0] if posteriors_by_paradigm else {}
+
+        # Find K0's winning hypothesis
+        k0_winner = max(k0_posteriors.keys(), key=lambda h: k0_posteriors.get(h, 0)) if k0_posteriors else "N/A"
+        k0_winner_prob = k0_posteriors.get(k0_winner, 0)
+
+        sections = []
+
+        # Header section
+        sections.append(f"""### K0 (Privileged Paradigm) - Baseline
+
+**Winning Hypothesis:** {k0_winner} (posterior: {k0_winner_prob:.4f})
+
+| Hypothesis | Posterior |
+|------------|-----------|""")
+        for h_id in hyp_ids:
+            prob = k0_posteriors.get(h_id, 0)
+            sections.append(f"| {h_id} | {prob:.4f} |")
+
+        sections.append("")
+
+        # Comparison sections for each biased paradigm
+        for paradigm in paradigms:
+            p_id = paradigm.get("id", "")
+            p_name = paradigm.get("name", p_id)
+            is_privileged = paradigm.get("is_privileged", False)
+            bias_type = paradigm.get("bias_type", "")
+
+            if p_id == "K0" or is_privileged:
+                continue  # Skip K0, already shown above
+
+            p_posteriors = posteriors_by_paradigm.get(p_id, {})
+            if not p_posteriors:
+                continue
+
+            # Find this paradigm's winner
+            p_winner = max(p_posteriors.keys(), key=lambda h: p_posteriors.get(h, 0)) if p_posteriors else "N/A"
+            p_winner_prob = p_posteriors.get(p_winner, 0)
+
+            # Determine if winner differs from K0
+            winner_differs = p_winner != k0_winner
+            winner_note = " ⚠️ DIFFERS FROM K0" if winner_differs else " ✓ Agrees with K0"
+
+            sections.append(f"""---
+
+### {p_id}: {p_name}
+
+**Bias Type:** {bias_type or 'Not specified'}
+**Winning Hypothesis:** {p_winner} (posterior: {p_winner_prob:.4f}){winner_note}
+
+**Comparison with K0:**
+
+| Hypothesis | {p_id} Posterior | K0 Posterior | Δ (difference) |
+|------------|------------------|--------------|----------------|""")
+
+            for h_id in hyp_ids:
+                p_prob = p_posteriors.get(h_id, 0)
+                k0_prob = k0_posteriors.get(h_id, 0)
+                delta = p_prob - k0_prob
+                delta_str = f"+{delta:.4f}" if delta > 0 else f"{delta:.4f}"
+                sections.append(f"| {h_id} | {p_prob:.4f} | {k0_prob:.4f} | {delta_str} |")
+
+            # Brief interpretation
+            if winner_differs:
+                sections.append(f"""
+**Interpretation:** Under {p_id}'s {bias_type or 'biased'} perspective, {p_winner} dominates
+instead of K0's preferred {k0_winner}. This reflects the paradigm's characteristic blind spots.""")
+            else:
+                sections.append(f"""
+**Interpretation:** {p_id} agrees with K0 on the winning hypothesis, suggesting
+this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'different'} perspective.""")
+
+        return "\n".join(sections)
 
     def _parse_posterior_section(self, report: str) -> Dict[str, float]:
         """
