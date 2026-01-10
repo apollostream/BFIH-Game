@@ -69,6 +69,53 @@ logging.basicConfig(
 
 logger.info(f"Logging to console and file: {LOG_FILE}")
 
+
+# ============================================================================
+# PROBABILITY BOUNDS
+# ============================================================================
+# Prevent extreme probabilities (0 or 1) which break Bayesian math:
+# - log(0) = -infinity
+# - Division by zero in odds calculations
+# - No evidence can update a prior of 0 or 1 (violates Cromwell's Rule)
+
+PROB_EPSILON = 0.001  # Minimum distance from 0 or 1
+PROB_MIN = PROB_EPSILON        # 0.001
+PROB_MAX = 1.0 - PROB_EPSILON  # 0.999
+
+
+def clamp_probability(p: float, context: str = "") -> float:
+    """
+    Clamp a probability to avoid extreme values (0 or 1).
+
+    Per Cromwell's Rule: "I beseech you, in the bowels of Christ,
+    think it possible that you may be mistaken."
+
+    Args:
+        p: Probability value to clamp
+        context: Optional context string for logging
+
+    Returns:
+        Probability clamped to [PROB_MIN, PROB_MAX]
+    """
+    if p <= 0.0:
+        if context:
+            logger.warning(f"Clamping probability from {p} to {PROB_MIN} ({context})")
+        return PROB_MIN
+    elif p >= 1.0:
+        if context:
+            logger.warning(f"Clamping probability from {p} to {PROB_MAX} ({context})")
+        return PROB_MAX
+    elif p < PROB_MIN:
+        if context:
+            logger.debug(f"Clamping probability from {p} to {PROB_MIN} ({context})")
+        return PROB_MIN
+    elif p > PROB_MAX:
+        if context:
+            logger.debug(f"Clamping probability from {p} to {PROB_MAX} ({context})")
+        return PROB_MAX
+    return p
+
+
 # OpenAI Configuration
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
@@ -216,10 +263,11 @@ class BFIHOrchestrator:
             first_paradigm = paradigm_ids[0] if paradigm_ids else None
 
             for paradigm_id in paradigm_ids:
-                # Extract priors for this paradigm
+                # Extract priors for this paradigm (clamped to avoid extremes)
                 computation_priors = {}
                 for h_id, p in priors_by_paradigm[paradigm_id].items():
-                    computation_priors[h_id] = p if isinstance(p, (int, float)) else p.get("probability", 0.5)
+                    raw_prior = p if isinstance(p, (int, float)) else p.get("probability", 0.5)
+                    computation_priors[h_id] = clamp_probability(raw_prior, f"prior {h_id} in {paradigm_id}")
 
                 # Compute metrics for this paradigm
                 paradigm_enriched, paradigm_joint = self._compute_cluster_bayesian_metrics(
@@ -654,16 +702,17 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 paradigm_id = paradigm.get("id")
                 paradigm_priors = priors_by_paradigm.get(paradigm_id, {})
 
-                # Get priors for each hypothesis
+                # Get priors for each hypothesis (clamped to avoid extremes)
                 priors = {}
                 for h_id in hyp_ids:
                     p = paradigm_priors.get(h_id, paradigm_priors.get(h_id.upper(), {}))
                     if isinstance(p, dict):
-                        priors[h_id] = p.get("probability", p.get("prior", 1.0 / len(hyp_ids)))
+                        raw_prior = p.get("probability", p.get("prior", 1.0 / len(hyp_ids)))
                     elif isinstance(p, (int, float)):
-                        priors[h_id] = float(p)
+                        raw_prior = float(p)
                     else:
-                        priors[h_id] = 1.0 / len(hyp_ids)  # Uniform default
+                        raw_prior = 1.0 / len(hyp_ids)  # Uniform default
+                    priors[h_id] = clamp_probability(raw_prior, f"prior {h_id} in {paradigm_id}")
 
                 # Extract PARADIGM-SPECIFIC likelihoods P(E|H,K) for this paradigm
                 cluster_likelihoods = []
@@ -676,16 +725,18 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                         # Fallback to old format: likelihoods[H] (same for all paradigms)
                         lh = cluster.get("likelihoods", {})
 
-                    # Extract likelihood for each hypothesis
+                    # Extract likelihood for each hypothesis (clamped to avoid extremes)
                     cluster_lh = {}
+                    cluster_id = cluster.get("cluster_id", "unknown")
                     for h_id in hyp_ids:
                         h_lh = lh.get(h_id, lh.get(h_id.upper(), lh.get(h_id.lower(), {})))
                         if isinstance(h_lh, dict):
-                            cluster_lh[h_id] = h_lh.get("probability", 0.5)
+                            raw_lh = h_lh.get("probability", 0.5)
                         elif isinstance(h_lh, (int, float)):
-                            cluster_lh[h_id] = float(h_lh)
+                            raw_lh = float(h_lh)
                         else:
-                            cluster_lh[h_id] = 0.5  # Default neutral
+                            raw_lh = 0.5  # Default neutral
+                        cluster_lh[h_id] = clamp_probability(raw_lh, f"likelihood {h_id}|{cluster_id}")
                     cluster_likelihoods.append(cluster_lh)
 
                 # Compute unnormalized posteriors using Bayes' theorem
@@ -1922,15 +1973,17 @@ MARKDOWN FORMATTING:
                     logger.warning(f"Cluster '{cluster_name}': no likelihoods found, using defaults")
 
             # Normalize likelihood format (may be {H: prob} or {H: {probability: prob}})
+            # Clamp to avoid extremes (0 or 1)
             norm_likelihoods = {}
             for h_id in hyp_ids:
                 lh = likelihoods.get(h_id, likelihoods.get(h_id.upper(), {}))
                 if isinstance(lh, dict):
-                    norm_likelihoods[h_id] = lh.get("probability", 0.5)
+                    raw_lh = lh.get("probability", 0.5)
                 elif isinstance(lh, (int, float)):
-                    norm_likelihoods[h_id] = float(lh)
+                    raw_lh = float(lh)
                 else:
-                    norm_likelihoods[h_id] = 0.5  # Default neutral
+                    raw_lh = 0.5  # Default neutral
+                norm_likelihoods[h_id] = clamp_probability(raw_lh, f"likelihood {h_id}|{cluster_name}")
 
             # Compute P(E|¬H), LR, WoE for each hypothesis
             bayesian_metrics = {}

@@ -6,6 +6,7 @@ import {
   getWoEHeatmapColor,
   formatWoE,
   calculateWoE,
+  clampProbability,
 } from '../../utils';
 import type { Hypothesis, EvidenceCluster, Paradigm, PriorWithJustification } from '../../types';
 import { ParadigmSelector } from '../game/ParadigmCard';
@@ -42,10 +43,17 @@ export function EvidenceMatrixHeatmap({
   } | null>(null);
 
   // Helper to extract prior value (handles both number and {probability: number} formats)
+  // Clamps to avoid extremes (0 or 1) which break Bayesian math
   const getPriorValue = (prior: PriorValue | undefined): number => {
-    if (prior === undefined) return 1.0 / hypotheses.length;
-    if (typeof prior === 'number') return prior;
-    return prior.probability ?? 1.0 / hypotheses.length;
+    let raw: number;
+    if (prior === undefined) {
+      raw = 1.0 / hypotheses.length;
+    } else if (typeof prior === 'number') {
+      raw = prior;
+    } else {
+      raw = prior.probability ?? 1.0 / hypotheses.length;
+    }
+    return clampProbability(raw);
   };
 
   // Helper to get likelihoods for a cluster, supporting both formats
@@ -83,9 +91,10 @@ export function EvidenceMatrixHeatmap({
           };
         } else {
           // Compute using correct Bayesian formula
+          // All probabilities are clamped to avoid extremes (0 or 1)
           const clusterLikelihoods = getClusterLikelihoods(cluster, activeParadigm);
           const likelihoodData = clusterLikelihoods[hypothesis.id];
-          const pEH = likelihoodData?.probability ?? 0.5;
+          const pEH = clampProbability(likelihoodData?.probability ?? 0.5);
           const priorI = getPriorValue(paradigmPriors[hypothesis.id]);
           const complementPrior = 1.0 - priorI;
 
@@ -95,7 +104,7 @@ export function EvidenceMatrixHeatmap({
             pENotH = hypIds
               .filter(hj => hj !== hypothesis.id)
               .reduce((sum, hj) => {
-                const pEHj = clusterLikelihoods[hj]?.probability ?? 0.5;
+                const pEHj = clampProbability(clusterLikelihoods[hj]?.probability ?? 0.5);
                 const priorJ = getPriorValue(paradigmPriors[hj]);
                 return sum + pEHj * (priorJ / complementPrior);
               }, 0);

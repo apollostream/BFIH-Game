@@ -1,5 +1,25 @@
 // Formatting utilities
 
+// Probability bounds to avoid extremes (0 or 1) which break Bayesian math
+// Per Cromwell's Rule: always leave room for uncertainty
+export const PROB_MIN = 0.001;
+export const PROB_MAX = 0.999;
+
+/**
+ * Clamp a probability to avoid extreme values (0 or 1).
+ * Extreme values break Bayesian calculations:
+ * - log(0) = -infinity
+ * - Division by zero in odds calculations
+ * - No evidence can update a prior of 0 or 1 (violates Cromwell's Rule)
+ */
+export function clampProbability(p: number): number {
+  if (p <= 0) return PROB_MIN;
+  if (p >= 1) return PROB_MAX;
+  if (p < PROB_MIN) return PROB_MIN;
+  if (p > PROB_MAX) return PROB_MAX;
+  return p;
+}
+
 // Format number as percentage
 export function formatPercent(value: number, decimals: number = 1): string {
   return `${(value * 100).toFixed(decimals)}%`;
