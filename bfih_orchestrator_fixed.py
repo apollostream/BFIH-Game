@@ -1036,19 +1036,29 @@ METHODOLOGY CONTEXT:
 
 YOUR TASK:
 For EACH hypothesis, search for real-world evidence:
-1. Generate 2-3 specific web search queries per hypothesis
-2. Execute web searches to find supporting or refuting evidence
+1. Generate 3-4 specific web search queries per hypothesis (minimum 15-20 total queries)
+2. Execute ALL queries to find supporting AND refuting evidence
 3. Record FULL source citations with URLs for all evidence
 
-Return a JSON object with "evidence_items" array containing ALL relevant evidence found.
-- Include EVERY distinct source discovered (aim for 15-30+ items if available)
-- Do NOT artificially limit to exactly 15 items - include all relevant sources
+SEARCH STRATEGY - Execute searches for:
+- Company funding/investment news
+- Customer testimonials and case studies
+- Competitor analysis and market position
+- Critical reviews or concerns
+- Employee reviews (Glassdoor, LinkedIn)
+- Regulatory or legal issues
+- Industry analyst reports
+- Historical context and base rates for similar companies
+
+Return a JSON object with "evidence_items" array containing 15-25 evidence items.
+- Include evidence that SUPPORTS each hypothesis
+- Include evidence that REFUTES each hypothesis (critical for intellectual honesty)
 - Each item needs: evidence_id, description, source_name, source_url, citation_apa, date_accessed, supports_hypotheses, refutes_hypotheses, evidence_type
 
 Evidence types: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional
 """
         try:
-            tools = [{"type": "web_search", "search_context_size": "medium"}]
+            tools = [{"type": "web_search", "search_context_size": "high"}]
             result = self._run_structured_phase(
                 prompt, "evidence", "Phase 2: Evidence Gathering",
                 tools=tools
