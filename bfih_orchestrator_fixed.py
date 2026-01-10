@@ -1040,8 +1040,10 @@ For EACH hypothesis, search for real-world evidence:
 2. Execute web searches to find supporting or refuting evidence
 3. Record FULL source citations with URLs for all evidence
 
-Return a JSON object with "evidence_items" array containing 15-25 evidence items.
-Each item needs: evidence_id, description, source_name, source_url, citation_apa, date_accessed, supports_hypotheses, refutes_hypotheses, evidence_type.
+Return a JSON object with "evidence_items" array containing ALL relevant evidence found.
+- Include EVERY distinct source discovered (aim for 15-30+ items if available)
+- Do NOT artificially limit to exactly 15 items - include all relevant sources
+- Each item needs: evidence_id, description, source_name, source_url, citation_apa, date_accessed, supports_hypotheses, refutes_hypotheses, evidence_type
 
 Evidence types: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional
 """
@@ -1528,7 +1530,9 @@ For EACH hypothesis:
 
 IMPORTANT MARKDOWN FORMATTING:
 - Always include a BLANK LINE before any table (between label and table header)
-- Use DECIMAL format (0.XXX) for all probabilities.
+- Use DECIMAL format (0.XXX) for all probabilities
+- DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
+- Output raw markdown directly
 """
         return self._run_phase(prompt, [], "Phase 5a: Introduction Sections")
 
@@ -1625,6 +1629,8 @@ IMPORTANT:
 
 MARKDOWN FORMATTING:
 - Always include a BLANK LINE before any table
+- DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
+- Output raw markdown directly
 """
         return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
 
@@ -1729,6 +1735,8 @@ IMPORTANT:
 MARKDOWN FORMATTING:
 - Always include a BLANK LINE before any table
 - Use values from the pre-computed table exactly as shown
+- DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
+- Output raw markdown directly - the content will be rendered as markdown
 """
         return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions")
 
