@@ -234,15 +234,11 @@ class BFIHOrchestrator:
 
             precomputed_joint_table = self._format_joint_metrics_table(joint_metrics, hyp_ids)
 
-            # Phase 4: Run Bayesian computation (for verification and additional outputs)
-            computation = self._run_phase_4_computation(request, likelihoods_text)
-
-            # Extract structured computation metrics (posteriors, cluster_metrics, confirmation_metrics)
-            computation_metrics = self._extract_computation_metrics(computation)
-
-            # Compute paradigm-specific posteriors BEFORE Phase 5 report generation
-            posteriors_by_paradigm = self._extract_posteriors_from_report(
-                computation, request.scenario_config, evidence_clusters
+            # Compute paradigm-specific posteriors using Python (authoritative source)
+            # NOTE: Phase 4 code_interpreter was removed - it produced inconsistent posteriors
+            # that didn't account for paradigm-specific priors and likelihoods
+            posteriors_by_paradigm = self._compute_paradigm_posteriors(
+                request.scenario_config, evidence_clusters
             )
 
             # Build paradigm comparison table for Phase 5c
@@ -252,8 +248,8 @@ class BFIHOrchestrator:
 
             # Phase 5: Generate final report (pass pre-computed Bayesian tables AND paradigm posteriors)
             bfih_report = self._run_phase_5_report(
-                request, methodology, evidence_text, likelihoods_text, computation,
-                evidence_items, enriched_clusters, computation_metrics,
+                request, methodology, evidence_text, likelihoods_text,
+                evidence_items, enriched_clusters,
                 precomputed_cluster_tables, precomputed_joint_table,
                 posteriors_by_paradigm, paradigm_comparison_table
             )
@@ -596,11 +592,15 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 """
         return prompt
     
-    def _extract_posteriors_from_report(self, report: str, scenario_config: Dict,
-                                         evidence_clusters: List[Dict] = None) -> Dict:
+    def _compute_paradigm_posteriors(self, scenario_config: Dict,
+                                      evidence_clusters: List[Dict] = None) -> Dict:
         """
-        Extract posterior probabilities from the generated report.
+        Compute paradigm-specific posterior probabilities using Bayesian updating.
         Returns dict of {paradigm_id: {hypothesis_id: posterior_value}}
+
+        This is the AUTHORITATIVE source for all posterior values in the system.
+        Phase 4 code_interpreter was removed because it didn't account for
+        paradigm-specific priors and likelihoods.
 
         Computes SEPARATE posteriors for each paradigm using:
         - Each paradigm's specific priors from scenario_config
@@ -689,18 +689,14 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 logger.info(f"Paradigm {paradigm_id} posteriors: {posteriors[paradigm_id]}")
         else:
-            # Fallback: Parse posteriors from report text (same for all paradigms)
-            logger.warning("No evidence clusters available, falling back to text extraction")
-            extracted = self._parse_posterior_section(report)
-
-            if not extracted:
-                logger.warning("No posteriors extracted from report, using defaults")
+            # Fallback: Use uniform posteriors when no evidence clusters available
+            logger.warning("No evidence clusters available, using uniform posteriors")
+            uniform_prob = 1.0 / len(hyp_ids) if hyp_ids else 0.25
 
             for paradigm in paradigms:
                 paradigm_id = paradigm.get("id")
-                posteriors[paradigm_id] = {}
-                for hypothesis_id, value in extracted.items():
-                    posteriors[paradigm_id][hypothesis_id] = value
+                posteriors[paradigm_id] = {h_id: uniform_prob for h_id in hyp_ids}
+                logger.info(f"Paradigm {paradigm_id} using uniform posteriors: {posteriors[paradigm_id]}")
 
         return posteriors
 
@@ -1264,56 +1260,11 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         logger.warning("Could not parse structured clusters, returning empty list")
         return []
 
-    def _run_phase_4_computation(self, request: BFIHAnalysisRequest, likelihoods: str) -> str:
-        """Phase 4: Run Bayesian computation with code interpreter"""
-        scenario_json = json.dumps(request.scenario_config, indent=2)
-
-        # Build the Python code template
-        python_code = self._build_bayesian_code_template()
-
-        bfih_context = get_bfih_system_context("Bayesian Computation", "4")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
-
-SCENARIO CONFIGURATION:
-{scenario_json}
-
-LIKELIHOOD ASSIGNMENTS:
-{likelihoods[:6000]}
-
-YOUR TASK:
-Use the Python code_interpreter to compute:
-1. Parse the likelihood assignments above into evidence clusters
-2. Compute P(E|¬H) for each hypothesis using: P(E|¬H_i) = Σ P(E|H_j) * P(H_j)/(1-P(H_i)) for j≠i
-3. Compute likelihood ratios: LR = P(E|H) / P(E|¬H)
-4. Compute weight of evidence: WoE = 10 * log₁₀(LR) in decibans
-5. Compute posterior probabilities using Bayes' theorem
-6. Print results in this EXACT format:
-
-BFIH POSTERIOR COMPUTATION
-Final Posterior Probabilities:
-H1: [value]
-H2: [value]
-...
-
-Here is a template to adapt:
-
-```python
-{python_code}
-```
-
-IMPORTANT: Adapt the priors and likelihoods based on the scenario configuration and likelihood assignments above.
-Print the final posteriors clearly labeled.
-"""
-        tools = [{"type": "code_interpreter", "container": {"type": "auto"}}]
-        return self._run_phase(prompt, tools, "Phase 4: Bayesian Computation")
-
     def _run_phase_5_report(self, request: BFIHAnalysisRequest,
                            methodology: str, evidence: str,
-                           likelihoods: str, computation: str,
+                           likelihoods: str,
                            evidence_items: List[Dict] = None,
                            evidence_clusters: List[Dict] = None,
-                           computation_metrics: Dict = None,
                            precomputed_cluster_tables: List[Dict] = None,
                            precomputed_joint_table: str = None,
                            posteriors_by_paradigm: Dict = None,
@@ -1323,18 +1274,19 @@ Print the final posteriors clearly labeled.
         Generates report sections separately then concatenates them.
 
         Args:
-            computation_metrics: Structured dict with posteriors, cluster_metrics, confirmation_metrics
-                                 extracted from Phase 4 code_interpreter output
             precomputed_cluster_tables: Pre-computed Bayesian metrics tables for each cluster
             precomputed_joint_table: Pre-computed joint evidence metrics table
             posteriors_by_paradigm: Dict mapping paradigm_id -> {hypothesis_id -> posterior}
             paradigm_comparison_table: Pre-formatted markdown comparing K0 vs biased paradigms
+
+        NOTE: Phase 4 code_interpreter was removed. All Bayesian computation is now done
+        in Python (_compute_paradigm_posteriors) to ensure paradigm-specific posteriors
+        are consistent throughout the report.
         """
         # Build context data
         paradigms = request.scenario_config.get("paradigms", [])
         hypotheses = request.scenario_config.get("hypotheses", [])
         priors = request.scenario_config.get("priors_by_paradigm", request.scenario_config.get("priors", {}))
-        computation_metrics = computation_metrics or {}
 
         paradigm_list = self._build_paradigm_list_with_stances(paradigms)
         hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
@@ -1343,7 +1295,7 @@ Print the final posteriors clearly labeled.
 
         # Phase 5a: Executive Summary, Paradigms, Hypotheses
         section_a = self._run_phase_5a_intro(
-            request, paradigm_list, hypothesis_list, computation, priors,
+            request, paradigm_list, hypothesis_list, priors,
             posteriors_by_paradigm
         )
 
@@ -1355,7 +1307,7 @@ Print the final posteriors clearly labeled.
 
         # Phase 5c: Bayesian Results (with PRE-COMPUTED joint metrics table AND paradigm comparison)
         section_c = self._run_phase_5c_results(
-            request, computation, paradigms, hypotheses, priors,
+            request, paradigms, hypotheses, priors,
             precomputed_cluster_tables or [], precomputed_joint_table or "",
             paradigm_comparison_table or ""
         )
@@ -1530,7 +1482,7 @@ Print the final posteriors clearly labeled.
 
     def _run_phase_5a_intro(self, request: BFIHAnalysisRequest,
                             paradigm_list: str, hypothesis_list: str,
-                            computation: str, priors: Dict,
+                            priors: Dict,
                             posteriors_by_paradigm: Dict = None) -> str:
         """Phase 5a: Generate Executive Summary, Paradigms, and Hypotheses sections."""
         bfih_context = get_bfih_system_context("Report Generation - Introduction", "5a")
@@ -1717,7 +1669,7 @@ MARKDOWN FORMATTING:
         return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
 
     def _run_phase_5c_results(self, request: BFIHAnalysisRequest,
-                              computation: str, paradigms: List[Dict],
+                              paradigms: List[Dict],
                               hypotheses: List[Dict], priors: Dict,
                               precomputed_cluster_tables: List[Dict] = None,
                               precomputed_joint_table: str = None,
@@ -1884,130 +1836,6 @@ MARKDOWN FORMATTING:
 | Sensitivity Analysis | ✓ | Prior variation tested |
 """
         return bibliography
-
-    def _build_bayesian_code_template(self) -> str:
-        """Return the Python code template for Bayesian computation"""
-        return '''import json
-import numpy as np
-from collections import OrderedDict
-
-# Define hypotheses and priors (ADAPT THESE based on scenario)
-hypotheses = ["H1", "H2", "H3", "H4"]
-priors = {"H1": 0.25, "H2": 0.25, "H3": 0.25, "H4": 0.25}
-
-# Define evidence clusters with likelihoods (ADAPT THESE based on likelihood assignments)
-evidence_clusters = OrderedDict({
-    "Cluster_A": {
-        "description": "Evidence cluster A",
-        "likelihoods": {"H1": 0.5, "H2": 0.5, "H3": 0.5, "H4": 0.5}
-    }
-})
-
-# Compute P(E|~H) for each hypothesis and cluster-level metrics
-cluster_metrics = {h: [] for h in hypotheses}
-for cluster_name, cluster_data in evidence_clusters.items():
-    lklhd = cluster_data["likelihoods"]
-    cluster_data["likelihoods_not_h"] = {}
-    for h_i in hypotheses:
-        complement_prior = 1 - priors[h_i]
-        if complement_prior > 0:
-            p_e_not_h = sum(
-                lklhd[h_j] * (priors[h_j] / complement_prior)
-                for h_j in hypotheses if h_j != h_i
-            )
-            cluster_data["likelihoods_not_h"][h_i] = p_e_not_h
-            # Cluster-level LR and WoE
-            p_e_h = lklhd[h_i]
-            lr = p_e_h / p_e_not_h if p_e_not_h > 0 else float("inf")
-            woe = 10 * np.log10(lr) if lr > 0 and lr != float("inf") else 0
-            cluster_metrics[h_i].append({
-                "cluster": cluster_name,
-                "P(E|H)": round(p_e_h, 4),
-                "P(E|~H)": round(p_e_not_h, 4),
-                "LR": round(lr, 4) if lr != float("inf") else "inf",
-                "WoE_dB": round(woe, 2)
-            })
-
-# Compute posteriors and total likelihood
-unnormalized = {}
-total_likelihood = {}
-for h_i in hypotheses:
-    log_likelihood = sum(
-        np.log10(cluster["likelihoods"][h_i])
-        for cluster in evidence_clusters.values()
-    )
-    total_likelihood[h_i] = 10 ** log_likelihood
-    unnormalized[h_i] = priors[h_i] * total_likelihood[h_i]
-
-norm_const = sum(unnormalized.values())
-posteriors = {h: round(unnormalized[h] / norm_const, 6) for h in hypotheses}
-
-# Compute total confirmation metrics (LR and WoE from priors to posteriors)
-confirmation_metrics = {}
-for h in hypotheses:
-    prior = priors[h]
-    post = posteriors[h]
-    if prior > 0 and prior < 1 and post > 0 and post < 1:
-        prior_odds = prior / (1 - prior)
-        posterior_odds = post / (1 - post)
-        total_lr = posterior_odds / prior_odds
-        total_woe = 10 * np.log10(total_lr) if total_lr > 0 else 0
-    else:
-        total_lr = float("inf") if post >= 1 else 0
-        total_woe = float("inf") if post >= 1 else float("-inf")
-    confirmation_metrics[h] = {
-        "prior": round(prior, 4),
-        "posterior": round(post, 6),
-        "total_LR": round(total_lr, 4) if total_lr != float("inf") else "inf",
-        "total_WoE_dB": round(total_woe, 2) if total_woe not in [float("inf"), float("-inf")] else str(total_woe)
-    }
-
-# Output as JSON for reliable parsing
-result = {
-    "posteriors": posteriors,
-    "priors": priors,
-    "confirmation_metrics": confirmation_metrics,
-    "cluster_metrics": cluster_metrics,
-    "sum_check": round(sum(posteriors.values()), 6)
-}
-
-print("BFIH_JSON_OUTPUT_START")
-print(json.dumps(result, indent=2))
-print("BFIH_JSON_OUTPUT_END")
-
-# Also print human-readable format
-print("\\nBFIH POSTERIOR COMPUTATION")
-print("Final Posterior Probabilities:")
-for h in sorted(posteriors.keys(), key=lambda x: posteriors[x], reverse=True):
-    cm = confirmation_metrics[h]
-    print(f"{h}: {posteriors[h]:.4f} (LR: {cm['total_LR']}, WoE: {cm['total_WoE_dB']} dB)")
-'''
-
-    def _extract_computation_metrics(self, computation_output: str) -> Dict:
-        """
-        Extract full Bayesian computation metrics from Phase 4 output.
-        Returns dict with: posteriors, priors, confirmation_metrics, cluster_metrics
-        """
-        # Try to extract JSON output
-        json_pattern = r"BFIH_JSON_OUTPUT_START\s*(\{.*?\})\s*BFIH_JSON_OUTPUT_END"
-        json_match = re.search(json_pattern, computation_output, re.DOTALL)
-
-        if json_match:
-            try:
-                result = json.loads(json_match.group(1))
-                logger.info(f"Extracted full computation metrics: posteriors={list(result.get('posteriors', {}).keys())}, "
-                           f"cluster_metrics={len(result.get('cluster_metrics', {}))} hypotheses")
-                return result
-            except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse computation JSON: {e}")
-
-        # Return empty structure if parsing fails
-        return {
-            "posteriors": {},
-            "priors": {},
-            "confirmation_metrics": {},
-            "cluster_metrics": {}
-        }
 
     def _compute_cluster_bayesian_metrics(
         self, evidence_clusters: List[Dict], priors: Dict[str, float], paradigm_id: str = None
@@ -2337,61 +2165,6 @@ instead of K0's preferred {k0_winner}. This reflects the paradigm's characterist
 this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'different'} perspective.""")
 
         return "\n".join(sections)
-
-    def _parse_posterior_section(self, report: str) -> Dict[str, float]:
-        """
-        Parse posteriors from the computation output.
-        First tries to extract JSON between BFIH_JSON_OUTPUT_START/END markers.
-        Falls back to regex parsing of "H1: 0.91" format.
-        """
-        extracted = {}
-
-        # Method 1: Try to extract JSON output (preferred)
-        json_pattern = r"BFIH_JSON_OUTPUT_START\s*(\{.*?\})\s*BFIH_JSON_OUTPUT_END"
-        json_match = re.search(json_pattern, report, re.DOTALL)
-
-        if json_match:
-            try:
-                result = json.loads(json_match.group(1))
-                extracted = result.get("posteriors", {})
-                logger.info(f"Extracted posteriors from JSON: {extracted}")
-                return extracted
-            except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse JSON output: {e}, falling back to regex")
-
-        # Method 2: Fallback to regex parsing
-        section_pattern = r"BFIH POSTERIOR COMPUTATION[=\s\n]*(?:Final Posterior Probabilities[:\s]*)?(.+?)(?:Sum:|Normalization|BFIH BAYESIAN|```|$)"
-        section_match = re.search(section_pattern, report, re.DOTALL | re.IGNORECASE)
-
-        if section_match:
-            section_text = section_match.group(1)
-            logger.debug(f"Found posterior section: {section_text[:300]}...")
-        else:
-            logger.warning("Could not find 'BFIH POSTERIOR COMPUTATION' section, searching full report")
-            section_text = report
-
-        # Pattern: H1: 0.91 or H4: 1.2e-3 or **H1**: 0.3890 (with optional bold markdown)
-        posterior_pattern = r"\*?\*?(H\d+)\*?\*?\s*:\s*([0-9.]+(?:e[+-]?\d+)?)"
-        matches = re.findall(posterior_pattern, section_text, re.IGNORECASE)
-
-        for hypothesis_id, value_str in matches:
-            hypothesis_id = hypothesis_id.upper()
-            try:
-                value = float(value_str)
-                if 0.0 <= value <= 1.0:
-                    extracted[hypothesis_id] = value
-                else:
-                    logger.warning(f"Posterior {value} for {hypothesis_id} outside [0,1]")
-            except ValueError as e:
-                logger.warning(f"Could not parse '{value_str}' for {hypothesis_id}: {e}")
-
-        if extracted:
-            total = sum(extracted.values())
-            if not (0.9 <= total <= 1.1):
-                logger.warning(f"Extracted posteriors sum to {total:.4f}, expected ~1.0")
-
-        logger.info(f"Extracted posteriors: {extracted}")
-        return extracted
 
     # ========================================================================
     # AUTONOMOUS ANALYSIS (Topic Submission → Full Analysis)
