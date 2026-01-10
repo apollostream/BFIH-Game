@@ -30,6 +30,8 @@ analysis_result*.json
 bfih_report_auto_*.md
 bfih_report_auto_*.json
 bfih_report_auto_*.html
+bfih-report-auto_*.md
+bfih-report-auto_*.html
 auto_*.html
 uploaded_files.json
 *_v2.json
