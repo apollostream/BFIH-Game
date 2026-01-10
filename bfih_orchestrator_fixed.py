@@ -1343,7 +1343,8 @@ Print the final posteriors clearly labeled.
 
         # Phase 5a: Executive Summary, Paradigms, Hypotheses
         section_a = self._run_phase_5a_intro(
-            request, paradigm_list, hypothesis_list, computation, priors
+            request, paradigm_list, hypothesis_list, computation, priors,
+            posteriors_by_paradigm
         )
 
         # Phase 5b: Evidence Matrix (with PRE-COMPUTED Bayesian tables)
@@ -1529,9 +1530,28 @@ Print the final posteriors clearly labeled.
 
     def _run_phase_5a_intro(self, request: BFIHAnalysisRequest,
                             paradigm_list: str, hypothesis_list: str,
-                            computation: str, priors: Dict) -> str:
+                            computation: str, priors: Dict,
+                            posteriors_by_paradigm: Dict = None) -> str:
         """Phase 5a: Generate Executive Summary, Paradigms, and Hypotheses sections."""
         bfih_context = get_bfih_system_context("Report Generation - Introduction", "5a")
+
+        # Format paradigm-specific posteriors for Executive Summary
+        # This is the AUTHORITATIVE source - use these values, not code_interpreter output
+        posteriors_by_paradigm = posteriors_by_paradigm or {}
+        k0_posteriors = posteriors_by_paradigm.get("K0", {})
+
+        # Build posteriors summary table
+        posteriors_summary = "**K0 (Privileged Paradigm) Posteriors - USE THESE VALUES:**\n\n"
+        posteriors_summary += "| Hypothesis | Posterior |\n|------------|----------|\n"
+        for h_id in sorted(k0_posteriors.keys()):
+            posteriors_summary += f"| {h_id} | {k0_posteriors[h_id]:.4f} |\n"
+
+        # Find winning hypothesis under K0
+        if k0_posteriors:
+            winning_h = max(k0_posteriors.keys(), key=lambda h: k0_posteriors[h])
+            winning_posterior = k0_posteriors[winning_h]
+            posteriors_summary += f"\n**Winning hypothesis under K0: {winning_h} (posterior: {winning_posterior:.4f})**\n"
+
         prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
@@ -1544,8 +1564,15 @@ HYPOTHESES:
 PRIORS BY PARADIGM:
 {json.dumps(priors, indent=2)}
 
-COMPUTATION RESULTS:
-{computation[:3000]}
+## AUTHORITATIVE POSTERIOR PROBABILITIES (computed mathematically)
+
+IMPORTANT: The posteriors below were computed programmatically using Bayesian updating.
+Use ONLY these values in the Executive Summary. Do NOT use any other posterior values.
+
+{posteriors_summary}
+
+All paradigm posteriors:
+{json.dumps(posteriors_by_paradigm, indent=2)}
 
 Generate these sections in markdown:
 
