@@ -1336,7 +1336,7 @@ Print the final posteriors clearly labeled.
         priors = request.scenario_config.get("priors_by_paradigm", request.scenario_config.get("priors", {}))
         computation_metrics = computation_metrics or {}
 
-        paradigm_list = "\n".join([f"- {p.get('id', 'K?')}: {p.get('name', 'Unknown')} - {p.get('description', '')}" for p in paradigms])
+        paradigm_list = self._build_paradigm_list_with_stances(paradigms)
         hypothesis_list = "\n".join([f"- {h.get('id', 'H?')}: {h.get('name', 'Unknown')} - {h.get('description', '')}" for h in hypotheses])
         evidence_items_json = json.dumps(evidence_items or [], indent=2)
         evidence_clusters_json = json.dumps(evidence_clusters or [], indent=2)
@@ -1390,6 +1390,52 @@ Print the final posteriors clearly labeled.
         # Post-process report to add short names next to Ki/Hj symbols
         full_report = self._enrich_report_with_short_names(full_report, request.scenario_config)
         return full_report
+
+    def _build_paradigm_list_with_stances(self, paradigms: List[Dict]) -> str:
+        """
+        Build paradigm list with pre-computed stance tables for the report.
+
+        Each paradigm gets a description and a 6-dimension stance table built
+        programmatically from the paradigm JSON data.
+        """
+        sections = []
+        for p in paradigms:
+            p_id = p.get('id', 'K?')
+            p_name = p.get('name', 'Unknown')
+            p_desc = p.get('description', '')
+            p_stance = p.get('stance', {})
+
+            # Build stance table if stance data exists
+            if p_stance:
+                stance_table = f"""
+**Explicit Stance (6 Dimensions):**
+
+| Dimension | Stance |
+|-----------|--------|
+| Ontology | {p_stance.get('ontology', 'Not specified')} |
+| Epistemology | {p_stance.get('epistemology', 'Not specified')} |
+| Axiology | {p_stance.get('axiology', 'Not specified')} |
+| Methodology | {p_stance.get('methodology', 'Not specified')} |
+| Sociology | {p_stance.get('sociology', 'Not specified')} |
+| Temporality | {p_stance.get('temporality', 'Not specified')} |
+"""
+            else:
+                stance_table = "\n*(No explicit stance data available)*\n"
+
+            # Mark K0-inv specially
+            inverse_note = ""
+            if p.get('is_k0_inverse'):
+                inverse_note = " **(True inverse of K0)**"
+            elif p.get('is_privileged'):
+                inverse_note = " **(Privileged paradigm)**"
+
+            section = f"""### {p_id}: {p_name}{inverse_note}
+
+{p_desc}
+{stance_table}"""
+            sections.append(section)
+
+        return "\n---\n".join(sections)
 
     def _enrich_report_with_short_names(self, report: str, scenario_config: Dict) -> str:
         """
@@ -1517,10 +1563,9 @@ Write 3-4 paragraphs covering:
 
 ## 1. Paradigms Analyzed
 
-For EACH paradigm, write 1-2 paragraphs describing:
-- The paradigm name and core assumptions
-- What this paradigm treats as valid evidence
-- How it would approach this question differently from other paradigms
+The paradigm data below includes PRE-BUILT stance tables. Copy them EXACTLY as provided.
+For each paradigm, you may add 1-2 sentences of additional context AFTER the stance table,
+but DO NOT modify the table content - it was computed programmatically from the paradigm JSON.
 
 ---
 
