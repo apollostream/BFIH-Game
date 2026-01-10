@@ -2959,13 +2959,29 @@ Paradigm IDs: {paradigm_ids}
 ## ASSIGNMENT RULES:
 
 1. **Priors must sum to 1.0** for each paradigm (MECE requirement)
-2. **K0 (privileged paradigm)** should have more balanced priors reflecting uncertainty
-3. **K1-K5 (biased paradigms)** should have priors that reflect their specific biases:
+
+2. **BASE RATES ARE CRITICAL** - Before assigning priors, consider:
+   - What is the base rate for claims like this to be true in general?
+   - For startups: ~90% fail, ~5-10% might be called "thriving"
+   - For extraordinary claims: Start with LOW priors for affirmative hypotheses
+   - The prior for H1 (proposition TRUE) should reflect how UNLIKELY the claim is *a priori*
+   - A company being "thriving" is NOT the default state - it's the exception
+
+3. **K0 (privileged paradigm)** should be SKEPTICAL by default:
+   - Reflect genuine uncertainty weighted by base rates
+   - For positive claims (X is thriving, X is successful), start with LOW priors (0.10-0.20)
+   - Spread probability mass across FALSE, PARTIAL, and alternative hypotheses
+   - Only assign high priors to affirmative claims if background knowledge strongly supports them
+
+4. **K1-Kn (biased paradigms)** should have priors that reflect their specific biases:
    - Domain bias: Higher priors for hypotheses in favored domains
    - Temporal bias: Higher priors for hypotheses matching time horizon preference
    - Ideological bias: Higher priors for hypotheses aligned with values
-4. **H0 (catch-all)** should generally receive 5-20% prior (room for unforeseen alternatives)
-5. **Justifications** should reference paradigm assumptions, NOT external evidence
+   - Even biased paradigms should respect base rates somewhat
+
+5. **H0 (catch-all)** should generally receive 5-20% prior (room for unforeseen alternatives)
+
+6. **Justifications** should reference paradigm assumptions AND base rate reasoning, NOT external evidence
 
 ## OUTPUT FORMAT
 
@@ -2973,8 +2989,10 @@ Return as a JSON object with "paradigm_priors" array containing:
 - paradigm_id: the paradigm identifier
 - hypothesis_priors: array of {{hypothesis_id, prior, justification}}
 
-Example justification (GOOD): "K1's economic focus naturally assigns higher prior to market-based explanations"
+Example justification (GOOD): "Given the base rate that ~90% of startups fail, K0 assigns only 0.15 prior to H1 (TRUE) and spreads mass across H2-H4"
+Example justification (GOOD): "K1's economic focus assigns slightly higher prior (0.25) to market-based explanations, though still respecting low base rates"
 Example justification (BAD): "Studies show that economic factors account for 60% of such outcomes" (uses evidence!)
+Example justification (BAD): "The proposition sounds reasonable so H1 gets 0.40" (ignores base rates!)
 
 IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
