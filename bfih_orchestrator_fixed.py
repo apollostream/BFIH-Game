@@ -204,27 +204,53 @@ class BFIHOrchestrator:
             )
 
             # Compute Bayesian metrics (P(E|¬H), LR, WoE) in Python - NOT by LLM
-            # Get priors for computation (use first paradigm's priors or average)
+            # Compute metrics for ALL paradigms so frontend can display paradigm-specific values
             priors_by_paradigm = request.scenario_config.get(
                 "priors_by_paradigm", request.scenario_config.get("priors", {})
             )
-            # Use first paradigm's priors for cluster metrics (or could average across paradigms)
-            first_paradigm = list(priors_by_paradigm.keys())[0] if priors_by_paradigm else None
-            computation_priors = {}
-            if first_paradigm:
-                for h_id, p in priors_by_paradigm[first_paradigm].items():
+            paradigm_ids = list(priors_by_paradigm.keys()) if priors_by_paradigm else []
+
+            # Compute metrics for each paradigm and merge into bayesian_metrics_by_paradigm
+            enriched_clusters = None
+            joint_metrics = {}
+            first_paradigm = paradigm_ids[0] if paradigm_ids else None
+
+            for paradigm_id in paradigm_ids:
+                # Extract priors for this paradigm
+                computation_priors = {}
+                for h_id, p in priors_by_paradigm[paradigm_id].items():
                     computation_priors[h_id] = p if isinstance(p, (int, float)) else p.get("probability", 0.5)
 
-            enriched_clusters, joint_metrics = self._compute_cluster_bayesian_metrics(
-                evidence_clusters, computation_priors, first_paradigm
-            )
+                # Compute metrics for this paradigm
+                paradigm_enriched, paradigm_joint = self._compute_cluster_bayesian_metrics(
+                    evidence_clusters, computation_priors, paradigm_id
+                )
 
-            # Format pre-computed tables for report
+                if enriched_clusters is None:
+                    # First paradigm: initialize enriched_clusters with bayesian_metrics_by_paradigm
+                    enriched_clusters = []
+                    for cluster in paradigm_enriched:
+                        new_cluster = {k: v for k, v in cluster.items() if k != "bayesian_metrics"}
+                        new_cluster["bayesian_metrics_by_paradigm"] = {
+                            paradigm_id: cluster.get("bayesian_metrics", {})
+                        }
+                        enriched_clusters.append(new_cluster)
+                    joint_metrics = paradigm_joint
+                else:
+                    # Subsequent paradigms: merge metrics into existing clusters
+                    for i, cluster in enumerate(paradigm_enriched):
+                        enriched_clusters[i]["bayesian_metrics_by_paradigm"][paradigm_id] = cluster.get("bayesian_metrics", {})
+
+            # Fallback if no paradigms
+            if enriched_clusters is None:
+                enriched_clusters = evidence_clusters
+
+            # Format pre-computed tables for report (using first paradigm for display)
             hyp_ids = [h.get("id") for h in request.scenario_config.get("hypotheses", [])]
             precomputed_cluster_tables = []
             for cluster in enriched_clusters:
                 cluster_name = cluster.get("cluster_id") or cluster.get("cluster_name", "Unknown")
-                table = self._format_cluster_metrics_table(cluster, hyp_ids)
+                table = self._format_cluster_metrics_table(cluster, hyp_ids, first_paradigm)
                 precomputed_cluster_tables.append({
                     "name": cluster_name,
                     "description": cluster.get("description", ""),
@@ -281,8 +307,9 @@ class BFIHOrchestrator:
             )
 
             # Store structured evidence in metadata for access
+            # Use enriched_clusters which includes bayesian_metrics_by_paradigm for frontend
             result.metadata["evidence_items"] = evidence_items
-            result.metadata["evidence_clusters"] = evidence_clusters
+            result.metadata["evidence_clusters"] = enriched_clusters
 
             logger.info(f"BFIH analysis completed successfully: {analysis_id}")
             logger.info(f"Duration: {duration_seconds:.1f}s")
@@ -2034,9 +2061,27 @@ MARKDOWN FORMATTING:
         logger.info(f"Computed Bayesian metrics for {len(enriched_clusters)} clusters, {len(hyp_ids)} hypotheses")
         return enriched_clusters, joint_metrics
 
-    def _format_cluster_metrics_table(self, cluster: Dict, hyp_ids: List[str]) -> str:
-        """Format a single cluster's Bayesian metrics as a markdown table."""
-        metrics = cluster.get("bayesian_metrics", {})
+    def _format_cluster_metrics_table(self, cluster: Dict, hyp_ids: List[str], paradigm_id: str = None) -> str:
+        """Format a single cluster's Bayesian metrics as a markdown table.
+
+        Args:
+            cluster: Cluster dict with bayesian_metrics or bayesian_metrics_by_paradigm
+            hyp_ids: List of hypothesis IDs
+            paradigm_id: Optional paradigm ID to get metrics for (uses first if not specified)
+        """
+        # Try bayesian_metrics_by_paradigm first (new format)
+        metrics_by_paradigm = cluster.get("bayesian_metrics_by_paradigm", {})
+        if metrics_by_paradigm:
+            if paradigm_id and paradigm_id in metrics_by_paradigm:
+                metrics = metrics_by_paradigm[paradigm_id]
+            else:
+                # Use first available paradigm
+                first_key = list(metrics_by_paradigm.keys())[0] if metrics_by_paradigm else None
+                metrics = metrics_by_paradigm.get(first_key, {}) if first_key else {}
+        else:
+            # Fall back to old format
+            metrics = cluster.get("bayesian_metrics", {})
+
         if not metrics:
             return ""
 

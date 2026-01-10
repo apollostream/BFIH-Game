@@ -219,6 +219,7 @@ export function EvidenceRoundPage() {
                   )}
                   paradigms={paradigms}
                   activeParadigm={activeParadigm}
+                  priorsByParadigm={priorsSource}
                   onParadigmChange={setActiveParadigm}
                 />
               </motion.div>

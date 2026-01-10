@@ -7,15 +7,20 @@ import {
   formatWoE,
   calculateWoE,
 } from '../../utils';
-import type { Hypothesis, EvidenceCluster, Paradigm } from '../../types';
+import type { Hypothesis, EvidenceCluster, Paradigm, PriorWithJustification } from '../../types';
 import { ParadigmSelector } from '../game/ParadigmCard';
 import { Tooltip } from '../ui/Tooltip';
+
+// Type for priors - can be number or object with probability
+type PriorValue = number | PriorWithJustification;
+type PriorsByParadigm = Record<string, Record<string, PriorValue>>;
 
 interface EvidenceMatrixHeatmapProps {
   hypotheses: Hypothesis[];
   clusters: EvidenceCluster[];
   paradigms: Paradigm[];
   activeParadigm: string;
+  priorsByParadigm?: PriorsByParadigm;  // Paradigm-specific priors for correct WoE calculation
   onParadigmChange?: (paradigmId: string) => void;
   onCellClick?: (hypothesisId: string, clusterId: string) => void;
   className?: string;
@@ -26,6 +31,7 @@ export function EvidenceMatrixHeatmap({
   clusters,
   paradigms,
   activeParadigm,
+  priorsByParadigm,
   onParadigmChange,
   onCellClick,
   className,
@@ -34,6 +40,13 @@ export function EvidenceMatrixHeatmap({
     hypothesisId: string;
     clusterId: string;
   } | null>(null);
+
+  // Helper to extract prior value (handles both number and {probability: number} formats)
+  const getPriorValue = (prior: PriorValue | undefined): number => {
+    if (prior === undefined) return 1.0 / hypotheses.length;
+    if (typeof prior === 'number') return prior;
+    return prior.probability ?? 1.0 / hypotheses.length;
+  };
 
   // Helper to get likelihoods for a cluster, supporting both formats
   const getClusterLikelihoods = (cluster: EvidenceCluster, paradigmId: string) => {
@@ -45,30 +58,61 @@ export function EvidenceMatrixHeatmap({
     return cluster.likelihoods || {};
   };
 
-  // Build matrix data - now paradigm-aware
+  // Build matrix data - now paradigm-aware with correct Bayesian calculation
   const matrixData = useMemo(() => {
+    // Get priors for the active paradigm
+    const paradigmPriors = priorsByParadigm?.[activeParadigm] || {};
+    const hypIds = hypotheses.map(h => h.id);
+
     return hypotheses.map((hypothesis) => {
-      const row: Record<string, { woe: number; likelihood: number; justification?: string }> = {};
+      const row: Record<string, { woe: number; likelihood: number; pENotH: number; lr: number; justification?: string }> = {};
 
       clusters.forEach((cluster) => {
-        const clusterLikelihoods = getClusterLikelihoods(cluster, activeParadigm);
-        const likelihoodData = clusterLikelihoods[hypothesis.id];
-        const likelihood = likelihoodData?.probability ?? 0.5;
+        // Check for pre-computed metrics first (from backend)
+        const precomputedMetrics = cluster.bayesian_metrics_by_paradigm?.[activeParadigm]?.[hypothesis.id]
+          || cluster.bayesian_metrics?.[hypothesis.id];
 
-        // Calculate WoE (simplified - in real implementation would need P(E|not H))
-        // Here we approximate with likelihood vs average
-        const likelihoodValues = Object.values(clusterLikelihoods);
-        const avgLikelihood = likelihoodValues.length > 0
-          ? likelihoodValues.reduce((sum, l) => sum + (l?.probability ?? 0.5), 0) / likelihoodValues.length
-          : 0.5;
-        const lr = likelihood / Math.max(avgLikelihood, 0.01);
-        const woe = calculateWoE(lr);
+        if (precomputedMetrics) {
+          // Use pre-computed values from backend
+          row[cluster.cluster_id] = {
+            woe: precomputedMetrics.woe,
+            likelihood: precomputedMetrics.p_e_h,
+            pENotH: precomputedMetrics.p_e_not_h,
+            lr: precomputedMetrics.lr,
+            justification: undefined,
+          };
+        } else {
+          // Compute using correct Bayesian formula
+          const clusterLikelihoods = getClusterLikelihoods(cluster, activeParadigm);
+          const likelihoodData = clusterLikelihoods[hypothesis.id];
+          const pEH = likelihoodData?.probability ?? 0.5;
+          const priorI = getPriorValue(paradigmPriors[hypothesis.id]);
+          const complementPrior = 1.0 - priorI;
 
-        row[cluster.cluster_id] = {
-          woe: isFinite(woe) ? woe : 0,
-          likelihood,
-          justification: likelihoodData?.justification,
-        };
+          // P(E|¬H_i) = Σ P(E|H_j) × P(H_j) / (1 - P(H_i)) for j ≠ i
+          let pENotH = 0.5;  // Default if calculation fails
+          if (complementPrior > 0.001) {
+            pENotH = hypIds
+              .filter(hj => hj !== hypothesis.id)
+              .reduce((sum, hj) => {
+                const pEHj = clusterLikelihoods[hj]?.probability ?? 0.5;
+                const priorJ = getPriorValue(paradigmPriors[hj]);
+                return sum + pEHj * (priorJ / complementPrior);
+              }, 0);
+          }
+
+          // Likelihood ratio and WoE
+          const lr = pEH / Math.max(pENotH, 0.001);
+          const woe = calculateWoE(lr);
+
+          row[cluster.cluster_id] = {
+            woe: isFinite(woe) ? woe : 0,
+            likelihood: pEH,
+            pENotH,
+            lr,
+            justification: likelihoodData?.justification,
+          };
+        }
       });
 
       return {
@@ -77,7 +121,7 @@ export function EvidenceMatrixHeatmap({
         data: row,
       };
     });
-  }, [hypotheses, clusters, activeParadigm]);
+  }, [hypotheses, clusters, activeParadigm, priorsByParadigm]);
 
   // Calculate max absolute WoE for scaling (reserved for future dynamic scaling)
   const _maxWoE = useMemo(() => {
@@ -169,8 +213,10 @@ export function EvidenceMatrixHeatmap({
                               <div className="font-medium mb-1">
                                 {row.hypothesis.name} × {cluster.cluster_name}
                               </div>
-                              <div>WoE: {formatWoE(cellData.woe)}</div>
                               <div>P(E|H): {(cellData.likelihood * 100).toFixed(1)}%</div>
+                              <div>P(E|¬H): {(cellData.pENotH * 100).toFixed(1)}%</div>
+                              <div>LR: {cellData.lr.toFixed(3)}</div>
+                              <div>WoE: {formatWoE(cellData.woe)}</div>
                               {cellData.justification && (
                                 <div className="mt-2 text-text-secondary text-xs">
                                   {cellData.justification}

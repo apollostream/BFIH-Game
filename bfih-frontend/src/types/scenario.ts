@@ -82,6 +82,15 @@ export interface ClusterLikelihood {
   justification: string;
 }
 
+// Bayesian metrics computed for each hypothesis within a cluster
+export interface ClusterBayesianMetrics {
+  p_e_h: number;      // P(E|H) - likelihood
+  p_e_not_h: number;  // P(E|¬H) - likelihood under negation
+  lr: number;         // Likelihood ratio
+  woe: number;        // Weight of evidence in decibans
+  direction: string;  // "Strong Support", "Weak Refutation", etc.
+}
+
 export interface EvidenceCluster {
   cluster_id: string;
   cluster_name: string;
@@ -90,6 +99,9 @@ export interface EvidenceCluster {
   conditional_independence_justification?: string;  // May be omitted
   likelihoods?: Record<string, ClusterLikelihood>;
   likelihoods_by_paradigm?: Record<string, Record<string, ClusterLikelihood>>;  // Paradigm-specific likelihoods
+  // Pre-computed Bayesian metrics by paradigm (from backend)
+  bayesian_metrics?: Record<string, ClusterBayesianMetrics>;  // {H_id: metrics} for default paradigm
+  bayesian_metrics_by_paradigm?: Record<string, Record<string, ClusterBayesianMetrics>>;  // {K_id: {H_id: metrics}}
   // Direct items for clusters that include evidence
   items?: EvidenceItem[];
 }
