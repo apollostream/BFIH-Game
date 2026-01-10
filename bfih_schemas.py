@@ -53,6 +53,32 @@ class ForcingFunctionCompliance(StrictModel):
     )
 
 
+class ParadigmStance(StrictModel):
+    """Explicit philosophical stance across 6 dimensions per BFIH Paradigm Inversion methodology.
+
+    Each paradigm must have a distinct, explicit stance. K0's inverse must genuinely
+    invert each dimension - not a straw man, but a coherent alternative worldview.
+    """
+    ontology: str = Field(
+        description="What exists/is real (e.g., 'Material/measurable phenomena' vs 'Spiritual/transcendent realities')"
+    )
+    epistemology: str = Field(
+        description="How we know (e.g., 'Empirical observation and falsification' vs 'Revelatory wisdom and tradition')"
+    )
+    axiology: str = Field(
+        description="What is valuable (e.g., 'Efficiency and optimization' vs 'Faithfulness to obligations')"
+    )
+    methodology: str = Field(
+        description="How we analyze (e.g., 'Analytical/reductionist decomposition' vs 'Holistic/synthetic integration')"
+    )
+    sociology: str = Field(
+        description="Who decides (e.g., 'Expert/technocratic authority' vs 'Communal discernment within tradition')"
+    )
+    temporality: str = Field(
+        description="Time horizon (e.g., 'Short-term optimization' vs 'Intergenerational/eternal perspective')"
+    )
+
+
 class ParadigmCharacteristics(StrictModel):
     """Characteristics that define how a paradigm evaluates evidence"""
     prefers_evidence_types: List[str] = Field(
@@ -74,24 +100,33 @@ class Paradigm(StrictModel):
 
     Following BFIH Paradigm Construction Manual:
     - K0: Privileged paradigm (maximally intellectually honest, passes all forcing functions)
+    - K0-inv: True inverse of K0 - a genuine alternative worldview, NOT intellectually dishonest
     - K1-K5: Biased paradigms (realistically biased, fail >= 1 forcing function)
+
+    CRITICAL: Each paradigm must have an explicit stance across 6 dimensions.
+    K0-inv must genuinely invert K0's stance - e.g., if K0 is Secular/Empiricist/Analytical,
+    K0-inv is Religious/Revelatory/Holistic. Both are legitimate epistemic positions.
     """
-    id: str = Field(description="Unique identifier: K0 for privileged, K1-K5 for biased")
+    id: str = Field(description="Unique identifier: K0, K0-inv, K1-K5")
     name: str = Field(description="Short descriptive name")
     description: str = Field(description="Epistemic stance and what counts as valid evidence")
     is_privileged: bool = Field(
         description="True only for K0 (maximally intellectually honest paradigm)"
     )
+    is_k0_inverse: bool = Field(
+        description="True only for K0-inv (genuine inverse worldview of K0, not dishonest)"
+    )
     bias_type: Union[BiasType, None] = Field(
-        description="Type of bias: domain, temporal, ideological, cognitive, institutional (null for K0)"
+        description="Type of bias: domain, temporal, ideological, cognitive, institutional (null for K0/K0-inv)"
     )
     bias_description: Union[str, None] = Field(
-        description="Specific description of the bias (null for K0)"
+        description="Specific description of the bias (null for K0/K0-inv)"
     )
     inverse_paradigm_id: Union[str, None] = Field(
-        description="ID of the inverse/opposing paradigm if applicable, or null"
+        description="ID of the inverse/opposing paradigm (K0 <-> K0-inv, K1 <-> K2, etc.)"
     )
     # Note: nested model fields cannot have description with $ref in strict mode
+    stance: ParadigmStance
     forcing_function_compliance: ForcingFunctionCompliance
     domains_covered: List[DomainType] = Field(
         description="Ontological domains this paradigm engages (K0 should have all 7)"

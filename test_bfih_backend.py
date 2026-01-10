@@ -12,7 +12,7 @@ from typing import Dict
 from datetime import datetime
 from unittest.mock import Mock, patch, MagicMock
 
-from bfih_orchestrator import (
+from bfih_orchestrator_fixed import (
     BFIHOrchestrator,
     BFIHAnalysisRequest,
     BFIHAnalysisResult,
@@ -173,12 +173,12 @@ class TestStorageManager:
     
     def test_store_and_retrieve_analysis_result(self, storage_manager, sample_analysis_result):
         """Test storing and retrieving analysis result"""
-        analysis_id = "test_analysis_001"
-        
+        analysis_id = sample_analysis_result.analysis_id
+
         # Store
         success = storage_manager.store_analysis_result(analysis_id, sample_analysis_result)
         assert success is True
-        
+
         # Retrieve
         retrieved = storage_manager.retrieve_analysis_result(analysis_id)
         assert retrieved is not None
@@ -219,7 +219,7 @@ class TestStorageManager:
 class TestBFIHOrchestrator:
     """Test BFIH orchestrator with mocked API"""
     
-    @patch('bfih_orchestrator.client')
+    @patch('bfih_orchestrator_fixed.client')
     def test_orchestrator_initialization(self, mock_client):
         """Test orchestrator initialization"""
         orchestrator = BFIHOrchestrator(vector_store_id="vs_test_001")
@@ -227,7 +227,7 @@ class TestBFIHOrchestrator:
         assert orchestrator.model == "gpt-4o"
         assert orchestrator.vector_store_id == "vs_test_001"
     
-    @patch('bfih_orchestrator.client')
+    @patch('bfih_orchestrator_fixed.client')
     def test_build_orchestration_prompt(self, mock_client, sample_analysis_request):
         """Test orchestration prompt building"""
         orchestrator = BFIHOrchestrator()
@@ -277,11 +277,11 @@ class TestAPIEndpoints:
             "scenario_id": "s_001"
             # Missing proposition and scenario_config
         }
-        
+
         response = test_client.post("/api/bfih-analysis", json=request_data)
-        
+
         assert response.status_code == 400
-        assert "required fields" in response.json()["detail"].lower()
+        assert "required fields" in response.json()["error"].lower()
     
     def test_store_scenario(self, test_client, sample_scenario_config):
         """Test storing scenario"""

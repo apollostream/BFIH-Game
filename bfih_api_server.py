@@ -139,14 +139,16 @@ async def submit_analysis(request: Dict, background_tasks: BackgroundTasks):
         )
         
         logger.info(f"Submitted analysis request: {analysis_id}")
-        
+
         return {
             "analysis_id": analysis_id,
             "status": "processing",
             "estimated_seconds": 45,
             "scenario_id": request["scenario_id"]
         }
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error submitting analysis: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))

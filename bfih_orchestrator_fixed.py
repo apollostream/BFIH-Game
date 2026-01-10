@@ -2419,48 +2419,61 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
 PROPOSITION: "{proposition}"
 DOMAIN: {domain}
 
-## CRITICAL REQUIREMENT: One Privileged + Multiple Biased Paradigms
+## CRITICAL REQUIREMENT: K0 + K0-inv + Biased Paradigms
 
-You MUST generate:
-1. **K0 (Privileged Paradigm)**: Maximally intellectually honest
+You MUST generate paradigms with EXPLICIT STANCES across 6 dimensions:
+
+### 1. **K0 (Privileged Paradigm)**: Maximally intellectually honest
    - Applies ALL forcing functions (Ontological Scan, Ancestral Check, Paradigm Inversion)
-   - Covers all 9 ontological domains (Biological, Economic, Cultural, Theological, Historical, Institutional, Psychological, Constitutional/Legal, Democratic)
+   - Covers all 9 ontological domains
    - Has explicit assumptions, limitations, and falsification criteria
-   - NOT neutral—has a perspective, but systematically interrogates its own blind spots
+   - NOT neutral—has a SPECIFIC STANCE, but systematically interrogates its own blind spots
    - For POLITICAL propositions: MUST explicitly address Constitutional/Legal and Democratic domains
 
-2. **K1-K5 (Biased Paradigms)**: 3-5 realistically biased paradigms
+### 2. **K0-inv (True Inverse of K0)**: Genuine alternative worldview
+   - CRITICAL: This is NOT about intellectual dishonesty or bad faith
+   - Must GENUINELY INVERT K0's stance across ALL 6 dimensions:
+     * If K0 is Secular → K0-inv is Religious/Theological
+     * If K0 is Empiricist → K0-inv is Revelatory/Traditional
+     * If K0 is Analytical → K0-inv is Holistic/Synthetic
+     * If K0 is Individualist → K0-inv is Communitarian
+     * If K0 is Optimizing → K0-inv is Receiving/Accepting
+     * If K0 is Short-term → K0-inv is Intergenerational/Eternal
+   - K0-inv is a coherent worldview that could yield TRUE insights K0 would miss
+   - Example: "Life architecture is not a project to be engineered; it is a gift to be received within tradition, community, and faith"
+
+### 3. **K1-K5 (Biased Paradigms)**: 3-5 realistically biased paradigms
    - Each must fail ≥1 forcing function (document which one)
-   - Must be REALISTIC biases, not straw men (would an expert recognize themselves?)
-   - Types of bias to choose from:
-     * **Domain Bias**: Only sees one discipline (e.g., economists ignore theology)
-     * **Temporal Bias**: Short-term vs long-term focus
-     * **Ideological Bias**: Value commitment (libertarian, egalitarian, etc.)
-     * **Cognitive Bias**: Overconfidence, availability bias, confirmation bias
-     * **Institutional Bias**: Resource constraints, deadline pressure
+   - Must be REALISTIC biases, not straw men
+   - Types: Domain Bias, Temporal Bias, Ideological Bias, Cognitive Bias, Institutional Bias
+
+## EXPLICIT STANCE REQUIREMENT (6 Dimensions)
+
+EVERY paradigm (K0, K0-inv, K1-K5) must have an explicit stance object with:
+- **ontology**: What exists/is real (e.g., "Material/measurable phenomena" vs "Spiritual/transcendent realities")
+- **epistemology**: How we know (e.g., "Empirical observation" vs "Revelatory wisdom and tradition")
+- **axiology**: What is valuable (e.g., "Efficiency/optimization" vs "Faithfulness to obligations")
+- **methodology**: How we analyze (e.g., "Analytical/reductionist" vs "Holistic/synthetic")
+- **sociology**: Who decides (e.g., "Expert/technocratic" vs "Communal discernment")
+- **temporality**: Time horizon (e.g., "Short-term ROI" vs "Intergenerational/eternal")
 
 ## OUTPUT FORMAT
 
 For EACH paradigm provide:
-- id: K0, K1, K2, K3, etc.
+- id: K0, K0-inv, K1, K2, K3, etc.
 - name: Short descriptive name
 - description: Epistemic stance - what this paradigm treats as valid evidence
-- is_privileged: true for K0, false for others
-- bias_type: null for K0, otherwise one of [domain, temporal, ideological, cognitive, institutional]
-- bias_description: null for K0, otherwise describe the specific bias
-- inverse_paradigm_id: ID of inverse paradigm if applicable, or null
-- forcing_function_compliance: Object with:
-  - ontological_scan: "pass" or "fail: [reason]"
-  - ancestral_check: "pass" or "fail: [reason]"
-  - paradigm_inversion: "pass" or "fail: [reason]"
-- domains_covered: List of domains this paradigm engages (K0 should have all 7)
-- characteristics: Object with:
-  - prefers_evidence_types: List of evidence types this paradigm values
-  - skeptical_of: List of factors this paradigm discounts
-  - causal_preference: Primary causal mechanism this paradigm favors
-  - time_horizon: Short-term, medium-term, long-term, or intergenerational
+- is_privileged: true ONLY for K0
+- is_k0_inverse: true ONLY for K0-inv
+- bias_type: null for K0/K0-inv, otherwise one of [domain, temporal, ideological, cognitive, institutional]
+- bias_description: null for K0/K0-inv, otherwise describe the specific bias
+- inverse_paradigm_id: K0 points to K0-inv, K0-inv points to K0, others as appropriate
+- stance: Object with ontology, epistemology, axiology, methodology, sociology, temporality
+- forcing_function_compliance: Object with ontological_scan, ancestral_check, paradigm_inversion
+- domains_covered: List of domains this paradigm engages
+- characteristics: Object with prefers_evidence_types, skeptical_of, causal_preference, time_horizon
 
-Return the result as a JSON object with a "paradigms" array starting with K0.
+Return the result as a JSON object with a "paradigms" array: [K0, K0-inv, K1, K2, ...].
 
 IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
@@ -2474,15 +2487,25 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
             paradigms = result.get("paradigms", [])
         except Exception as e:
             logger.error(f"Structured output failed for paradigms: {e}, using fallback")
-            # Fallback to default paradigms following the K0 + K1-K4 structure
+            # Fallback to default paradigms following the K0 + K0-inv + K1-K4 structure
+            # Each paradigm has an explicit stance across 6 dimensions
             paradigms = [
                 {
-                    "id": "K0", "name": "Integrated Multi-Domain Analysis",
-                    "description": "Intellectually honest synthesis across all domains with explicit uncertainty",
+                    "id": "K0", "name": "Secular-Empiricist Synthesis",
+                    "description": "Intellectually honest synthesis privileging empirical observation, falsifiable claims, and multi-causal analysis across all domains",
                     "is_privileged": True,
+                    "is_k0_inverse": False,
                     "bias_type": None,
                     "bias_description": None,
-                    "inverse_paradigm_id": None,
+                    "inverse_paradigm_id": "K0-inv",
+                    "stance": {
+                        "ontology": "Material and measurable phenomena; accepts non-material factors only with empirical correlates",
+                        "epistemology": "Empirical observation, falsification, peer review; values replicable findings",
+                        "axiology": "Truth-seeking, efficiency, optimization of measurable outcomes",
+                        "methodology": "Analytical decomposition, controlled comparison, quantitative where possible",
+                        "sociology": "Expert consensus, credentialed authority, institutional review",
+                        "temporality": "Medium-term with explicit uncertainty about long-term projections"
+                    },
                     "forcing_function_compliance": {
                         "ontological_scan": "pass",
                         "ancestral_check": "pass",
@@ -2491,8 +2514,37 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                     "domains_covered": ["Biological", "Economic", "Cultural", "Theological", "Historical", "Institutional", "Psychological", "Constitutional_Legal", "Democratic"],
                     "characteristics": {
                         "prefers_evidence_types": ["quantitative", "qualitative", "historical", "expert_testimony"],
-                        "skeptical_of": ["single-cause explanations", "unfalsifiable claims"],
+                        "skeptical_of": ["single-cause explanations", "unfalsifiable claims", "appeals to tradition alone"],
                         "causal_preference": "multi-causal with documented interactions",
+                        "time_horizon": "medium-term"
+                    }
+                },
+                {
+                    "id": "K0-inv", "name": "Religious-Traditional Wisdom",
+                    "description": "Genuine inverse worldview: knowledge received through revelation, tradition, and communal discernment within faith; could yield true insights the empiricist stance would miss",
+                    "is_privileged": False,
+                    "is_k0_inverse": True,
+                    "bias_type": None,
+                    "bias_description": None,
+                    "inverse_paradigm_id": "K0",
+                    "stance": {
+                        "ontology": "Spiritual and transcendent realities are primary; material world participates in higher order",
+                        "epistemology": "Revelatory wisdom, sacred tradition, lived experience within faith community",
+                        "axiology": "Faithfulness to obligations, covenant-keeping, alignment with transcendent purposes",
+                        "methodology": "Holistic integration, narrative understanding, wisdom accumulated across generations",
+                        "sociology": "Communal discernment, elders and tradition-bearers, authority rooted in spiritual lineage",
+                        "temporality": "Intergenerational and eternal; current decisions judged by their fit within cosmic/sacred history"
+                    },
+                    "forcing_function_compliance": {
+                        "ontological_scan": "pass: engages all domains through theological lens",
+                        "ancestral_check": "pass: tradition is central",
+                        "paradigm_inversion": "pass: explicitly inverts K0"
+                    },
+                    "domains_covered": ["Biological", "Economic", "Cultural", "Theological", "Historical", "Institutional", "Psychological"],
+                    "characteristics": {
+                        "prefers_evidence_types": ["scriptural", "traditional", "testimonial", "communal_wisdom"],
+                        "skeptical_of": ["reductionist explanations", "claims that exclude transcendence", "purely technocratic solutions"],
+                        "causal_preference": "providential ordering and human response to transcendent call",
                         "time_horizon": "intergenerational"
                     }
                 },
@@ -2500,9 +2552,18 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                     "id": "K1", "name": "Techno-Economic Rationalist",
                     "description": "Success/failure driven by measurable economic and technical factors",
                     "is_privileged": False,
+                    "is_k0_inverse": False,
                     "bias_type": "domain",
                     "bias_description": "Ignores cultural/theological domains; over-weights quantitative metrics",
                     "inverse_paradigm_id": "K2",
+                    "stance": {
+                        "ontology": "Economic and technical systems are the fundamental drivers",
+                        "epistemology": "Quantitative metrics, ROI calculations, technical benchmarks",
+                        "axiology": "Efficiency, profit maximization, competitive advantage",
+                        "methodology": "Cost-benefit analysis, financial modeling, technical assessment",
+                        "sociology": "Markets and technical experts determine outcomes",
+                        "temporality": "Short-term quarterly/annual cycles"
+                    },
                     "forcing_function_compliance": {
                         "ontological_scan": "fail: ignores Theological and Cultural domains",
                         "ancestral_check": "pass",
@@ -2520,9 +2581,18 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                     "id": "K2", "name": "Cultural-Historical Interpreter",
                     "description": "Events shaped by deep cultural patterns, traditions, and historical precedent",
                     "is_privileged": False,
+                    "is_k0_inverse": False,
                     "bias_type": "temporal",
                     "bias_description": "Over-weights historical patterns; may miss novel factors",
                     "inverse_paradigm_id": "K1",
+                    "stance": {
+                        "ontology": "Cultural narratives and historical forces shape reality",
+                        "epistemology": "Historical analysis, ethnographic understanding, narrative interpretation",
+                        "axiology": "Cultural continuity, meaning-making, identity preservation",
+                        "methodology": "Comparative historical analysis, thick description, genealogical tracing",
+                        "sociology": "Communities and their traditions determine outcomes",
+                        "temporality": "Long-term historical patterns and path dependencies"
+                    },
                     "forcing_function_compliance": {
                         "ontological_scan": "fail: under-weights Economic and Technical domains",
                         "ancestral_check": "pass",
@@ -2540,9 +2610,18 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                     "id": "K3", "name": "Regulatory-Institutional Analyst",
                     "description": "Outcomes determined by governance structures, rules, and institutional incentives",
                     "is_privileged": False,
+                    "is_k0_inverse": False,
                     "bias_type": "institutional",
                     "bias_description": "Over-emphasizes formal rules; may miss informal dynamics",
-                    "inverse_paradigm_id": None,
+                    "inverse_paradigm_id": "K4",
+                    "stance": {
+                        "ontology": "Institutions and formal rules are the primary causal factors",
+                        "epistemology": "Policy analysis, legal interpretation, institutional documentation",
+                        "axiology": "Order, compliance, proper governance",
+                        "methodology": "Institutional analysis, regulatory review, stakeholder mapping",
+                        "sociology": "Institutions and their formal processes determine outcomes",
+                        "temporality": "Medium-term policy cycles"
+                    },
                     "forcing_function_compliance": {
                         "ontological_scan": "fail: ignores Biological and Psychological domains",
                         "ancestral_check": "pass",
@@ -2560,9 +2639,18 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                     "id": "K4", "name": "Individual Agency Advocate",
                     "description": "Outcomes primarily reflect individual choices, leadership, and personal responsibility",
                     "is_privileged": False,
+                    "is_k0_inverse": False,
                     "bias_type": "ideological",
                     "bias_description": "Over-weights individual action; under-weights structural constraints",
                     "inverse_paradigm_id": "K3",
+                    "stance": {
+                        "ontology": "Individual actors and their choices are the fundamental reality",
+                        "epistemology": "Biographical study, decision analysis, psychological assessment",
+                        "axiology": "Freedom, responsibility, self-determination",
+                        "methodology": "Case studies of individuals, leadership analysis, motivational research",
+                        "sociology": "Great individuals shape history; agency trumps structure",
+                        "temporality": "Short-term decision windows"
+                    },
                     "forcing_function_compliance": {
                         "ontological_scan": "fail: ignores systemic/institutional factors",
                         "ancestral_check": "fail: may ignore historical structural constraints",
