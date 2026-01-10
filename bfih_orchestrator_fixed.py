@@ -1756,25 +1756,45 @@ MARKDOWN FORMATTING:
             return "## 9. Bibliography\n\nNo sources available."
 
         # Build bibliography directly from evidence items
+        # Filter out items without valid URLs and deduplicate
+        seen_urls = set()
         bib_entries = []
-        for i, item in enumerate(evidence_items, 1):
-            citation = item.get('citation_apa', '')
-            url = item.get('source_url', '')
-            source = item.get('source_name', 'Unknown Source')
-            desc = item.get('description', '')
+        entry_num = 0
 
+        for item in evidence_items:
+            citation = item.get('citation_apa', '')
+            url = item.get('source_url', '').strip()
+            source = item.get('source_name', 'Unknown Source')
+
+            # Skip items without valid URLs (no "n/a", empty, or synthesis entries)
+            if not url or url.lower() in ('n/a', 'na', '-', '—', 'none', 'see above'):
+                continue
+            if not url.startswith('http'):
+                continue
+            # Skip "composite" or "synthesis" sources
+            if 'composite' in source.lower() or 'synthesis' in source.lower():
+                continue
+            # Skip duplicates
+            if url in seen_urls:
+                continue
+            seen_urls.add(url)
+
+            entry_num += 1
             if citation:
                 entry = citation
-                if url and url not in citation:
+                if url not in citation:
                     entry += f" Retrieved from {url}"
             else:
+                desc = item.get('description', '')[:100]  # Truncate long descriptions
                 entry = f"{source}. {desc}."
-                if url:
-                    entry += f" Retrieved from {url}"
+                entry += f" Retrieved from {url}"
 
-            bib_entries.append(f"{i}. {entry}")
+            bib_entries.append(f"{entry_num}. {entry}")
 
-        bibliography = "## 9. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
+        if not bib_entries:
+            bibliography = "## 9. Bibliography\n\nNo citable sources with valid URLs available."
+        else:
+            bibliography = "## 9. Bibliography\n\n**References (APA Format):**\n\n" + "\n\n".join(bib_entries)
 
         # Add intellectual honesty checklist
         bibliography += """
