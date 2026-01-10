@@ -27,9 +27,14 @@ build/
 # Generated analysis files (auto-generated during analysis)
 scenario_config_auto_*.json
 analysis_result*.json
-bfih-report-auto_*.md
-bfih-report-auto_*.html
+bfih_report_auto_*.md
+bfih_report_auto_*.json
+bfih_report_auto_*.html
+auto_*.html
 uploaded_files.json
+*_v2.json
+*_v2.md
+bfih_*.log
 
 # Generated/temp
 *.log
