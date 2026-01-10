@@ -14,6 +14,7 @@ type AnalysisStatusType = 'idle' | 'submitting' | 'processing' | 'completed' | '
 interface AnalysisState {
   // Current analysis
   pendingAnalysisId: string | null;
+  pendingProposition: string | null; // The proposition being analyzed
   status: AnalysisStatusType;
   analysisStatus: string | null; // Current phase status from backend
   currentAnalysis: BFIHAnalysisResult | null;
@@ -49,6 +50,7 @@ export const useAnalysisStore = create<AnalysisState>()(
       (set, get) => ({
         // Initial state
         pendingAnalysisId: null,
+        pendingProposition: null,
         status: 'idle' as AnalysisStatusType,
         analysisStatus: null,
         currentAnalysis: null,
@@ -67,6 +69,7 @@ export const useAnalysisStore = create<AnalysisState>()(
         set({
           status: 'submitting',
           isSubmitting: true,
+          pendingProposition: proposition, // Store the proposition immediately
           progress: 0,
           errorMessage: null,
           error: null,
@@ -207,6 +210,7 @@ export const useAnalysisStore = create<AnalysisState>()(
         get().stopPolling();
         set({
           pendingAnalysisId: null,
+          pendingProposition: null,
           status: 'idle',
           analysisStatus: null,
           currentAnalysis: null,
@@ -227,6 +231,7 @@ export const useAnalysisStore = create<AnalysisState>()(
         partialize: (state) => ({
           currentAnalysis: state.currentAnalysis,
           status: state.status,
+          pendingProposition: state.pendingProposition,
         }),
       }
     ),

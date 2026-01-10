@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PageContainer } from '../components/layout/PageContainer';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { useGameStore, useAnalysisStore } from '../stores';
+import { useGameStore } from '../stores';
+import { useAnalysisStore } from '../stores/analysisStore';
 import { getAnalysisStatus, getAnalysis, storeScenario } from '../api';
 import { pageVariants } from '../utils';
 import type { BFIHAnalysisResult } from '../types';
@@ -30,7 +31,7 @@ export function AnalysisInProgressPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { loadScenario } = useGameStore();
-  const { cacheResult } = useAnalysisStore();
+  const { cacheResult, pendingProposition } = useAnalysisStore();
 
   const [status, setStatus] = useState<'processing' | 'completed' | 'failed'>('processing');
   const [rawStatus, setRawStatus] = useState<string>(''); // For debugging
@@ -290,6 +291,20 @@ export function AnalysisInProgressPage() {
                 </div>
               )}
             </div>
+
+            {/* Proposition Display */}
+            {pendingProposition && (
+              <div className="text-center mb-6">
+                <div className="inline-block px-4 py-3 rounded-xl bg-surface-2/80 border border-border/50 max-w-xl">
+                  <div className="text-xs text-text-muted uppercase tracking-wider mb-1">
+                    Analyzing
+                  </div>
+                  <p className="text-text-primary font-medium text-lg leading-relaxed">
+                    "{pendingProposition}"
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Status Text */}
             <div className="text-center mb-8">
