@@ -3275,47 +3275,47 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 
 ### MANDATORY STRUCTURE (follow this closely):
 
-1. **COMPELLING HEADLINE** (with italicized subtitle)
+1. **Compelling Headline** (with italicized subtitle)
    - Capture the core insight or surprising finding
    - Subvert expectations if possible
 
-2. **THE ACCUSATION / COMMON BELIEF** (~300-500 words)
+2. **The Accusation / Common Belief** (~300-500 words)
    - What do most people believe about this topic?
    - What's the conventional narrative or popular misconception?
    - Set up the tension: "It's a compelling narrative. It's also deeply misleading."
 
-3. **WHAT ACTUALLY HAPPENED: THE EVIDENCE** (~1000-2000 words)
+3. **What Actually Happened: The Evidence** (~1000-2000 words)
    - Walk through the evidence chronologically or thematically
    - Use specific dates, names, numbers, and citations [1], [2], etc.
    - Structure with clear subheadings (###) for each major piece of evidence or theme
    - Show, don't just tell - include specific examples and quotes when available
    - Build a coherent narrative that reveals the real story
 
-4. **THE MULTIPLE PERSPECTIVES** (~800-1200 words)
+4. **The Multiple Perspectives** (~800-1200 words)
    - Present each paradigm's viewpoint as a named perspective
    - Format as: "### The [Paradigm Name]'s View: [One-line summary]"
    - Explain how each perspective interprets the same evidence differently
    - Be fair to each view - steelman, don't strawman
    - Show why reasonable people can disagree
 
-5. **THE SYNTHESIS: WHAT THE EVIDENCE ACTUALLY SHOWS** (~500-800 words)
+5. **The Synthesis: What the Evidence Actually Shows** (~500-800 words)
    - What conclusions can we draw with confidence?
    - Where does uncertainty remain?
    - What's the nuanced truth that transcends any single perspective?
 
-6. **THE HARD TRUTH: WHY THIS MATTERS** (~400-600 words)
+6. **The Hard Truth: Why This Matters** (~400-600 words)
    - What are the implications of getting this wrong?
    - What does this reveal about how we think about such issues?
    - Connect to broader patterns or lessons
 
-7. **WHAT YOU CAN ACTUALLY DO** (~400-600 words)
+7. **What You Can Actually Do** (~400-600 words)
    - Concrete, actionable recommendations
    - Numbered list of specific actions
    - Questions readers should ask themselves
    - How to apply these insights
    - Avoid vague platitudes - be specific
 
-8. **THE UNCOMFORTABLE CONCLUSION** (~300-400 words)
+8. **The Uncomfortable Conclusion** (~300-400 words)
    - The key insight most people don't want to hear
    - Why this matters going forward
    - Provocative final reflection
