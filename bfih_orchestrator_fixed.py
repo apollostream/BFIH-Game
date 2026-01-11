@@ -3261,64 +3261,66 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                         bibliography_section = remaining.strip()
                 break
 
-        prompt = f"""Transform the following BFIH analysis report into a compelling, in-depth magazine article in the style of The Atlantic or longform investigative journalism.
+        prompt = f"""Transform the following BFIH analysis report into an in-depth magazine article in the style of The Atlantic or longform explanatory journalism.
 
 ## CRITICAL REQUIREMENTS:
 
 ### TONE & STYLE:
 - Write in plain language accessible to general readers, NOT academic prose
-- This is NOT an opinion piece - present analysis objectively without advocacy
+- Be intellectually honest: present analysis fairly without advocacy or sensationalism
 - Be information-dense but engaging - every paragraph should teach something
 - Use vivid, specific details from the evidence rather than vague summaries
-- Challenge common assumptions and surface the uncomfortable truths
-- Help readers genuinely understand the complexity, not just summarize conclusions
+- Help readers genuinely understand the complexity, including genuine uncertainties
+- Respect the reader's intelligence - inform and illuminate, don't preach or provoke
 
-### MANDATORY STRUCTURE (follow this closely):
+### ARTICLE STRUCTURE:
+Create 6-8 sections with UNIQUE, TOPIC-SPECIFIC titles that fit THIS article's content.
+Do NOT use generic template titles. Each section title should be crafted specifically
+for this topic and could only belong to this article.
 
-1. **Compelling Headline** (with italicized subtitle)
-   - Capture the core insight or surprising finding
-   - Subvert expectations if possible
+Use this general flow, but invent your own section titles:
 
-2. **The Accusation / Common Belief** (~300-500 words)
-   - What do most people believe about this topic?
-   - What's the conventional narrative or popular misconception?
-   - Set up the tension: "It's a compelling narrative. It's also deeply misleading."
+1. **Headline + Subtitle**
+   - A compelling, specific headline that captures the core finding
+   - An italicized subtitle that adds context
 
-3. **What Actually Happened: The Evidence** (~1000-2000 words)
+2. **Opening Context** (~300-500 words)
+   - Set up the question or issue being examined
+   - Explain why this matters and what's at stake
+   - Provide necessary background for readers unfamiliar with the topic
+
+3. **The Evidence** (~1000-2000 words)
    - Walk through the evidence chronologically or thematically
    - Use specific dates, names, numbers, and citations [1], [2], etc.
-   - Structure with clear subheadings (###) for each major piece of evidence or theme
-   - Show, don't just tell - include specific examples and quotes when available
-   - Build a coherent narrative that reveals the real story
+   - Structure with clear subheadings (###) for each major theme or finding
+   - Include specific examples and data points
+   - Build a coherent narrative from the facts
 
-4. **The Multiple Perspectives** (~800-1200 words)
-   - Present each paradigm's viewpoint as a named perspective
-   - Format as: "### The [Paradigm Name]'s View: [One-line summary]"
-   - Explain how each perspective interprets the same evidence differently
-   - Be fair to each view - steelman, don't strawman
-   - Show why reasonable people can disagree
+4. **Different Interpretive Lenses** (~800-1200 words)
+   - Present how different analytical frameworks interpret this evidence
+   - Format as: "### [Descriptive Name]: [Brief characterization]"
+   - Explain the reasoning behind each perspective fairly
+   - Show where perspectives agree and where they diverge
 
-5. **The Synthesis: What the Evidence Actually Shows** (~500-800 words)
-   - What conclusions can we draw with confidence?
-   - Where does uncertainty remain?
-   - What's the nuanced truth that transcends any single perspective?
+5. **Synthesis and Assessment** (~500-800 words)
+   - What conclusions does the evidence support?
+   - Where does genuine uncertainty remain?
+   - What nuances are important to understand?
 
-6. **The Hard Truth: Why This Matters** (~400-600 words)
-   - What are the implications of getting this wrong?
-   - What does this reveal about how we think about such issues?
-   - Connect to broader patterns or lessons
+6. **Implications and Applications** (~400-600 words)
+   - What are the practical implications of these findings?
+   - How might this inform decisions or thinking?
+   - Connect to broader patterns or lessons where appropriate
 
-7. **What You Can Actually Do** (~400-600 words)
-   - Concrete, actionable recommendations
-   - Numbered list of specific actions
-   - Questions readers should ask themselves
-   - How to apply these insights
-   - Avoid vague platitudes - be specific
+7. **Practical Guidance** (~400-600 words)
+   - Concrete, actionable recommendations if applicable
+   - Questions readers might ask themselves
+   - How to apply these insights in practice
 
-8. **The Uncomfortable Conclusion** (~300-400 words)
-   - The key insight most people don't want to hear
-   - Why this matters going forward
-   - Provocative final reflection
+8. **Closing Reflection** (~300-400 words)
+   - Synthesize the key insight
+   - Reflect on what this reveals about the topic
+   - End with something thought-provoking but not sensationalized
 
 ### FORMATTING:
 - Use # for title, ## for major sections, ### for subsections
@@ -3331,8 +3333,10 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 ### WHAT TO AVOID:
 - DO NOT include a References/Bibliography section (it will be appended automatically)
 - DO NOT use academic jargon or methodology descriptions
-- DO NOT be superficial - dig deep into the evidence
-- DO NOT just summarize - analyze, contextualize, and illuminate
+- DO NOT use sensationalized language or clickbait phrasing
+- DO NOT presume what "most people believe" or claim insights people "don't want to hear"
+- DO NOT be preachy, provocative, or condescending
+- DO NOT use the template section titles verbatim - create unique titles for this article
 - DO NOT hedge excessively - make clear claims where evidence supports them
 - DO NOT use generic filler - every sentence should add value
 
