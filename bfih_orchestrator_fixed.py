@@ -3622,6 +3622,26 @@ The intellectually honest framing is: "Here are your real options with their dif
 - DO NOT hedge excessively - make clear claims where evidence supports them
 - DO NOT use generic filler - every sentence should add value
 
+### CRITICAL: NO EXPLICIT FRAMEWORK REFERENCES
+The article should read like professional journalism, NOT a meta-commentary on the analysis.
+
+**NEVER use these in the article text:**
+- Paradigm IDs: "K0", "K1", "K2", etc. → Instead say "from an empirical perspective" or "those who prioritize tradition"
+- Hypothesis IDs: "H1", "H2", "H3", etc. → Instead describe the claim directly
+- Evidence IDs: "E1", "E2", "[E3]", etc. → Instead say "evidence such as..." or just cite [1], [2]
+- Cluster IDs: "C1", "C2", "Cluster 3", etc. → Instead describe the evidence thematically
+- Framework jargon: "posterior probability", "likelihood ratio", "weight of evidence", "BFIH", "Bayesian"
+- Meta-references: "the analysis found", "the report shows", "under paradigm K0"
+
+**DO use natural language:**
+- "Evidence suggests..." not "Evidence cluster C2 shows..."
+- "From a perspective emphasizing tradition..." not "Under K2..."
+- "Multiple sources confirm..." not "E1, E3, and E7 support..."
+- "The most rigorous assessment concludes..." not "K0's posterior probability of 0.87 indicates..."
+- "Critics who prioritize novelty argue..." not "K1 assigns higher priors to..."
+
+The reader should learn about THE TOPIC, informed by rigorous analysis, without ever seeing the analytical scaffolding. Write as if you did the research yourself and are now explaining what you learned.
+
 ---
 
 BFIH ANALYSIS REPORT TO TRANSFORM:
