@@ -1,10 +1,63 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '../../utils';
 import type { LeaderboardEntry } from '../../types';
 
 interface LeaderboardProps {
   entries: LeaderboardEntry[];
   className?: string;
+}
+
+// Tooltip component for showing bet allocation
+function BetTooltip({ bets, isVisible }: { bets: Record<string, number>; isVisible: boolean }) {
+  const sortedBets = Object.entries(bets).sort((a, b) => b[1] - a[1]);
+  const total = Object.values(bets).reduce((sum, b) => sum + b, 0);
+
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.div
+          initial={{ opacity: 0, y: 5, scale: 0.95 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 5, scale: 0.95 }}
+          transition={{ duration: 0.15 }}
+          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50
+                     bg-surface-1 border border-border rounded-lg shadow-xl p-3 min-w-48"
+        >
+          <div className="text-xs font-semibold text-text-muted mb-2 uppercase tracking-wide">
+            Credit Allocation
+          </div>
+          <div className="space-y-1">
+            {sortedBets.map(([hypId, amount]) => (
+              <div key={hypId} className="flex items-center justify-between text-sm">
+                <span className="text-text-secondary">{hypId}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-16 h-1.5 bg-surface-2 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-accent rounded-full"
+                      style={{ width: `${total > 0 ? (amount / total) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <span className="text-text-primary font-medium w-8 text-right">{amount}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-border flex justify-between text-xs">
+            <span className="text-text-muted">Total</span>
+            <span className="text-text-primary font-semibold">{total} cr</span>
+          </div>
+          {/* Tooltip arrow */}
+          <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0
+                          border-l-8 border-r-8 border-t-8
+                          border-l-transparent border-r-transparent border-t-border" />
+          <div className="absolute left-1/2 -translate-x-1/2 top-full -mt-px w-0 h-0
+                          border-l-7 border-r-7 border-t-7
+                          border-l-transparent border-r-transparent border-t-surface-1" />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 const RANK_STYLES: Record<number, { medal: string; bgClass: string; textClass: string }> = {
@@ -14,6 +67,8 @@ const RANK_STYLES: Record<number, { medal: string; bgClass: string; textClass: s
 };
 
 export function Leaderboard({ entries, className }: LeaderboardProps) {
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   return (
     <div className={cn('space-y-2', className)}>
       {/* Header */}
@@ -35,14 +90,19 @@ export function Leaderboard({ entries, className }: LeaderboardProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.1, duration: 0.3 }}
             className={cn(
-              'flex items-center gap-3 px-4 py-3 rounded-xl',
+              'relative flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer',
               'border transition-all duration-300',
               entry.isPlayer
                 ? 'border-accent bg-accent/10 ring-2 ring-accent/30'
-                : 'border-border bg-surface-2/50',
+                : 'border-border bg-surface-2/50 hover:border-accent/50',
               rankStyle.bgClass
             )}
+            onMouseEnter={() => setHoveredId(entry.id)}
+            onMouseLeave={() => setHoveredId(null)}
           >
+            {/* Tooltip showing bet allocation */}
+            <BetTooltip bets={entry.bets} isVisible={hoveredId === entry.id} />
+
             {/* Rank */}
             <div className={cn('w-12 text-center font-bold text-xl', rankStyle.textClass)}>
               {rankStyle.medal || `#${entry.rank}`}
@@ -63,7 +123,10 @@ export function Leaderboard({ entries, className }: LeaderboardProps) {
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-text-muted">{entry.description}</div>
+                <div className="text-xs text-text-muted">
+                  {entry.description}
+                  <span className="ml-1 opacity-60">(hover for bets)</span>
+                </div>
               </div>
             </div>
 
