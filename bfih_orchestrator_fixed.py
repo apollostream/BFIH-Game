@@ -1067,6 +1067,42 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
+    def _generate_inverse_proposition(self, proposition: str) -> str:
+        """Generate the logical inverse/negation of a proposition for balanced evidence gathering.
+
+        This implements dual-framing to avoid confirmation bias in search queries.
+        For example:
+        - "AI will benefit humanity" -> "AI will harm humanity" or "AI will not benefit humanity"
+        - "Climate change is caused by humans" -> "Climate change is not primarily caused by humans"
+        """
+        prompt = f"""Given this proposition, generate its logical inverse or negation.
+The inverse should represent the opposite claim that would be true if the original is false.
+
+PROPOSITION: "{proposition}"
+
+Rules:
+1. Keep the same subject matter and scope
+2. Invert the core claim (not just add "not")
+3. Make it a natural-sounding statement someone might actually argue
+4. If the proposition is already negative, make it affirmative
+
+Return ONLY the inverse proposition, nothing else."""
+
+        try:
+            response = self.client.responses.create(
+                model="gpt-4o-mini",  # Fast model for simple task
+                input=prompt,
+            )
+            inverse = response.output_text.strip().strip('"')
+            logger.info(f"Generated inverse proposition: {inverse}")
+            return inverse
+        except Exception as e:
+            logger.warning(f"Failed to generate inverse proposition: {e}")
+            # Fallback: simple negation
+            if proposition.lower().startswith("it is "):
+                return proposition.replace("It is ", "It is not ", 1).replace("it is ", "it is not ", 1)
+            return f"It is not the case that {proposition.lower()}"
+
     def _run_phase_1_methodology(self, request: BFIHAnalysisRequest) -> str:
         """Phase 1: Retrieve BFIH methodology from vector store"""
         bfih_context = get_bfih_system_context("Methodology Retrieval", "1")
@@ -1089,16 +1125,24 @@ Focus on actionable steps for applying each forcing function.
 
     def _run_phase_2_evidence(self, request: BFIHAnalysisRequest, methodology: str) -> Tuple[str, List[Dict]]:
         """Phase 2: Gather evidence via web search using structured output.
-        Returns (markdown_text, structured_evidence)"""
+        Returns (markdown_text, structured_evidence)
+
+        Uses dual-framing to avoid confirmation bias: generates search queries for
+        both the original proposition AND its logical inverse.
+        """
         scenario_json = json.dumps(request.scenario_config, indent=2)
 
         # Get hypothesis IDs
         hypotheses = request.scenario_config.get("hypotheses", [])
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
 
+        # Generate inverse proposition for balanced evidence gathering
+        inverse_proposition = self._generate_inverse_proposition(request.proposition)
+
         bfih_context = get_bfih_system_context("Evidence Gathering", "2")
         prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+PROPOSITION (as stated): "{request.proposition}"
+INVERSE FRAMING: "{inverse_proposition}"
 
 HYPOTHESES: {hyp_ids}
 
@@ -1109,20 +1153,31 @@ METHODOLOGY CONTEXT:
 {methodology[:3000]}
 
 YOUR TASK:
-For EACH hypothesis, search for real-world evidence:
-1. Generate 3-4 specific web search queries per hypothesis (minimum 15-20 total queries)
-2. Execute ALL queries to find supporting AND refuting evidence
-3. Record FULL source citations with URLs for all evidence
+For EACH hypothesis, search for real-world evidence using BOTH framings to avoid confirmation bias.
 
-SEARCH STRATEGY - Execute searches for:
-- Company funding/investment news
+DUAL-FRAMING SEARCH STRATEGY (CRITICAL):
+You MUST generate search queries for BOTH perspectives:
+1. Queries assuming the ORIGINAL proposition is true - what evidence would support it?
+2. Queries assuming the INVERSE framing is true - what evidence would support that?
+3. Neutral queries seeking factual data regardless of framing
+
+This ensures balanced evidence gathering independent of how the user framed the topic.
+
+For each hypothesis, generate at least:
+- 2 queries that would find supporting evidence if TRUE
+- 2 queries that would find supporting evidence if FALSE
+- 1-2 neutral factual queries
+
+SEARCH TOPICS - Execute searches covering:
+- Funding/investment news and financial data
 - Customer testimonials and case studies
 - Competitor analysis and market position
-- Critical reviews or concerns
+- Critical reviews, concerns, and failures
 - Employee reviews (Glassdoor, LinkedIn)
 - Regulatory or legal issues
 - Industry analyst reports
-- Historical context and base rates for similar companies
+- Historical context and base rates for similar cases
+- Academic research and expert opinions
 
 Return a JSON object with "evidence_items" array containing 15-25 evidence items.
 - Include evidence that SUPPORTS each hypothesis
