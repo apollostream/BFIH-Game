@@ -425,7 +425,7 @@ ${hypotheses.map((h) => {
                   <Button
                     variant="primary"
                     className="w-full"
-                    onClick={handleGenerateSynopsis}
+                    onClick={synopsis ? () => setShowSynopsis(true) : handleGenerateSynopsis}
                     disabled={synopsisLoading || !canGenerateSynopsis}
                   >
                     {synopsisLoading ? (
@@ -445,15 +445,6 @@ ${hypotheses.map((h) => {
                       'Generate Magazine Synopsis'
                     )}
                   </Button>
-                  {synopsis && !showSynopsis && (
-                    <Button
-                      variant="ghost"
-                      className="w-full mt-1"
-                      onClick={() => setShowSynopsis(true)}
-                    >
-                      View Synopsis
-                    </Button>
-                  )}
                   {synopsisError && (
                     <p className="text-xs text-error mt-1">{synopsisError}</p>
                   )}
