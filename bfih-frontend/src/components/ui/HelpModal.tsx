@@ -269,17 +269,12 @@ function ConceptsContent() {
           any good confirmation measure must satisfy certain intuitive desiderata (axioms),
           and the likelihood ratio is the only measure that satisfies them all:
         </p>
-        <ul className="list-disc list-inside space-y-2 text-text-secondary mb-3">
+        <ul className="list-disc list-inside space-y-2 text-text-secondary">
           <li><strong>Symmetry:</strong> Evidence E supports H exactly as much as it refutes ¬H</li>
           <li><strong>Equivalence:</strong> Logically equivalent hypotheses receive equal support</li>
           <li><strong>Law of Likelihood:</strong> E supports H iff P(E|H) {">"} P(E|¬H)</li>
           <li><strong>Additivity:</strong> Independent pieces of evidence combine multiplicatively</li>
         </ul>
-        <p className="text-text-secondary">
-          Unlike other proposed measures (difference, ratio of posteriors, etc.), only the
-          likelihood ratio cleanly separates the <em>strength of evidence</em> from prior
-          beliefs—making it objective and paradigm-independent.
-        </p>
       </Section>
 
       <Section title="Weight of Evidence (WoE)">
