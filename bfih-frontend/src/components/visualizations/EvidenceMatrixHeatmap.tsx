@@ -72,6 +72,17 @@ export function EvidenceMatrixHeatmap({
     const paradigmPriors = priorsByParadigm?.[activeParadigm] || {};
     const hypIds = hypotheses.map(h => h.id);
 
+    // Debug logging
+    if (clusters.length > 0 && hypotheses.length > 0) {
+      console.log('[EvidenceMatrix] Building matrix:', {
+        activeParadigm,
+        numClusters: clusters.length,
+        numHypotheses: hypotheses.length,
+        hasParadigmPriors: Object.keys(paradigmPriors).length > 0,
+        sampleCluster: clusters[0],
+      });
+    }
+
     return hypotheses.map((hypothesis) => {
       const row: Record<string, { woe: number; likelihood: number; pENotH: number; lr: number; justification?: string }> = {};
 
@@ -80,13 +91,13 @@ export function EvidenceMatrixHeatmap({
         const precomputedMetrics = cluster.bayesian_metrics_by_paradigm?.[activeParadigm]?.[hypothesis.id]
           || cluster.bayesian_metrics?.[hypothesis.id];
 
-        if (precomputedMetrics) {
+        if (precomputedMetrics && typeof precomputedMetrics.woe === 'number') {
           // Use pre-computed values from backend
           row[cluster.cluster_id] = {
-            woe: precomputedMetrics.woe,
-            likelihood: precomputedMetrics.p_e_h,
-            pENotH: precomputedMetrics.p_e_not_h,
-            lr: precomputedMetrics.lr,
+            woe: isFinite(precomputedMetrics.woe) ? precomputedMetrics.woe : 0,
+            likelihood: precomputedMetrics.p_e_h ?? 0.5,
+            pENotH: precomputedMetrics.p_e_not_h ?? 0.5,
+            lr: precomputedMetrics.lr ?? 1,
             justification: undefined,
           };
         } else {
@@ -109,6 +120,8 @@ export function EvidenceMatrixHeatmap({
                 return sum + pEHj * (priorJ / complementPrior);
               }, 0);
           }
+          // Clamp pENotH to valid range
+          pENotH = clampProbability(pENotH);
 
           // Likelihood ratio and WoE
           const lr = pEH / Math.max(pENotH, 0.001);
@@ -118,7 +131,7 @@ export function EvidenceMatrixHeatmap({
             woe: isFinite(woe) ? woe : 0,
             likelihood: pEH,
             pENotH,
-            lr,
+            lr: isFinite(lr) ? lr : 1,
             justification: likelihoodData?.justification,
           };
         }
@@ -188,8 +201,12 @@ export function EvidenceMatrixHeatmap({
 
           <tbody>
             {matrixData.map((row, rowIndex) => {
+              // Calculate net WoE with NaN protection
               const netWoE = Object.values(row.data).reduce(
-                (sum, cell) => sum + cell.woe,
+                (sum, cell) => {
+                  const woe = cell?.woe;
+                  return sum + (typeof woe === 'number' && isFinite(woe) ? woe : 0);
+                },
                 0
               );
 
