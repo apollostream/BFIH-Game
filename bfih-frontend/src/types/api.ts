@@ -7,6 +7,20 @@ export interface AnalysisSubmitRequest {
   proposition: string;
   scenario_config: ScenarioConfig;
   user_id?: string;
+  reasoning_model?: string;  // Optional reasoning model override
+}
+
+// Reasoning model configuration
+export interface ReasoningModel {
+  id: string;
+  name: string;
+  description: string;
+  cost: 'low' | 'medium' | 'high';
+}
+
+export interface ReasoningModelsResponse {
+  models: ReasoningModel[];
+  default: string;
 }
 
 export interface AnalysisSubmitResponse {

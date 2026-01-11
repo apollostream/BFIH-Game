@@ -6,22 +6,40 @@ import type {
   AnalysisStatusResponse,
   BFIHAnalysisResult,
   ScenarioConfig,
+  ReasoningModelsResponse,
 } from '../types';
 
 export interface SubmitAnalysisParams {
   proposition: string;
   scenario_config?: ScenarioConfig;
   user_id?: string;
+  reasoning_model?: string;  // Optional model override
+}
+
+// Get available reasoning models
+export async function getReasoningModels(): Promise<ReasoningModelsResponse> {
+  const response = await get<ReasoningModelsResponse>('/api/reasoning-models');
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.data!;
 }
 
 // Submit a new analysis (autonomous mode - just proposition)
 export async function submitAnalysis(params: SubmitAnalysisParams): Promise<AnalysisSubmitResponse> {
-  const body = {
+  const body: Record<string, unknown> = {
     scenario_id: `auto_${Date.now().toString(16).slice(-8)}`,
     proposition: params.proposition,
     scenario_config: params.scenario_config || {},
     user_id: params.user_id,
   };
+
+  // Only include reasoning_model if specified
+  if (params.reasoning_model) {
+    body.reasoning_model = params.reasoning_model;
+  }
 
   const response = await post<AnalysisSubmitResponse>('/api/bfih-analysis', body);
 

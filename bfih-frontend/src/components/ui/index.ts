@@ -16,3 +16,4 @@ export {
   SkeletonChart,
   SkeletonReport,
 } from './Skeleton';
+export { ReasoningModelSelector } from './ReasoningModelSelector';

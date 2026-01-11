@@ -5,6 +5,7 @@ import { PageContainer } from '../components/layout/PageContainer';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { ReasoningModelSelector } from '../components/ui/ReasoningModelSelector';
 import { useAnalysisStore } from '../stores';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../utils';
 
@@ -38,7 +39,13 @@ const IconTarget = () => (
 export function HomePage() {
   const navigate = useNavigate();
   const [proposition, setProposition] = useState('');
-  const { submitNewAnalysis, isSubmitting, error } = useAnalysisStore();
+  const {
+    submitNewAnalysis,
+    isSubmitting,
+    error,
+    selectedReasoningModel,
+    setReasoningModel,
+  } = useAnalysisStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -133,6 +140,17 @@ export function HomePage() {
                   <p className="mt-3 text-sm text-text-muted">
                     Example: "Climate change will cause significant economic disruption by 2050"
                   </p>
+                </div>
+
+                {/* Model Selection */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-text-secondary">
+                    Advanced: Choose reasoning model for analysis depth vs. cost
+                  </div>
+                  <ReasoningModelSelector
+                    value={selectedReasoningModel}
+                    onChange={setReasoningModel}
+                  />
                 </div>
 
                 {error && (

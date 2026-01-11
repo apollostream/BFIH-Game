@@ -172,6 +172,9 @@ client = OpenAI(
 # DATA MODELS
 # ============================================================================
 
+# Available reasoning models for configuration
+AVAILABLE_REASONING_MODELS = ["o3-mini", "o3", "o4-mini", "gpt-5", "gpt-5.2", "gpt-5-mini"]
+
 @dataclass
 class BFIHAnalysisRequest:
     """Request to conduct BFIH analysis"""
@@ -179,7 +182,8 @@ class BFIHAnalysisRequest:
     proposition: str
     scenario_config: Dict
     user_id: Optional[str] = None
-    
+    reasoning_model: Optional[str] = None  # Override default reasoning model
+
     def to_dict(self):
         return asdict(self)
 
@@ -235,6 +239,12 @@ class BFIHOrchestrator:
             BFIHAnalysisResult with report and posteriors
         """
         analysis_start = datetime.now(timezone.utc)
+
+        # Override reasoning model if specified in request
+        if request.reasoning_model and request.reasoning_model in AVAILABLE_REASONING_MODELS:
+            self.reasoning_model = request.reasoning_model
+            logger.info(f"Using request-specified reasoning model: {self.reasoning_model}")
+
         logger.info(f"Starting BFIH analysis for scenario: {request.scenario_id}")
         logger.info(f"Proposition: {request.proposition}")
 
@@ -2324,7 +2334,8 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
     # ========================================================================
 
     def analyze_topic(self, proposition: str, domain: str = "business",
-                      difficulty: str = "medium") -> BFIHAnalysisResult:
+                      difficulty: str = "medium",
+                      reasoning_model: Optional[str] = None) -> BFIHAnalysisResult:
         """
         Autonomous BFIH analysis from topic submission.
 
@@ -2339,12 +2350,18 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
             proposition: The question to analyze (e.g., "Why did X succeed?")
             domain: Domain category (business, medical, policy, historical, etc.)
             difficulty: easy (3-4 hyp), medium (5-6 hyp), hard (7+ hyp)
+            reasoning_model: Optional reasoning model override (o3-mini, gpt-5.2, etc.)
 
         Returns:
             BFIHAnalysisResult with full report and generated config
         """
         analysis_start = datetime.now(timezone.utc)
         scenario_id = f"auto_{uuid.uuid4().hex[:8]}"
+
+        # Override reasoning model if specified
+        if reasoning_model and reasoning_model in AVAILABLE_REASONING_MODELS:
+            self.reasoning_model = reasoning_model
+            logger.info(f"Using specified reasoning model: {self.reasoning_model}")
 
         logger.info(f"{'='*60}")
         logger.info(f"AUTONOMOUS BFIH ANALYSIS")

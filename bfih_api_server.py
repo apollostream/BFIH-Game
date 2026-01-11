@@ -85,6 +85,23 @@ async def health_check():
     }
 
 
+@app.get("/api/reasoning-models")
+async def get_reasoning_models():
+    """Get available reasoning models for analysis"""
+    from bfih_orchestrator_fixed import AVAILABLE_REASONING_MODELS, REASONING_MODEL
+    return {
+        "models": [
+            {"id": "o3-mini", "name": "o3-mini", "description": "Fast, cost-efficient reasoning (default)", "cost": "low"},
+            {"id": "o3", "name": "o3", "description": "Full o3 reasoning model", "cost": "medium"},
+            {"id": "o4-mini", "name": "o4-mini", "description": "Latest mini reasoning model", "cost": "low"},
+            {"id": "gpt-5", "name": "GPT-5", "description": "Full GPT-5 model", "cost": "high"},
+            {"id": "gpt-5.2", "name": "GPT-5.2", "description": "Latest GPT-5, most capable", "cost": "high"},
+            {"id": "gpt-5-mini", "name": "GPT-5 Mini", "description": "Budget GPT-5 variant", "cost": "low"},
+        ],
+        "default": REASONING_MODEL
+    }
+
+
 @app.post("/api/bfih-analysis")
 async def submit_analysis(request: Dict, background_tasks: BackgroundTasks):
     """
@@ -119,7 +136,8 @@ async def submit_analysis(request: Dict, background_tasks: BackgroundTasks):
             scenario_id=request["scenario_id"],
             proposition=request["proposition"],
             scenario_config=request["scenario_config"],
-            user_id=request.get("user_id")
+            user_id=request.get("user_id"),
+            reasoning_model=request.get("reasoning_model")  # Optional model override
         )
         
         # Generate analysis ID
@@ -330,7 +348,8 @@ async def _run_analysis(analysis_id: str, analysis_request: BFIHAnalysisRequest)
             logger.info(f"Running autonomous analysis for: {analysis_request.proposition}")
             result = orchestrator.analyze_topic(
                 proposition=analysis_request.proposition,
-                domain="general"
+                domain="general",
+                reasoning_model=analysis_request.reasoning_model
             )
         else:
             # Standard mode: use provided scenario_config

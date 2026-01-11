@@ -26,6 +26,9 @@ interface AnalysisState {
   isSubmitting: boolean;
   isPolling: boolean;
 
+  // Model selection
+  selectedReasoningModel: string | null;  // null = use default
+
   // Polling
   pollIntervalId: number | null;
 
@@ -33,7 +36,8 @@ interface AnalysisState {
   cachedResults: Record<string, BFIHAnalysisResult>;
 
   // Actions
-  submitNewAnalysis: (proposition: string) => Promise<string | null>;
+  setReasoningModel: (model: string | null) => void;
+  submitNewAnalysis: (proposition: string, reasoningModel?: string) => Promise<string | null>;
   startPolling: (analysisId: string) => void;
   stopPolling: () => void;
   updateStatus: (status: AnalysisStatusResponse) => void;
@@ -61,11 +65,19 @@ export const useAnalysisStore = create<AnalysisState>()(
         startTime: null,
         isSubmitting: false,
         isPolling: false,
+        selectedReasoningModel: null,  // null = use server default
         pollIntervalId: null,
         cachedResults: {},
 
         // Actions
-        submitNewAnalysis: async (proposition) => {
+        setReasoningModel: (model) => {
+          set({ selectedReasoningModel: model });
+        },
+
+        submitNewAnalysis: async (proposition, reasoningModel) => {
+        // Use provided model, or fall back to store's selected model
+        const modelToUse = reasoningModel ?? get().selectedReasoningModel;
+
         set({
           status: 'submitting',
           isSubmitting: true,
@@ -77,7 +89,10 @@ export const useAnalysisStore = create<AnalysisState>()(
         });
 
         try {
-          const response = await submitAnalysis({ proposition });
+          const response = await submitAnalysis({
+            proposition,
+            reasoning_model: modelToUse || undefined,
+          });
 
           set({
             pendingAnalysisId: response.analysis_id,
@@ -221,6 +236,7 @@ export const useAnalysisStore = create<AnalysisState>()(
           startTime: null,
           isSubmitting: false,
           isPolling: false,
+          // Keep selectedReasoningModel - user preference should persist
         });
       },
       }),
@@ -232,6 +248,7 @@ export const useAnalysisStore = create<AnalysisState>()(
           currentAnalysis: state.currentAnalysis,
           status: state.status,
           pendingProposition: state.pendingProposition,
+          selectedReasoningModel: state.selectedReasoningModel,  // Persist model selection
         }),
       }
     ),
