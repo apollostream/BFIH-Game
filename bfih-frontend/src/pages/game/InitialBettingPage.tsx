@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { BettingSlider, BudgetBar, BetSummary } from '../../components/game/BettingSlider';
+import { CompetitorPreview } from '../../components/game/CompetitorPreview';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { useGameStore, useBettingStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
@@ -19,6 +20,7 @@ export function InitialBettingPage() {
     scenarioConfig,
     selectedParadigms,
     activeParadigm,
+    homeParadigm,
     setPhase,
   } = useGameStore();
   const {
@@ -160,6 +162,15 @@ export function InitialBettingPage() {
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-4">
             <motion.div variants={cardVariants} className="sticky top-24">
+              {/* Competitor Preview */}
+              {scenarioConfig.paradigms && scenarioConfig.paradigms.length > 0 && (
+                <CompetitorPreview
+                  paradigms={scenarioConfig.paradigms}
+                  excludeParadigmId={homeParadigm}
+                  className="mb-4"
+                />
+              )}
+
               {/* Bet Summary */}
               <BetSummary
                 bets={bets}

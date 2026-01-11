@@ -9,6 +9,12 @@ import type {
   Paradigm,
   Hypothesis,
   EvidenceCluster,
+  Competitor,
+  LeaderboardEntry,
+} from '../types';
+import {
+  getPersonaForParadigm,
+  calculatePersonaBets,
 } from '../types';
 
 interface GameState {
@@ -29,6 +35,10 @@ interface GameState {
   activeParadigm: string; // Currently viewing paradigm
   selectedParadigms: string[]; // Paradigms player has selected
 
+  // Competitors (player + paradigm personas)
+  competitors: Competitor[];
+  playerPayoff: number | null;
+
   // Computed getters
   getParadigms: () => Paradigm[];
   getHypotheses: () => Hypothesis[];
@@ -36,6 +46,7 @@ interface GameState {
   getCurrentCluster: () => EvidenceCluster | null;
   getPriors: (paradigmId?: string) => Record<string, number>;
   getPosteriors: (paradigmId?: string) => Record<string, number>;
+  getLeaderboard: () => LeaderboardEntry[];
 
   // Actions
   initGame: (scenarioConfig: ScenarioConfig, analysisResult?: BFIHAnalysisResult) => void;
@@ -47,6 +58,9 @@ interface GameState {
   selectHomeParadigm: (paradigmId: string) => void;
   setActiveParadigm: (paradigmId: string) => void;
   toggleParadigm: (paradigmId: string) => void;
+  initializeCompetitors: (playerBets: Record<string, number>, budget: number) => void;
+  calculateAllPayoffs: (posteriors: Record<string, number>, priors: Record<string, number>) => void;
+  updatePlayerBets: (bets: Record<string, number>) => void;
   resetGame: () => void;
 }
 
@@ -77,6 +91,8 @@ export const useGameStore = create<GameState>()(
         homeParadigm: null,
         activeParadigm: 'K1',
         selectedParadigms: [],
+        competitors: [],
+        playerPayoff: null,
 
         // Getters
         getParadigms: () => {
@@ -120,6 +136,20 @@ export const useGameStore = create<GameState>()(
           const { analysisResult, activeParadigm } = get();
           const pid = paradigmId || activeParadigm;
           return analysisResult?.posteriors?.[pid] || {};
+        },
+
+        getLeaderboard: () => {
+          const { competitors } = get();
+          if (competitors.length === 0) return [];
+
+          // Sort by payoff descending
+          const sorted = [...competitors].sort((a, b) => b.payoff - a.payoff);
+
+          // Assign ranks (handling ties)
+          return sorted.map((competitor, index) => ({
+            ...competitor,
+            rank: index + 1,
+          }));
         },
 
         // Actions
@@ -251,6 +281,112 @@ export const useGameStore = create<GameState>()(
           }
         },
 
+        initializeCompetitors: (playerBets, budget) => {
+          const { scenarioConfig, homeParadigm } = get();
+          if (!scenarioConfig) return;
+
+          const competitors: Competitor[] = [];
+          const priorsSource = scenarioConfig.priors || scenarioConfig.priors_by_paradigm || {};
+
+          // Add player as first competitor
+          competitors.push({
+            id: 'player',
+            name: 'You',
+            icon: '🎮',
+            description: 'Human player',
+            bets: { ...playerBets },
+            payoff: 0,
+            isPlayer: true,
+          });
+
+          // Add paradigm personas (excluding player's home paradigm if they chose one)
+          for (const paradigm of scenarioConfig.paradigms || []) {
+            // Skip player's home paradigm to avoid duplicate betting strategy
+            if (homeParadigm && paradigm.id === homeParadigm) continue;
+
+            const persona = getPersonaForParadigm(paradigm.id, paradigm.name);
+            const paradigmPriors = priorsSource[paradigm.id] || {};
+
+            // Extract probabilities from priors (handle both formats)
+            const priorProbs: Record<string, number> = {};
+            for (const [hypId, prior] of Object.entries(paradigmPriors)) {
+              priorProbs[hypId] = typeof prior === 'number' ? prior : (prior as { probability: number })?.probability || 0;
+            }
+
+            const personaBets = calculatePersonaBets(priorProbs, budget);
+
+            competitors.push({
+              id: paradigm.id,
+              name: persona.name,
+              icon: persona.icon,
+              description: persona.description,
+              bets: personaBets,
+              payoff: 0,
+              isPlayer: false,
+            });
+          }
+
+          set({ competitors });
+        },
+
+        calculateAllPayoffs: (posteriors, priors) => {
+          const { competitors, scenarioConfig } = get();
+          if (competitors.length === 0 || !scenarioConfig) return;
+
+          const hypotheses = scenarioConfig.hypotheses || [];
+
+          // Find the winner (highest posterior)
+          let winnerId = '';
+          let maxPosterior = -1;
+          for (const h of hypotheses) {
+            const post = posteriors[h.id] || 0;
+            if (post > maxPosterior) {
+              maxPosterior = post;
+              winnerId = h.id;
+            }
+          }
+
+          // Calculate payoffs for each competitor using odds_against formula
+          const updatedCompetitors = competitors.map((competitor) => {
+            let totalPayoff = 0;
+
+            for (const hypothesis of hypotheses) {
+              const bet = competitor.bets[hypothesis.id] || 0;
+              const prior = priors[hypothesis.id] || 0.01; // Avoid division by zero
+              const isWinner = hypothesis.id === winnerId;
+
+              if (isWinner) {
+                // Payoff = (bet / prior) - bet for the winning hypothesis
+                totalPayoff += (bet / prior) - bet;
+              } else {
+                // Lose the bet on non-winning hypotheses
+                totalPayoff -= bet;
+              }
+            }
+
+            return {
+              ...competitor,
+              payoff: Math.round(totalPayoff * 100) / 100, // Round to 2 decimal places
+            };
+          });
+
+          // Find player payoff
+          const playerCompetitor = updatedCompetitors.find((c) => c.isPlayer);
+
+          set({
+            competitors: updatedCompetitors,
+            playerPayoff: playerCompetitor?.payoff || null,
+          });
+        },
+
+        updatePlayerBets: (bets) => {
+          const { competitors } = get();
+          const updated = competitors.map((c) =>
+            c.isPlayer ? { ...c, bets: { ...bets } } : c
+          );
+          set({ competitors: updated });
+        },
+
         resetGame: () => {
           set({
             scenarioId: null,
@@ -264,6 +400,8 @@ export const useGameStore = create<GameState>()(
             homeParadigm: null,
             activeParadigm: 'K1',
             selectedParadigms: [],
+            competitors: [],
+            playerPayoff: null,
           });
         },
       }),
@@ -281,6 +419,8 @@ export const useGameStore = create<GameState>()(
           homeParadigm: state.homeParadigm,
           activeParadigm: state.activeParadigm,
           selectedParadigms: state.selectedParadigms,
+          competitors: state.competitors,  // Persist competitors for leaderboard
+          playerPayoff: state.playerPayoff,
         }),
       }
     ),

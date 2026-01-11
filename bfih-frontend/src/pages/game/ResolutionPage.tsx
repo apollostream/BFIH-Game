@@ -6,11 +6,13 @@ import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { HypothesisRanking } from '../../components/game/HypothesisCard';
+import { Leaderboard, VictoryMessage } from '../../components/game/Leaderboard';
+import { VictoryOverlay } from '../../components/game/VictoryOverlay';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
 import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
-import { pageVariants, cardVariants, formatPercent, formatCredits } from '../../utils';
+import { pageVariants, cardVariants, formatPercent } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
 
 export function ResolutionPage() {
@@ -22,22 +24,60 @@ export function ResolutionPage() {
     activeParadigm,
     setActiveParadigm,
     setPhase,
+    initializeCompetitors,
+    calculateAllPayoffs,
+    getLeaderboard,
+    competitors,
+    playerPayoff,
   } = useGameStore();
-  const { bets, calculatePayoff } = useBettingStore();
+  const { bets, budget } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   const [showPayoffs, setShowPayoffs] = useState(false);
-
-  useEffect(() => {
-    setPhase('resolution');
-    // Delayed reveal of payoffs
-    const timer = setTimeout(() => setShowPayoffs(true), 1500);
-    return () => clearTimeout(timer);
-  }, [setPhase]);
+  const [showVictoryOverlay, setShowVictoryOverlay] = useState(false);
 
   // Support both 'priors' and 'priors_by_paradigm' field names
   const priorsSource = scenarioConfig?.priors || scenarioConfig?.priors_by_paradigm;
+
+  useEffect(() => {
+    setPhase('resolution');
+
+    // Initialize competitors if not already done
+    if (competitors.length === 0 && Object.keys(bets).length > 0) {
+      initializeCompetitors(bets, budget);
+    }
+  }, [setPhase, competitors.length, bets, budget, initializeCompetitors]);
+
+  // Calculate payoffs once posteriors are available
+  useEffect(() => {
+    if (competitors.length > 0 && currentAnalysis?.posteriors && priorsSource) {
+      const posteriors = currentAnalysis.posteriors[activeParadigm] || {};
+      const paradigmPriors = priorsSource[activeParadigm] || {};
+
+      // Extract prior probabilities
+      const priors: Record<string, number> = {};
+      for (const [hypId, prior] of Object.entries(paradigmPriors)) {
+        priors[hypId] = typeof prior === 'number' ? prior : (prior as { probability: number })?.probability || 0;
+      }
+
+      calculateAllPayoffs(posteriors, priors);
+    }
+  }, [competitors.length, currentAnalysis, activeParadigm, priorsSource, calculateAllPayoffs]);
+
+  // Show victory overlay after a delay
+  useEffect(() => {
+    if (showPayoffs && playerPayoff !== null) {
+      const timer = setTimeout(() => setShowVictoryOverlay(true), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [showPayoffs, playerPayoff]);
+
+  // Delayed reveal of payoffs
+  useEffect(() => {
+    const timer = setTimeout(() => setShowPayoffs(true), 1500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Get posteriors from analysis result
   const posteriorsData = useMemo((): PosteriorsByParadigm => {
@@ -86,34 +126,9 @@ export function ResolutionPage() {
     (p) => selectedParadigms.includes(p.id)
   ) || [];
 
-  // Calculate payoffs for each hypothesis
-  const payoffs = useMemo(() => {
-    const result: Record<string, number> = {};
-    const posteriors = posteriorsData[activeParadigm] || {};
-    const priors = priorsData[activeParadigm] || {};
-
-    // Find the winner (highest posterior)
-    const hypotheses = scenarioConfig.hypotheses || [];
-    let winnerId = '';
-    let maxPosterior = -1;
-    for (const h of hypotheses) {
-      const post = posteriors[h.id] || 0;
-      if (post > maxPosterior) {
-        maxPosterior = post;
-        winnerId = h.id;
-      }
-    }
-
-    for (const hypothesis of hypotheses) {
-      const posterior = posteriors[hypothesis.id] || 0;
-      const prior = priors[hypothesis.id] || 0;
-      const isWinner = hypothesis.id === winnerId;
-      result[hypothesis.id] = calculatePayoff(hypothesis.id, posterior, isWinner, prior);
-    }
-    return result;
-  }, [scenarioConfig.hypotheses, bets, posteriorsData, priorsData, activeParadigm, calculatePayoff]);
-
-  const totalPayoff = Object.values(payoffs).reduce((sum, p) => sum + p, 0);
+  // Get leaderboard data
+  const leaderboard = getLeaderboard();
+  const playerRank = leaderboard.find((c) => c.isPlayer)?.rank || 0;
 
   // Find winner (highest posterior)
   const posteriors = posteriorsData[activeParadigm] || {};
@@ -181,21 +196,22 @@ export function ResolutionPage() {
           </motion.div>
         )}
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Final Rankings */}
-          <motion.div variants={cardVariants}>
-            <Card className="p-6">
-              <h2 className="text-xl font-semibold text-text-primary mb-4">
-                Final Hypothesis Rankings
-              </h2>
-              <HypothesisRanking
-                hypotheses={scenarioConfig.hypotheses || []}
-                posteriors={posteriors}
-              />
-            </Card>
+        {/* Victory Message */}
+        {showPayoffs && leaderboard.length > 0 && (
+          <motion.div
+            variants={cardVariants}
+            className="mb-8"
+          >
+            <VictoryMessage
+              playerRank={playerRank}
+              totalCompetitors={leaderboard.length}
+              winnerName={leaderboard[0]?.isPlayer ? undefined : leaderboard[0]?.name}
+            />
           </motion.div>
+        )}
 
-          {/* Payoffs */}
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Leaderboard */}
           <motion.div
             variants={cardVariants}
             initial={{ opacity: 0 }}
@@ -203,68 +219,11 @@ export function ResolutionPage() {
           >
             <Card className="p-6">
               <h2 className="text-xl font-semibold text-text-primary mb-4">
-                Your Betting Results
+                Final Standings
               </h2>
 
-              {showPayoffs ? (
-                <>
-                  <div className="space-y-3 mb-6">
-                    {scenarioConfig.hypotheses?.map((hypothesis) => {
-                      const bet = bets[hypothesis.id] || 0;
-                      const payoff = payoffs[hypothesis.id] || 0;
-                      const posterior = posteriors[hypothesis.id] || 0;
-
-                      return (
-                        <div
-                          key={hypothesis.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-surface-2"
-                        >
-                          <div>
-                            <span className="font-medium text-text-primary">
-                              {hypothesis.id}
-                            </span>
-                            <span className="text-text-muted ml-2">
-                              Bet: {formatCredits(bet)}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm text-text-muted">
-                              {formatPercent(posterior)}
-                            </div>
-                            <div
-                              className={`font-bold ${
-                                payoff >= 0 ? 'text-success' : 'text-error'
-                              }`}
-                            >
-                              {payoff >= 0 ? '+' : ''}
-                              {formatCredits(payoff)}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Total */}
-                  <div className="pt-4 border-t border-border">
-                    <div className="flex items-center justify-between">
-                      <span className="text-lg font-medium text-text-primary">
-                        Net Result
-                      </span>
-                      <motion.span
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.3, type: 'spring' }}
-                        className={`text-2xl font-bold ${
-                          totalPayoff >= 0 ? 'text-success' : 'text-error'
-                        }`}
-                      >
-                        {totalPayoff >= 0 ? '+' : ''}
-                        {formatCredits(totalPayoff)}
-                      </motion.span>
-                    </div>
-                  </div>
-                </>
+              {showPayoffs && leaderboard.length > 0 ? (
+                <Leaderboard entries={leaderboard} />
               ) : (
                 <div className="text-center py-8">
                   <motion.div
@@ -274,9 +233,22 @@ export function ResolutionPage() {
                   >
                     🎲
                   </motion.div>
-                  <p className="text-text-secondary">Calculating payoffs...</p>
+                  <p className="text-text-secondary">Calculating scores...</p>
                 </div>
               )}
+            </Card>
+          </motion.div>
+
+          {/* Hypothesis Rankings */}
+          <motion.div variants={cardVariants}>
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold text-text-primary mb-4">
+                Hypothesis Rankings
+              </h2>
+              <HypothesisRanking
+                hypotheses={scenarioConfig.hypotheses || []}
+                posteriors={posteriors}
+              />
             </Card>
           </motion.div>
         </div>
@@ -325,6 +297,16 @@ export function ResolutionPage() {
           </Button>
         </motion.div>
       </PageContainer>
+
+      {/* Victory Overlay */}
+      <VictoryOverlay
+        show={showVictoryOverlay}
+        playerRank={playerRank}
+        totalCompetitors={leaderboard.length}
+        playerPayoff={playerPayoff || 0}
+        winnerName={leaderboard[0]?.isPlayer ? undefined : leaderboard[0]?.name}
+        onClose={() => setShowVictoryOverlay(false)}
+      />
     </motion.div>
   );
 }
