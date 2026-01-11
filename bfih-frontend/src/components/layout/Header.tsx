@@ -1,17 +1,21 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils';
 import { useUIStore, useGameStore } from '../../stores';
+import { HelpModal } from '../ui/HelpModal';
 
 export function Header() {
   const location = useLocation();
   const { theme, toggleTheme } = useUIStore();
   const { isGameActive, scenarioConfig } = useGameStore();
+  const [showHelp, setShowHelp] = useState(false);
 
   const isHome = location.pathname === '/';
   const isLibrary = location.pathname === '/library';
 
   return (
+  <>
     <header className="sticky top-0 z-40 w-full">
       <div className="glass border-b border-border">
         <div className="container mx-auto px-4">
@@ -56,6 +60,19 @@ export function Header() {
                 Library
               </NavLink>
 
+              {/* Help button */}
+              <button
+                onClick={() => setShowHelp(true)}
+                className={cn(
+                  'p-2 rounded-lg',
+                  'text-text-muted hover:text-text-primary',
+                  'hover:bg-surface-2 transition-colors'
+                )}
+                aria-label="Help"
+              >
+                <HelpIcon className="w-5 h-5" />
+              </button>
+
               {/* Theme toggle */}
               <button
                 onClick={toggleTheme}
@@ -77,6 +94,10 @@ export function Header() {
         </div>
       </div>
     </header>
+
+    {/* Help Modal */}
+    <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
+  </>
   );
 }
 
@@ -133,6 +154,24 @@ function MoonIcon({ className }: { className?: string }) {
         strokeLinejoin="round"
         strokeWidth={2}
         d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"
+      />
+    </svg>
+  );
+}
+
+function HelpIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
       />
     </svg>
   );
