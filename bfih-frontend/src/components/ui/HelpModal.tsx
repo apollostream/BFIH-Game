@@ -236,30 +236,68 @@ function ConceptsContent() {
 
       <Section title="Likelihoods">
         <p>
-          Likelihood P(E|H) measures how probable the observed evidence would be if a
-          particular hypothesis were true. High likelihood means the evidence strongly
-          supports that hypothesis.
+          Likelihood P(E|H) measures how probable the observed evidence would be <em>if</em> a
+          particular hypothesis were true. This is not the same as probability of the
+          hypothesis—it asks: "Given H is true, how expected is this evidence?"
         </p>
-        <p className="text-text-secondary mt-2">
-          The ratio of likelihoods between hypotheses determines how much posteriors shift
-          from priors—this is the "weight of evidence."
+        <p className="text-text-secondary mt-3">
+          <strong>Example:</strong> If H = "It rained last night" and E = "The sidewalk is wet,"
+          then P(E|H) is high (wet sidewalks are very expected if it rained). But P(E|not-H)
+          might also be moderate (sprinklers, car wash, etc.).
+        </p>
+      </Section>
+
+      <Section title="Likelihood Ratios">
+        <p className="mb-3">
+          The <strong>Likelihood Ratio</strong> (LR) compares how well two hypotheses predict
+          the observed evidence:
+        </p>
+        <div className="bg-surface-2 rounded-lg p-4 font-mono text-sm text-center mb-3">
+          LR = P(E|H₁) / P(E|H₂)
+        </div>
+        <p className="mb-3">
+          Philosopher <strong>Branden Fitelson</strong> demonstrated that the likelihood ratio
+          is the uniquely correct measure of evidential support. His work established that
+          any good confirmation measure must satisfy certain intuitive desiderata (axioms),
+          and the likelihood ratio is the only measure that satisfies them all:
+        </p>
+        <ul className="list-disc list-inside space-y-2 text-text-secondary mb-3">
+          <li><strong>Symmetry:</strong> Evidence E supports H₁ over H₂ exactly as much as it
+            refutes H₂ relative to H₁</li>
+          <li><strong>Equivalence:</strong> Logically equivalent hypotheses receive equal support</li>
+          <li><strong>Law of Likelihood:</strong> E favors H₁ over H₂ if and only if P(E|H₁) {">"} P(E|H₂)</li>
+          <li><strong>Additivity:</strong> Independent pieces of evidence combine multiplicatively</li>
+        </ul>
+        <p className="text-text-secondary">
+          Unlike other proposed measures (difference, ratio of posteriors, etc.), only the
+          likelihood ratio cleanly separates the <em>strength of evidence</em> from prior
+          beliefs—making it objective and paradigm-independent.
         </p>
       </Section>
 
       <Section title="Weight of Evidence (WoE)">
         <p>
-          Weight of Evidence is measured in decibans (dB) and quantifies how much evidence
-          favors one hypothesis over another:
+          Weight of Evidence converts the likelihood ratio to a logarithmic scale measured
+          in <strong>decibans</strong> (dB), invented by Alan Turing during WWII codebreaking:
         </p>
         <div className="bg-surface-2 rounded-lg p-4 font-mono text-sm text-center my-3">
           WoE = 10 × log₁₀(Likelihood Ratio)
         </div>
+        <p className="mb-3 text-text-secondary">
+          The logarithmic scale has a key advantage: independent pieces of evidence <em>add</em> rather
+          than multiply, making it intuitive to accumulate evidence across multiple observations.
+        </p>
         <ul className="list-disc list-inside space-y-1 text-text-secondary">
-          <li>+10 dB: Evidence is 10x more likely under H1 than H2</li>
-          <li>+20 dB: Evidence is 100x more likely under H1</li>
-          <li>0 dB: Evidence equally supports both hypotheses</li>
-          <li>-10 dB: Evidence favors H2 over H1</li>
+          <li><strong>+10 dB:</strong> Evidence is 10x more likely under H₁ than H₂ (strong support)</li>
+          <li><strong>+20 dB:</strong> Evidence is 100x more likely under H₁ (very strong)</li>
+          <li><strong>0 dB:</strong> Evidence equally consistent with both hypotheses (neutral)</li>
+          <li><strong>-10 dB:</strong> Evidence favors H₂ over H₁ (strong refutation of H₁)</li>
         </ul>
+        <p className="text-text-secondary mt-3">
+          Turing considered ±10 dB (10:1 odds) to be meaningful evidence, and ±20 dB (100:1)
+          to be decisive. BFIH uses this scale to help you calibrate your intuitions about
+          evidence strength.
+        </p>
       </Section>
 
       <Section title="Learning from the Game">
