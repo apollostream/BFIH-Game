@@ -327,10 +327,59 @@ async def get_analysis_status(analysis_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class SynopsisRequest(BaseModel):
+    """Request body for synopsis generation with report content"""
+    report: str
+    scenario_id: Optional[str] = None
+
+
+@app.post("/api/generate-synopsis")
+async def generate_synopsis_from_report(request: SynopsisRequest):
+    """
+    Generate a magazine-style synopsis from a provided BFIH report.
+
+    This endpoint accepts the report content directly from the frontend,
+    avoiding storage lookups. This is the preferred method.
+
+    Returns:
+    {
+        "scenario_id": "s_001",
+        "synopsis": "markdown synopsis content",
+        "status": "completed"
+    }
+    """
+    try:
+        if not request.report:
+            raise HTTPException(
+                status_code=400,
+                detail="No report content provided"
+            )
+
+        scenario_id = request.scenario_id or "synopsis"
+
+        # Generate the synopsis
+        logger.info(f"Generating magazine synopsis for scenario: {scenario_id}")
+        synopsis = orchestrator.generate_magazine_synopsis(request.report, scenario_id)
+
+        return {
+            "scenario_id": scenario_id,
+            "synopsis": synopsis,
+            "status": "completed"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating synopsis: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.post("/api/generate-synopsis/{analysis_id}")
 async def generate_synopsis(analysis_id: str):
     """
     Generate a magazine-style synopsis from a completed BFIH analysis.
+
+    DEPRECATED: Use POST /api/generate-synopsis with report content instead.
 
     This transforms the technical report into an engaging, Atlantic-style
     magazine article that is accessible to general readers.

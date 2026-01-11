@@ -74,14 +74,22 @@ export async function getAnalysis(analysisId: string): Promise<BFIHAnalysisResul
 
 // Generate magazine-style synopsis from completed analysis
 export interface SynopsisResponse {
-  analysis_id: string;
   scenario_id: string;
   synopsis: string;
   status: string;
 }
 
-export async function generateSynopsis(analysisId: string): Promise<SynopsisResponse> {
-  const response = await post<SynopsisResponse>(`/api/generate-synopsis/${analysisId}`, {});
+export interface GenerateSynopsisParams {
+  report: string;
+  scenarioId?: string;
+}
+
+export async function generateSynopsis(params: GenerateSynopsisParams): Promise<SynopsisResponse> {
+  // Use the new endpoint that accepts report content directly
+  const response = await post<SynopsisResponse>('/api/generate-synopsis', {
+    report: params.report,
+    scenario_id: params.scenarioId,
+  });
 
   if (response.error) {
     throw new Error(response.error);

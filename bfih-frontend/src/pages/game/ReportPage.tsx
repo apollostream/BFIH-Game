@@ -40,11 +40,11 @@ export function ReportPage() {
 
   // Handler to generate magazine synopsis
   const handleGenerateSynopsis = async () => {
-    // Try to get analysis ID from currentAnalysis, or fall back to scenarioId
-    const analysisId = currentAnalysis?.analysis_id || scenarioId;
+    // Get the report from currentAnalysis - this is already in memory
+    const report = currentAnalysis?.report;
 
-    if (!analysisId) {
-      setSynopsisError('No analysis ID available');
+    if (!report) {
+      setSynopsisError('No report available to generate synopsis');
       return;
     }
 
@@ -52,7 +52,10 @@ export function ReportPage() {
     setSynopsisError(null);
 
     try {
-      const result = await generateSynopsis(analysisId);
+      const result = await generateSynopsis({
+        report,
+        scenarioId: scenarioId || undefined,
+      });
       setSynopsis(result.synopsis);
       setShowSynopsis(true);
     } catch (error) {
@@ -62,8 +65,8 @@ export function ReportPage() {
     }
   };
 
-  // Determine if synopsis can be generated
-  const canGenerateSynopsis = !!(currentAnalysis?.analysis_id || scenarioId);
+  // Determine if synopsis can be generated (need report in memory)
+  const canGenerateSynopsis = !!currentAnalysis?.report;
 
   if (!scenarioConfig) {
     return (
