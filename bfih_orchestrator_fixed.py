@@ -2434,6 +2434,40 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
 PROPOSITION: "{proposition}"
 DOMAIN: {domain}
 
+## EPISTEMIC GUARDRAILS - READ FIRST
+
+Before generating paradigms, classify the proposition:
+
+### TYPE A: Empirical Factual Claims
+Claims with objectively verifiable answers (e.g., "The earth is flat", "Vaccines cause autism", "The moon landing was faked"):
+- ALL paradigms MUST AGREE on the factual answer based on scientific consensus
+- Paradigms differ on VALUES and PRIORITIES, not on relationship with objective reality
+- Do NOT generate paradigms that affirm science denial, conspiracy theories, or anti-empirical positions
+- Instead, paradigms should address: "Given the factual answer, what are the implications? Why does this matter? What values are at stake?"
+- For clearly false claims: Hypotheses should be about WHY people believe the false claim, not WHETHER the claim is true
+
+### TYPE B: Value-Laden / Interpretive Propositions
+Claims involving values, priorities, or interpretations (e.g., "Nuclear energy should be expanded", "Life begins at conception", "Immigration policy should be more restrictive"):
+- Paradigms CAN differ on substantive conclusions
+- Differences reflect genuine value differences (e.g., individual vs collective, economic vs cultural, short-term vs long-term)
+- All paradigms must still share basic epistemic rationality
+
+### PROHIBITED PARADIGMS (Never Generate These)
+- **Science Denial**: "Flat Earth Believer", "Anti-Vaccine Truther", "Climate Denial"
+- **Conspiracy Thinking**: "Anti-Establishment Skeptic" who rejects all mainstream institutions
+- **Epistemic Relativism**: Paradigms that treat all truth claims as equally valid
+- **Bad Faith Positions**: Paradigms designed to undermine rational discourse
+
+### ALL PARADIGMS MUST SHARE
+- Commitment to logical consistency
+- Willingness to update beliefs based on evidence
+- Recognition that some claims are objectively true or false
+- Good faith engagement with opposing views
+
+If the proposition is a Type A empirical claim with clear scientific consensus, reframe the analysis to ask a more intellectually productive question (e.g., "Why do flat earth beliefs persist?" rather than "Is the earth flat?").
+
+---
+
 ## CRITICAL REQUIREMENT: K0 + K0-inv + Biased Paradigms
 
 You MUST generate paradigms with EXPLICIT STANCES across 6 dimensions:
@@ -2723,6 +2757,33 @@ Hypotheses answer: "Is this proposition TRUE, FALSE, or CONDITIONALLY TRUE?"
 - H3: "PARTIAL - Safety issues contributed, but comparable to industry norms"
 - H4: "FALSE - Regulatory capture, not Boeing's internal culture, was primary cause"
 - H0: "OTHER - Some unforeseen factor or combination not captured by H1-H4" (catch-all)
+
+## SPECIAL CASE: FACTUAL CLAIMS WITH CLEAR SCIENTIFIC CONSENSUS
+
+For propositions that assert something contrary to established scientific fact (e.g., "The earth is flat",
+"Vaccines cause autism", "The moon landing was faked", "Evolution is false"):
+
+**CRITICAL: Do NOT generate hypotheses affirming scientifically false claims.**
+
+Instead, reframe the analysis to address WHY people believe the false claim:
+- H1: "Social/psychological factors" - Distrust of institutions, in-group identity, cognitive biases
+- H2: "Information ecosystem factors" - Algorithm-driven bubbles, misinformation spread, media literacy gaps
+- H3: "Cultural/historical factors" - Anti-establishment traditions, historical betrayals of trust, religious frameworks
+- H4: "Educational factors" - Gaps in science education, failure to teach critical thinking
+- H0: "Other unforeseen factors"
+
+**Example: "The earth is flat" - CORRECT reframing:**
+- Reframe to: "Why do flat earth beliefs persist despite overwhelming evidence?"
+- H1: "Distrust of scientific institutions and authority drives flat earth belief"
+- H2: "Social media algorithms and echo chambers amplify flat earth communities"
+- H3: "Flat earth belief serves psychological needs for certainty and belonging"
+- H4: "Failures in science education enable flat earth belief to spread"
+- H0: "Other unforeseen factors"
+
+**NEVER generate these hypotheses for factual claims:**
+- ❌ "TRUE - The earth is actually flat despite mainstream claims"
+- ❌ "TRUE - Vaccines do cause autism despite CDC/WHO denial"
+- ❌ "PARTIAL - There's some validity to flat earth arguments"
 
 ## SPECIAL CASE: SUPERLATIVE/COMPARATIVE CLAIMS
 
