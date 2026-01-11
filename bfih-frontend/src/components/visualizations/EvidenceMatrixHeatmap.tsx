@@ -209,13 +209,13 @@ export function EvidenceMatrixHeatmap({
 
                   {/* WoE cells */}
                   {clusters.map((cluster) => {
-                    const cellData = row.data[cluster.cluster_id];
+                    const rawCellData = row.data[cluster.cluster_id];
                     const isHovered =
                       hoveredCell?.hypothesisId === row.hypothesisId &&
                       hoveredCell?.clusterId === cluster.cluster_id;
 
-                    // Guard against missing cell data
-                    if (!cellData) {
+                    // Guard against missing or incomplete cell data
+                    if (!rawCellData || typeof rawCellData.woe !== 'number') {
                       return (
                         <td key={cluster.cluster_id} className="p-1">
                           <div className="w-12 h-12 rounded-lg bg-surface-2 flex items-center justify-center text-xs text-text-muted">
@@ -224,6 +224,15 @@ export function EvidenceMatrixHeatmap({
                         </td>
                       );
                     }
+
+                    // Ensure all properties have safe defaults
+                    const cellData = {
+                      woe: rawCellData.woe ?? 0,
+                      likelihood: rawCellData.likelihood ?? 0.5,
+                      pENotH: rawCellData.pENotH ?? 0.5,
+                      lr: rawCellData.lr ?? 1,
+                      justification: rawCellData.justification,
+                    };
 
                     return (
                       <td key={cluster.cluster_id} className="p-1">
