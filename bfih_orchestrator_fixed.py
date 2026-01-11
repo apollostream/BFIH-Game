@@ -3265,12 +3265,28 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 
 ## CRITICAL REQUIREMENTS:
 
+### THE K0 PARADIGM HAS PRIMACY:
+The BFIH framework designates K0 as the "privileged paradigm" - not because it's one ideology among many,
+but because it represents a commitment to intellectual honesty as a methodology rather than to any
+particular worldview. K0's conclusions should be treated as THE primary finding of the analysis.
+
+Your article should:
+- Lead with and center K0's verdict and conclusions as the main finding
+- Present K0's assessment as the intellectually honest baseline
+- Treat other paradigms (K1, K2, etc.) as revealing how ideological commitments DIFFER from
+  the intellectually honest assessment - not as equally valid alternatives
+- Show how paradigms with ideological commitments (techno-optimism, traditionalism, etc.)
+  reach different conclusions and WHY their priors or interpretive biases lead them there
+- Do NOT frame this as "different perspectives are all valid" or "it depends on your values"
+- DO frame this as "here's what intellectually honest analysis finds, and here's how various
+  ideological lenses diverge from that finding"
+
 ### TONE & STYLE:
 - Write in plain language accessible to general readers, NOT academic prose
-- Be intellectually honest: present analysis fairly without advocacy or sensationalism
+- Be intellectually honest: present the K0 finding confidently, other paradigms fairly but critically
 - Be information-dense but engaging - every paragraph should teach something
 - Use vivid, specific details from the evidence rather than vague summaries
-- Help readers genuinely understand the complexity, including genuine uncertainties
+- Help readers understand both the conclusion AND why ideological thinking leads elsewhere
 - Respect the reader's intelligence - inform and illuminate, don't preach or provoke
 
 ### ARTICLE STRUCTURE:
@@ -3281,7 +3297,7 @@ for this topic and could only belong to this article.
 Use this general flow, but invent your own section titles:
 
 1. **Headline + Subtitle**
-   - A compelling, specific headline that captures the core finding
+   - A compelling, specific headline that captures K0's core finding
    - An italicized subtitle that adds context
 
 2. **Opening Context** (~300-500 words)
@@ -3296,31 +3312,33 @@ Use this general flow, but invent your own section titles:
    - Include specific examples and data points
    - Build a coherent narrative from the facts
 
-4. **Different Interpretive Lenses** (~800-1200 words)
-   - Present how different analytical frameworks interpret this evidence
-   - Format as: "### [Descriptive Name]: [Brief characterization]"
-   - Explain the reasoning behind each perspective fairly
-   - Show where perspectives agree and where they diverge
+4. **The Intellectually Honest Assessment** (~500-800 words)
+   - Present K0's conclusions as the primary finding
+   - Explain the reasoning and evidence that supports this verdict
+   - Acknowledge genuine uncertainties where they exist
+   - This is THE answer the analysis provides
 
-5. **Synthesis and Assessment** (~500-800 words)
-   - What conclusions does the evidence support?
-   - Where does genuine uncertainty remain?
-   - What nuances are important to understand?
+5. **How Ideological Lenses Diverge** (~800-1200 words)
+   - Show how paradigms with ideological commitments reach different conclusions
+   - Format as: "### [Paradigm Name]: [How it diverges and why]"
+   - Explain what priors or assumptions lead each ideology to its different conclusion
+   - This is NOT "alternative valid views" - it's "how ideology distorts assessment"
+   - Be fair in representing each view, but clear that K0 has epistemic privilege
 
 6. **Implications and Applications** (~400-600 words)
-   - What are the practical implications of these findings?
+   - What are the practical implications of K0's findings?
    - How might this inform decisions or thinking?
    - Connect to broader patterns or lessons where appropriate
 
 7. **Practical Guidance** (~400-600 words)
-   - Concrete, actionable recommendations if applicable
+   - Concrete, actionable recommendations based on the K0 finding
    - Questions readers might ask themselves
    - How to apply these insights in practice
 
 8. **Closing Reflection** (~300-400 words)
-   - Synthesize the key insight
+   - Synthesize the key insight from K0
    - Reflect on what this reveals about the topic
-   - End with something thought-provoking but not sensationalized
+   - End with something thought-provoking but grounded in the analysis
 
 ### FORMATTING:
 - Use # for title, ## for major sections, ### for subsections
@@ -3334,7 +3352,8 @@ Use this general flow, but invent your own section titles:
 - DO NOT include a References/Bibliography section (it will be appended automatically)
 - DO NOT use academic jargon or methodology descriptions
 - DO NOT use sensationalized language or clickbait phrasing
-- DO NOT presume what "most people believe" or claim insights people "don't want to hear"
+- DO NOT treat all paradigms as equally epistemically valid - K0 has primacy
+- DO NOT frame findings as "it depends on your perspective" relativism
 - DO NOT be preachy, provocative, or condescending
 - DO NOT use the template section titles verbatim - create unique titles for this article
 - DO NOT hedge excessively - make clear claims where evidence supports them
