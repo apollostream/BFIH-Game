@@ -3344,11 +3344,13 @@ BFIH ANALYSIS REPORT TO TRANSFORM:
 
 ---
 
-Generate the complete magazine-style article now. Make it rich, detailed, and genuinely illuminating. The goal is that a reader who knows nothing about this topic could read your article and come away with deep understanding and new perspectives. This should be a piece worthy of publication in a major magazine."""
+Generate the complete magazine-style article now. Make it rich, detailed, and genuinely illuminating. The goal is that a reader who knows nothing about this topic could read your article and come away with deep understanding and new perspectives. This should be a piece worthy of publication in a major magazine.
+
+CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not summarize or abbreviate. Expand on each section with specific details, examples, and analysis from the source report. A short response is unacceptable."""
 
         try:
             response = self.client.responses.create(
-                model="gpt-4o",  # Use gpt-4o for high-quality writing
+                model="gpt-5.2",  # Use GPT-5.2 for highest quality long-form writing
                 input=prompt,
                 max_output_tokens=16000,  # Increased for longer, richer output
             )
