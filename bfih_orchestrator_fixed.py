@@ -1214,6 +1214,36 @@ SEARCH TOPICS - Execute searches covering:
 - Historical context and base rates for similar cases
 - Academic research and expert opinions
 
+## SPECIAL: RECOMMENDATION/CHOICE QUERIES (Best X, Top Options, GOAT, etc.)
+
+If the proposition is asking for recommendations (best restaurants, hotels, products, athletes, etc.):
+
+**GATHER CANDIDATE-SPECIFIC EVIDENCE:**
+1. Search for "best [X] in [Y]" rankings and listicles
+2. Search for reviews of SPECIFIC candidates named in the hypotheses
+3. Capture concrete attributes: prices, ratings, locations, key features
+4. Include BOTH professional reviews AND user reviews
+5. Search for comparison articles that contrast multiple options
+
+**FOR EACH NAMED CANDIDATE, try to find:**
+- Overall rating/score from authoritative sources
+- 2-3 standout features or differentiators
+- Price range or tier
+- Location/availability details
+- Notable pros and cons from reviews
+- Any awards, recognition, or "best of" mentions
+
+**Example searches for "best burgers in Cincinnati":**
+- "best burgers Cincinnati 2024 2025"
+- "[Restaurant Name] reviews ratings"
+- "Cincinnati burger restaurants comparison"
+- "[Restaurant Name] menu prices"
+- "Yelp top rated burgers Cincinnati"
+
+The goal is actionable evidence about specific options, not abstract philosophy.
+
+---
+
 Return a JSON object with "evidence_items" array containing 15-25 evidence items.
 - Include evidence that SUPPORTS each hypothesis
 - Include evidence that REFUTES each hypothesis (critical for intellectual honesty)
@@ -2885,6 +2915,53 @@ Example: "Tom Brady is the NFL GOAT"
 - Name specific alternatives in DENY hypotheses to drive comparative evidence search
 - Consider whether the superlative claim's category matters (position, era, metric)
 
+## SPECIAL CASE: RECOMMENDATION/CHOICE QUERIES (Best X in Y, Top Options, etc.)
+
+For propositions seeking recommendations like "best burgers in Cincinnati", "luxury hotels in Paris",
+"top accounting software for small business", or any "what are my options?" type query:
+
+**CRITICAL: These are NOT abstract philosophical questions. Users want ACTIONABLE GUIDANCE.**
+
+The intellectually honest approach is to:
+1. Acknowledge that "best" depends on individual criteria and preferences
+2. BUT STILL enumerate specific, real-world candidates with their attributes
+3. Present evidence about each candidate's strengths and weaknesses
+4. Let users make informed decisions based on their own priorities
+
+**REQUIRED: Generate hypotheses that NAME SPECIFIC CANDIDATES**
+
+Example: "Best burgers in Cincinnati"
+  - H1: "[Specific Restaurant A] offers the best burger" - Name actual establishment (e.g., "Terry's Turf Club")
+  - H2: "[Specific Restaurant B] offers the best burger" - Name a different contender (e.g., "Zip's Cafe")
+  - H3: "[Specific Restaurant C] offers the best burger" - Name another strong option (e.g., "Krueger's Tavern")
+  - H4: "Best depends on criteria (price, atmosphere, meat quality, toppings)" - QUALIFY hypothesis
+  - H0: "Other establishments not yet discovered or newly opened"
+
+Example: "Lifestyle luxury hotels in Nashville"
+  - H1: "[Hotel A] is the best lifestyle luxury option" - Name actual hotel (e.g., "The Graduate Nashville")
+  - H2: "[Hotel B] is the best lifestyle luxury option" - Name competitor (e.g., "Noelle Nashville")
+  - H3: "[Hotel C] is the best lifestyle luxury option" - Name another (e.g., "Bobby Hotel")
+  - H4: "Best depends on specific needs (location, amenities, price point, vibe)"
+  - H0: "Boutique options or new properties not yet widely reviewed"
+
+**IMPORTANT FOR EVIDENCE GATHERING:**
+- Evidence should include reviews, ratings, specific attributes of each named candidate
+- Search for "best [X] in [Y]" rankings, local guides, expert reviews
+- Capture prices, locations, key differentiators, standout features
+- Include both professional reviews AND user reviews where available
+
+**THE GOAL:** After the analysis, users should have a clear mental map of:
+- What the actual options are (named candidates)
+- What each option is known for (differentiators)
+- What criteria matter for choosing between them
+- Enough information to make their own informed choice
+
+This IS intellectually honest because:
+- We're not claiming one answer is objectively correct
+- We're presenting real evidence about real options
+- We acknowledge the role of personal preferences
+- We help users think through the decision rather than making it for them
+
 ## SPECIAL CASE: POLITICAL/GOVERNANCE PROPOSITIONS
 
 For propositions about political leaders, administrations, governments, policies, or national direction:
@@ -3484,6 +3561,42 @@ Use this general flow, but invent your own section titles:
    - Concrete, actionable recommendations based on the K0 finding
    - Questions readers might ask themselves
    - How to apply these insights in practice
+
+### SPECIAL: RECOMMENDATION/CHOICE QUERIES (Best X, Hotels, Restaurants, Products, GOAT, etc.)
+
+If the analysis is about finding "the best" option (restaurants, hotels, products, athletes, etc.),
+you MUST include a **Candidate Comparison Table or Enumeration** section:
+
+- Create a markdown table or structured list of ALL named candidates from the analysis
+- For each candidate, include:
+  - Name
+  - Key differentiator/what it's known for
+  - Rating or tier (if available from evidence)
+  - Price range (if applicable)
+  - Standout features (2-3 bullet points)
+  - Best for (what type of user/preference this suits)
+
+**Example Table for "Best Burgers in Cincinnati":**
+
+| Restaurant | Known For | Rating | Price | Best For |
+|------------|-----------|--------|-------|----------|
+| Terry's Turf Club | Massive hand-patted burgers, dive bar atmosphere | 4.5★ | $$ | Purists wanting no-frills excellence |
+| Zip's Cafe | Classic Cincinnati-style, been there forever | 4.3★ | $ | Nostalgic locals, budget-conscious |
+| Krueger's Tavern | Gourmet toppings, craft beer selection | 4.4★ | $$$ | Foodies wanting elevated experience |
+
+**Or for Hotels:**
+
+| Hotel | Style | Price/Night | Location | Best For |
+|-------|-------|-------------|----------|----------|
+| Noelle Nashville | Industrial-chic boutique | $300-450 | Downtown/Printers Alley | Design lovers, walkability |
+| Bobby Hotel | Rooftop scene, social vibe | $250-400 | Downtown | Millennials, social travelers |
+| Graduate Nashville | Music-themed, quirky | $200-350 | Midtown/Vanderbilt | Budget-conscious, campus visitors |
+
+This table should come BEFORE or WITHIN the "Practical Guidance" section, giving readers
+an at-a-glance comparison they can reference for decisions.
+
+The intellectually honest framing is: "Here are your real options with their differentiators.
+'Best' depends on your priorities, but here's the information to decide."
 
 8. **Closing Reflection** (~300-400 words)
    - Synthesize the key insight from K0
