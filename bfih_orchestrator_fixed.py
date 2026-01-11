@@ -849,7 +849,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
     def _run_structured_phase(self, prompt: str, schema_name: str, phase_name: str,
                                tools: List[Dict] = None, max_retries: int = 2,
-                               model: str = None) -> dict:
+                               model: str = None, return_citations: bool = False) -> dict:
         """
         Run a phase with structured output (JSON Schema enforcement).
 
@@ -863,9 +863,10 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
             tools: Optional list of tools (file_search, web_search)
             max_retries: Number of retry attempts on connection failure
             model: Optional model override (default: self.model)
+            return_citations: If True, return tuple of (result, url_citations) for web_search
 
         Returns:
-            Parsed JSON dict matching the schema
+            Parsed JSON dict matching the schema, or tuple (dict, list) if return_citations=True
         """
         import time
 
@@ -923,12 +924,34 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 output_text = response.output_text
                 print(f"\n[Received structured output, parsing JSON...]")
 
+                # Extract url_citation annotations if requested
+                url_citations = []
+                if return_citations:
+                    # Look for url_citation annotations in the response output
+                    for output_item in response.output:
+                        if hasattr(output_item, 'content'):
+                            for content_item in output_item.content:
+                                if hasattr(content_item, 'annotations'):
+                                    for annotation in content_item.annotations:
+                                        if hasattr(annotation, 'type') and annotation.type == 'url_citation':
+                                            url_citations.append({
+                                                'url': getattr(annotation, 'url', ''),
+                                                'title': getattr(annotation, 'title', ''),
+                                                'start_index': getattr(annotation, 'start_index', 0),
+                                                'end_index': getattr(annotation, 'end_index', 0)
+                                            })
+                    if url_citations:
+                        logger.info(f"Extracted {len(url_citations)} URL citations from web search")
+                        print(f"[Extracted {len(url_citations)} URL citations from web search]")
+
                 # Parse JSON from output
                 try:
                     # The output should be valid JSON due to schema enforcement
                     result = json.loads(output_text)
                     logger.info(f"{phase_name} complete with valid JSON")
                     print(f"[{phase_name} complete - valid JSON parsed]")
+                    if return_citations:
+                        return result, url_citations
                     return result
                 except json.JSONDecodeError as e:
                     # Fallback: try to extract JSON from the response
@@ -937,6 +960,8 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     if json_match:
                         result = json.loads(json_match.group(0))
                         logger.info(f"{phase_name} complete with extracted JSON")
+                        if return_citations:
+                            return result, url_citations
                         return result
                     raise ValueError(f"Could not parse JSON from response: {output_text[:500]}")
 
@@ -1198,11 +1223,48 @@ Evidence types: quantitative, qualitative, expert_testimony, historical_analogy,
 """
         try:
             tools = [{"type": "web_search", "search_context_size": "high"}]
-            result = self._run_structured_phase(
+            result, url_citations = self._run_structured_phase(
                 prompt, "evidence", "Phase 2: Evidence Gathering",
-                tools=tools
+                tools=tools, return_citations=True
             )
             evidence_items = result.get("evidence_items", [])
+
+            # Populate source_url from url_citations if not already set
+            # Build a lookup by title (case-insensitive, partial match)
+            citation_url_map = {}
+            for citation in url_citations:
+                if citation.get('url') and citation.get('title'):
+                    # Store with lowercase title for matching
+                    title_key = citation['title'].lower().strip()
+                    citation_url_map[title_key] = citation['url']
+
+            # Try to match evidence items with citations
+            for item in evidence_items:
+                if not item.get('source_url') or item['source_url'].strip() == '':
+                    source_name = item.get('source_name', '').lower().strip()
+                    citation_text = item.get('citation_apa', '').lower()
+
+                    # Try exact match on source name
+                    for title, url in citation_url_map.items():
+                        if source_name and source_name in title:
+                            item['source_url'] = url
+                            break
+                        # Also try matching parts of the citation
+                        if title in citation_text:
+                            item['source_url'] = url
+                            break
+
+            # If we have unused citations, add them to items without URLs
+            used_urls = {item.get('source_url') for item in evidence_items if item.get('source_url')}
+            unused_citations = [c for c in url_citations if c.get('url') and c['url'] not in used_urls]
+            items_without_urls = [item for item in evidence_items if not item.get('source_url') or item['source_url'].strip() == '']
+
+            # Assign remaining citations to items without URLs (best effort)
+            for item, citation in zip(items_without_urls, unused_citations):
+                item['source_url'] = citation['url']
+
+            logger.info(f"Populated {sum(1 for item in evidence_items if item.get('source_url'))} items with URLs from {len(url_citations)} citations")
+
             # Generate markdown summary from structured data
             markdown_summary = self._generate_evidence_markdown(evidence_items)
         except Exception as e:
