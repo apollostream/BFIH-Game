@@ -213,10 +213,12 @@ export function HypothesisCard({
           {/* Tags */}
           {showDetails && (
             <div className="flex flex-wrap gap-2 mb-3">
-              {hypothesis.domains?.map((domain) => (
+              {/* Deduplicate domains in case backend sends duplicates */}
+              {[...new Set(hypothesis.domains || [])].map((domain) => (
                 <DomainBadge key={domain} domain={domain} size="sm" />
               ))}
-              {hypothesis.associated_paradigms?.map((paradigmId) => (
+              {/* Deduplicate paradigms in case backend sends duplicates */}
+              {[...new Set(hypothesis.associated_paradigms || [])].map((paradigmId) => (
                 <ParadigmBadge key={paradigmId} paradigmId={paradigmId} size="sm">
                   {paradigmId}
                 </ParadigmBadge>

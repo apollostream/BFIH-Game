@@ -3002,6 +3002,13 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
             hypotheses = result.get("hypotheses", [])
             forcing_functions_log = result.get("forcing_functions_log", {})
 
+            # Deduplicate domains and associated_paradigms for each hypothesis
+            for hyp in hypotheses:
+                if hyp.get("domains"):
+                    hyp["domains"] = list(dict.fromkeys(hyp["domains"]))  # Preserve order, remove dupes
+                if hyp.get("associated_paradigms"):
+                    hyp["associated_paradigms"] = list(dict.fromkeys(hyp["associated_paradigms"]))
+
             # Validate we got actual hypotheses
             if len(hypotheses) < 2:
                 raise ValueError(f"Reasoning model only returned {len(hypotheses)} hypotheses")
@@ -3016,6 +3023,12 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                 )
                 hypotheses = result.get("hypotheses", [])
                 forcing_functions_log = result.get("forcing_functions_log", {})
+                # Deduplicate domains and associated_paradigms for each hypothesis
+                for hyp in hypotheses:
+                    if hyp.get("domains"):
+                        hyp["domains"] = list(dict.fromkeys(hyp["domains"]))
+                    if hyp.get("associated_paradigms"):
+                        hyp["associated_paradigms"] = list(dict.fromkeys(hyp["associated_paradigms"]))
             except Exception as e2:
                 logger.error(f"Both reasoning and structured output failed: {e2}")
                 # Ultimate fallback with proper truth-value structure
