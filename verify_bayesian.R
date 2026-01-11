@@ -3,10 +3,22 @@
 # Reads analysis JSON and recomputes posteriors to verify calculations
 
 library(jsonlite)
+library(magrittr)
+library(tidyverse)
 
 # ============================================================================
 # FUNCTIONS
 # ============================================================================
+
+compute_likelihood_negation <- function(priors, likelihoods){
+  map2_dbl(
+    .x = priors,
+    .y = seq_along(priors),
+    .f = \(p,i){
+      sum(likelihoods[-i]*priors[-i]/(1-p))
+    }
+  )
+}
 
 compute_posteriors <- function(priors, joint_likelihoods) {
   # Compute posteriors via Bayes' theorem with normalization
@@ -15,7 +27,7 @@ compute_posteriors <- function(priors, joint_likelihoods) {
   numerators <- joint_likelihoods * priors
   normalizing_constant <- sum(numerators)
   posteriors <- numerators / normalizing_constant
-
+  
   return(posteriors)
 }
 
@@ -101,6 +113,8 @@ verify_analysis <- function(json_file) {
     cat("\nCluster Likelihoods:\n")
     n_clusters <- if (is.data.frame(clusters)) nrow(clusters) else length(clusters)
 
+    in_clusters <- list(n_clusters)
+      
     for (i in seq_len(n_clusters)) {
       # Handle both data frame and list formats
       if (is.data.frame(clusters)) {
@@ -113,22 +127,42 @@ verify_analysis <- function(json_file) {
       }
 
       likelihoods_paradigm <- likelihoods_by_paradigm[[paradigm_id]]
+      lklhd <- map_dbl(likelihoods_paradigm,\(lik_data){
+        prob <- if (is.list(lik_data)) lik_data$probability else lik_data
+        return(prob)
+      })
+      lklhd_not <- compute_likelihood_negation(priors,lklhd)
 
       cat("\n  Cluster", i, "(", cluster_name, "):\n")
+      #print(list(cluster=cluster_name,priors=priors,likelihoods=lklhd,lklhd_not=lklhd_not))
 
+      c_id <- sprintf("C_%d",i)
+      in_clusters[[c_id]] <- matrix(
+        0,nrow=length(h_ids),ncol=4,
+        dimnames = list(h_ids,c("P(E|H)", "P(E|~H)", "LR", "WoE (dB)")))
+      cat(sprintf("%-6s %12s %12s %12s %12s\n", "H", "P(E|H)", "P(E|~H)", "LR", "WoE (dB)"))
+      cat(paste(rep("-", 56), collapse=""), "\n")
       for (h_id in h_ids) {
         if (!is.null(likelihoods_paradigm[[h_id]])) {
           # Handle nested structure
           lik_data <- likelihoods_paradigm[[h_id]]
           prob <- if (is.list(lik_data)) lik_data$probability else lik_data
           joint_likelihoods[h_id] <- joint_likelihoods[h_id] * prob
-          cat("    ", h_id, ": P(E|H) =", round(prob, 4), "\n")
+          prob_not <- lklhd_not[[h_id]]
+          cat(
+            sprintf("%-6s %12.4f %12.4f %12.4f %12.2f\n",
+                    h_id, prob, prob_not, prob/prob_not, 10*log10(prob/prob_not))
+          )
+          in_clusters[[c_id]][h_id,] <- c(  prob, prob_not, prob/prob_not, 10*log10(prob/prob_not))
         }
       }
     }
 
     cat("\nJoint Likelihoods P(E|H) [product across clusters]:\n")
     print(format(joint_likelihoods, scientific = TRUE, digits = 4))
+    
+    # Compute joint_likelihoods under negation
+    joint_pe_noth <- compute_likelihood_negation(priors, joint_likelihoods)
 
     # Compute posteriors
     computed_posteriors <- compute_posteriors(priors, joint_likelihoods)
@@ -165,8 +199,12 @@ verify_analysis <- function(json_file) {
     cat(sprintf("%-6s %12s %12s %12s %12s\n", "H", "Prior", "Posterior", "LR", "WoE (dB)"))
     cat(paste(rep("-", 56), collapse=""), "\n")
 
+    all_lr <- seq_along(h_ids) |> set_names(h_ids)
+    all_woe <- seq_along(h_ids) |> set_names(h_ids)
     for (h_id in h_ids) {
       metrics <- compute_lr_woe(priors[h_id], computed_posteriors[h_id])
+      all_lr[[h_id]] <- metrics$lr
+      all_woe[[h_id]] <- metrics$woe
       cat(sprintf("%-6s %12.4f %12.4f %12.4f %12.2f\n",
                   h_id, priors[h_id], computed_posteriors[h_id],
                   metrics$lr, metrics$woe))
@@ -175,9 +213,13 @@ verify_analysis <- function(json_file) {
     results[[paradigm_id]] <- list(
       priors = priors,
       joint_likelihoods = joint_likelihoods,
+      joint_lklhd_neg = joint_pe_noth,
+      joint_lr = all_lr,
+      joint_woe = all_woe,
       computed_posteriors = computed_posteriors,
       stored_posteriors = stored,
-      max_diff = max_diff
+      max_diff = max_diff,
+      in_clusters = in_clusters
     )
 
     cat("\n")
