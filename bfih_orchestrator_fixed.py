@@ -3669,6 +3669,13 @@ if __name__ == "__main__":
         type=str,
         help="Output filename for report (without extension). Saves .md and .json"
     )
+    parser.add_argument(
+        "--model", "-m",
+        type=str,
+        default="o3-mini",
+        choices=AVAILABLE_REASONING_MODELS,
+        help=f"Reasoning model to use (default: o3-mini). Options: {', '.join(AVAILABLE_REASONING_MODELS)}"
+    )
 
     args = parser.parse_args()
 
@@ -3678,7 +3685,8 @@ if __name__ == "__main__":
         result = orchestrator.analyze_topic(
             proposition=args.topic,
             domain=args.domain,
-            difficulty=args.difficulty
+            difficulty=args.difficulty,
+            reasoning_model=args.model
         )
 
         # Print results
