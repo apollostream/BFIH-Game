@@ -214,6 +214,17 @@ export function EvidenceMatrixHeatmap({
                       hoveredCell?.hypothesisId === row.hypothesisId &&
                       hoveredCell?.clusterId === cluster.cluster_id;
 
+                    // Guard against missing cell data
+                    if (!cellData) {
+                      return (
+                        <td key={cluster.cluster_id} className="p-1">
+                          <div className="w-12 h-12 rounded-lg bg-surface-2 flex items-center justify-center text-xs text-text-muted">
+                            --
+                          </div>
+                        </td>
+                      );
+                    }
+
                     return (
                       <td key={cluster.cluster_id} className="p-1">
                         <Tooltip
