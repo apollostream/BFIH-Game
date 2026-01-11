@@ -249,23 +249,30 @@ function ConceptsContent() {
 
       <Section title="Likelihood Ratios">
         <p className="mb-3">
-          The <strong>Likelihood Ratio</strong> (LR) compares how well two hypotheses predict
-          the observed evidence:
+          The <strong>Likelihood Ratio</strong> (LR) compares how well a hypothesis predicts
+          the evidence versus all alternatives combined:
         </p>
         <div className="bg-surface-2 rounded-lg p-4 font-mono text-sm text-center mb-3">
-          LR = P(E|H₁) / P(E|H₂)
+          <div>LR = P(E|H) / P(E|¬H)</div>
+        </div>
+        <p className="mb-3 text-text-secondary">
+          Here ¬H represents the negation of H—all alternative hypotheses. P(E|¬H) is the
+          weighted average likelihood across alternatives:
+        </p>
+        <div className="bg-surface-2 rounded-lg p-4 font-mono text-sm text-center mb-3">
+          <div>P(E|¬H) = Σ P(E|Hⱼ) × P(Hⱼ) / (1 - P(H))</div>
+          <div className="text-text-muted text-xs mt-1">for all j ≠ i</div>
         </div>
         <p className="mb-3">
-          Philosopher <strong>Branden Fitelson</strong> demonstrated that the likelihood ratio
+          Philosopher <strong>Branden Fitelson</strong> demonstrated that this likelihood ratio
           is the uniquely correct measure of evidential support. His work established that
           any good confirmation measure must satisfy certain intuitive desiderata (axioms),
           and the likelihood ratio is the only measure that satisfies them all:
         </p>
         <ul className="list-disc list-inside space-y-2 text-text-secondary mb-3">
-          <li><strong>Symmetry:</strong> Evidence E supports H₁ over H₂ exactly as much as it
-            refutes H₂ relative to H₁</li>
+          <li><strong>Symmetry:</strong> Evidence E supports H exactly as much as it refutes ¬H</li>
           <li><strong>Equivalence:</strong> Logically equivalent hypotheses receive equal support</li>
-          <li><strong>Law of Likelihood:</strong> E favors H₁ over H₂ if and only if P(E|H₁) {">"} P(E|H₂)</li>
+          <li><strong>Law of Likelihood:</strong> E supports H iff P(E|H) {">"} P(E|¬H)</li>
           <li><strong>Additivity:</strong> Independent pieces of evidence combine multiplicatively</li>
         </ul>
         <p className="text-text-secondary">
