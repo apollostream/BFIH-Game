@@ -43,11 +43,20 @@ export function ResolutionPage() {
   useEffect(() => {
     setPhase('resolution');
 
-    // Initialize competitors if not already done
-    if (competitors.length === 0 && Object.keys(bets).length > 0) {
+    // Check if we need to initialize or reinitialize competitors
+    const hasBets = Object.keys(bets).length > 0;
+    if (!hasBets) return;
+
+    // Find current player bets in competitors
+    const playerCompetitor = competitors.find((c) => c.isPlayer);
+    const playerBetsMatch = playerCompetitor &&
+      Object.keys(bets).every((hypId) => playerCompetitor.bets[hypId] === bets[hypId]);
+
+    // Initialize if no competitors, or reinitialize if player bets have changed
+    if (competitors.length === 0 || !playerBetsMatch) {
       initializeCompetitors(bets, budget);
     }
-  }, [setPhase, competitors.length, bets, budget, initializeCompetitors]);
+  }, [setPhase, competitors, bets, budget, initializeCompetitors]);
 
   // Calculate payoffs once posteriors are available
   useEffect(() => {

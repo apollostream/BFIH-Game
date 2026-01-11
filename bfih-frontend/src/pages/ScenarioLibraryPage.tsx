@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { listScenarios } from '../api';
-import { useGameStore, useAnalysisStore } from '../stores';
+import { useGameStore, useAnalysisStore, useBettingStore } from '../stores';
 import { pageVariants, staggerContainerVariants, cardVariants, formatDate } from '../utils';
 import type { ScenarioSummary } from '../types';
 
@@ -20,6 +20,7 @@ export function ScenarioLibraryPage() {
   // Get current game state to show "Continue" option
   const { scenarioId, scenarioConfig, isGameActive, clearScenarioCache } = useGameStore();
   const { clearCurrentAnalysis } = useAnalysisStore();
+  const { resetBetting } = useBettingStore();
 
   // Check if there's an active game to continue
   const hasActiveGame = isGameActive && scenarioId && scenarioConfig;
@@ -134,9 +135,10 @@ export function ScenarioLibraryPage() {
                   variant="elevated"
                   className="p-6 cursor-pointer group"
                   onClick={() => {
-                    // Clear cached data to force fresh fetch
+                    // Clear all cached data to force fresh fetch
                     clearScenarioCache();
                     clearCurrentAnalysis();
+                    resetBetting();  // Clear old bets
                     navigate(`/game/${scenario.scenario_id}/setup`);
                   }}
                 >

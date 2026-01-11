@@ -396,6 +396,8 @@ export const useGameStore = create<GameState>()(
               scenarioId: null,
               scenarioConfig: null,
               analysisResult: null,
+              competitors: [],  // Clear stale competitors with old bets
+              playerPayoff: null,
             });
           }
         },
