@@ -1,6 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { PageContainer } from '../../components/layout/PageContainer';
 import { Card } from '../../components/ui/Card';
@@ -10,6 +10,7 @@ import { PhaseIndicator } from '../../components/game/PhaseIndicator';
 import { useGameStore, useAnalysisStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants, formatPercent } from '../../utils';
+import { generateSynopsis } from '../../api';
 import type { EvidenceCluster, EvidenceItem, ClusterLikelihood } from '../../types';
 
 // Helper to calculate Weight of Evidence in decibans
@@ -27,9 +28,42 @@ export function ReportPage() {
   const { currentAnalysis } = useAnalysisStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
+  // Synopsis generation state
+  const [synopsisLoading, setSynopsisLoading] = useState(false);
+  const [synopsis, setSynopsis] = useState<string | null>(null);
+  const [synopsisError, setSynopsisError] = useState<string | null>(null);
+  const [showSynopsis, setShowSynopsis] = useState(false);
+
   useEffect(() => {
     setPhase('report');
   }, [setPhase]);
+
+  // Handler to generate magazine synopsis
+  const handleGenerateSynopsis = async () => {
+    // Try to get analysis ID from currentAnalysis, or fall back to scenarioId
+    const analysisId = currentAnalysis?.analysis_id || scenarioId;
+
+    if (!analysisId) {
+      setSynopsisError('No analysis ID available');
+      return;
+    }
+
+    setSynopsisLoading(true);
+    setSynopsisError(null);
+
+    try {
+      const result = await generateSynopsis(analysisId);
+      setSynopsis(result.synopsis);
+      setShowSynopsis(true);
+    } catch (error) {
+      setSynopsisError(error instanceof Error ? error.message : 'Failed to generate synopsis');
+    } finally {
+      setSynopsisLoading(false);
+    }
+  };
+
+  // Determine if synopsis can be generated
+  const canGenerateSynopsis = !!(currentAnalysis?.analysis_id || scenarioId);
 
   if (!scenarioConfig) {
     return (
@@ -44,8 +78,10 @@ export function ReportPage() {
 
   // Get evidence clusters from analysis metadata (where they actually live)
   // Fall back to scenarioConfig for backwards compatibility
+  // Note: Evidence clusters can be stored in different locations depending on the scenario format
   const evidenceClusters = currentAnalysis?.metadata?.evidence_clusters
     || scenarioConfig.evidence_clusters
+    || scenarioConfig.evidence?.clusters
     || [];
 
   // Get evidence items
@@ -383,6 +419,45 @@ ${hypotheses.map((h) => {
                 >
                   Copy to Clipboard
                 </Button>
+
+                {/* Magazine Synopsis Button */}
+                <div className="pt-2 border-t border-border mt-2">
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={handleGenerateSynopsis}
+                    disabled={synopsisLoading || !canGenerateSynopsis}
+                  >
+                    {synopsisLoading ? (
+                      <>
+                        <motion.span
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          className="inline-block mr-2"
+                        >
+                          ⏳
+                        </motion.span>
+                        Generating...
+                      </>
+                    ) : synopsis ? (
+                      'View Synopsis'
+                    ) : (
+                      'Generate Magazine Synopsis'
+                    )}
+                  </Button>
+                  {synopsis && !showSynopsis && (
+                    <Button
+                      variant="ghost"
+                      className="w-full mt-1"
+                      onClick={() => setShowSynopsis(true)}
+                    >
+                      View Synopsis
+                    </Button>
+                  )}
+                  {synopsisError && (
+                    <p className="text-xs text-error mt-1">{synopsisError}</p>
+                  )}
+                </div>
               </div>
             </motion.div>
           </div>
@@ -426,6 +501,77 @@ ${hypotheses.map((h) => {
           </Button>
         </motion.div>
       </PageContainer>
+
+      {/* Synopsis Modal */}
+      <AnimatePresence>
+        {showSynopsis && synopsis && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
+              onClick={() => setShowSynopsis(false)}
+            />
+
+            {/* Modal */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-4 md:inset-8 lg:inset-16 bg-surface-1 rounded-2xl z-50 overflow-hidden flex flex-col"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                <div>
+                  <h2 className="text-xl font-bold text-text-primary">Magazine Synopsis</h2>
+                  <p className="text-sm text-text-secondary">Plain-language summary of the analysis</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      const blob = new Blob([synopsis], { type: 'text/markdown' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${scenarioId}-magazine-synopsis.md`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowSynopsis(false)}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                <article className="prose prose-invert prose-lg max-w-4xl mx-auto
+                  prose-headings:text-text-primary
+                  prose-p:text-text-secondary
+                  prose-strong:text-text-primary
+                  prose-li:text-text-secondary
+                  prose-a:text-accent hover:prose-a:underline
+                  prose-blockquote:border-accent prose-blockquote:text-text-secondary
+                  prose-hr:border-border
+                ">
+                  <ReactMarkdown>{synopsis}</ReactMarkdown>
+                </article>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

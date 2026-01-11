@@ -311,19 +311,78 @@ async def get_analysis_status(analysis_id: str):
     """Get status of analysis (processing, completed, failed)"""
     try:
         status = storage.get_analysis_status(analysis_id)
-        
+
         if not status:
             raise HTTPException(
                 status_code=404,
                 detail=f"Analysis not found: {analysis_id}"
             )
-        
+
         return status
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error getting analysis status: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/generate-synopsis/{analysis_id}")
+async def generate_synopsis(analysis_id: str):
+    """
+    Generate a magazine-style synopsis from a completed BFIH analysis.
+
+    This transforms the technical report into an engaging, Atlantic-style
+    magazine article that is accessible to general readers.
+
+    Returns:
+    {
+        "analysis_id": "uuid",
+        "scenario_id": "s_001",
+        "synopsis": "markdown synopsis content",
+        "status": "completed"
+    }
+    """
+    try:
+        # Retrieve the completed analysis
+        result = storage.retrieve_analysis_result(analysis_id)
+
+        if not result:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Analysis not found: {analysis_id}"
+            )
+
+        if result.get("status") != "completed":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Analysis not yet completed. Status: {result.get('status')}"
+            )
+
+        report = result.get("report")
+        if not report:
+            raise HTTPException(
+                status_code=400,
+                detail="No report found in analysis result"
+            )
+
+        scenario_id = result.get("scenario_id", analysis_id[:8])
+
+        # Generate the synopsis
+        logger.info(f"Generating magazine synopsis for analysis: {analysis_id}")
+        synopsis = orchestrator.generate_magazine_synopsis(report, scenario_id)
+
+        return {
+            "analysis_id": analysis_id,
+            "scenario_id": scenario_id,
+            "synopsis": synopsis,
+            "status": "completed"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating synopsis: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 

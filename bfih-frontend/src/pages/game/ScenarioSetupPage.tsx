@@ -48,14 +48,16 @@ export function ScenarioSetupPage() {
         loadScenario(config);
 
         // Try to fetch analysis result (may not exist)
+        // Use analysis_id from config if available, otherwise try scenarioId
+        const analysisId = config.analysis_id || config.scenario_config?.analysis_id || scenarioId;
         try {
-          const analysis = await getAnalysis(scenarioId);
+          const analysis = await getAnalysis(analysisId);
           if (analysis && !('error' in analysis)) {
             setCurrentAnalysis(analysis);
           }
         } catch {
           // Analysis not found is OK - scenario can work without it
-          console.log('No analysis result for scenario:', scenarioId);
+          console.log('No analysis result for scenario:', scenarioId, '(tried analysis_id:', analysisId, ')');
         }
       } catch (err) {
         console.error('Failed to load scenario:', err);

@@ -72,6 +72,24 @@ export async function getAnalysis(analysisId: string): Promise<BFIHAnalysisResul
   return response.data!;
 }
 
+// Generate magazine-style synopsis from completed analysis
+export interface SynopsisResponse {
+  analysis_id: string;
+  scenario_id: string;
+  synopsis: string;
+  status: string;
+}
+
+export async function generateSynopsis(analysisId: string): Promise<SynopsisResponse> {
+  const response = await post<SynopsisResponse>(`/api/generate-synopsis/${analysisId}`, {});
+
+  if (response.error) {
+    throw new Error(response.error);
+  }
+
+  return response.data!;
+}
+
 // Poll analysis until complete
 export async function pollAnalysisUntilComplete(
   analysisId: string,

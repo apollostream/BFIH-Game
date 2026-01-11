@@ -61,6 +61,7 @@ interface GameState {
   initializeCompetitors: (playerBets: Record<string, number>, budget: number) => void;
   calculateAllPayoffs: (posteriors: Record<string, number>, priors: Record<string, number>) => void;
   updatePlayerBets: (bets: Record<string, number>) => void;
+  clearScenarioCache: (scenarioIdToClear?: string) => void;
   resetGame: () => void;
 }
 
@@ -385,6 +386,18 @@ export const useGameStore = create<GameState>()(
             c.isPlayer ? { ...c, bets: { ...bets } } : c
           );
           set({ competitors: updated });
+        },
+
+        clearScenarioCache: (scenarioIdToClear) => {
+          const { scenarioId } = get();
+          // Clear cache if no specific ID given, or if it matches
+          if (!scenarioIdToClear || scenarioId === scenarioIdToClear) {
+            set({
+              scenarioId: null,
+              scenarioConfig: null,
+              analysisResult: null,
+            });
+          }
         },
 
         resetGame: () => {

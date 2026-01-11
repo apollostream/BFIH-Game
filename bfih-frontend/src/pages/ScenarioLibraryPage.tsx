@@ -7,7 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
 import { Skeleton } from '../components/ui/Skeleton';
 import { listScenarios } from '../api';
-import { useGameStore } from '../stores';
+import { useGameStore, useAnalysisStore } from '../stores';
 import { pageVariants, staggerContainerVariants, cardVariants, formatDate } from '../utils';
 import type { ScenarioSummary } from '../types';
 
@@ -18,7 +18,8 @@ export function ScenarioLibraryPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Get current game state to show "Continue" option
-  const { scenarioId, scenarioConfig, isGameActive } = useGameStore();
+  const { scenarioId, scenarioConfig, isGameActive, clearScenarioCache } = useGameStore();
+  const { clearCurrentAnalysis } = useAnalysisStore();
 
   // Check if there's an active game to continue
   const hasActiveGame = isGameActive && scenarioId && scenarioConfig;
@@ -132,7 +133,12 @@ export function ScenarioLibraryPage() {
                 <Card
                   variant="elevated"
                   className="p-6 cursor-pointer group"
-                  onClick={() => navigate(`/game/${scenario.scenario_id}/setup`)}
+                  onClick={() => {
+                    // Clear cached data to force fresh fetch
+                    clearScenarioCache();
+                    clearCurrentAnalysis();
+                    navigate(`/game/${scenario.scenario_id}/setup`);
+                  }}
                 >
                   {/* Title */}
                   <h3 className="text-lg font-semibold text-text-primary mb-2

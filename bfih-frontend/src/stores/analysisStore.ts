@@ -37,12 +37,14 @@ interface AnalysisState {
 
   // Actions
   setReasoningModel: (model: string | null) => void;
+  setCurrentAnalysis: (result: BFIHAnalysisResult) => void;
   submitNewAnalysis: (proposition: string, reasoningModel?: string) => Promise<string | null>;
   startPolling: (analysisId: string) => void;
   stopPolling: () => void;
   updateStatus: (status: AnalysisStatusResponse) => void;
   getCachedResult: (analysisId: string) => BFIHAnalysisResult | null;
   cacheResult: (result: BFIHAnalysisResult) => void;
+  clearCurrentAnalysis: () => void;
   reset: () => void;
 }
 
@@ -72,6 +74,23 @@ export const useAnalysisStore = create<AnalysisState>()(
         // Actions
         setReasoningModel: (model) => {
           set({ selectedReasoningModel: model });
+        },
+
+        setCurrentAnalysis: (result) => {
+          set({
+            currentAnalysis: result,
+            status: 'completed',
+            analysisStatus: 'completed',
+          });
+          // Also cache it
+          if (result.analysis_id) {
+            set((state) => ({
+              cachedResults: {
+                ...state.cachedResults,
+                [result.analysis_id]: result,
+              },
+            }));
+          }
         },
 
         submitNewAnalysis: async (proposition, reasoningModel) => {
@@ -219,6 +238,14 @@ export const useAnalysisStore = create<AnalysisState>()(
             [result.analysis_id]: result,
           },
         }));
+      },
+
+      clearCurrentAnalysis: () => {
+        set({
+          currentAnalysis: null,
+          status: 'idle',
+          analysisStatus: null,
+        });
       },
 
       reset: () => {

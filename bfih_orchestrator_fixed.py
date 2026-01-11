@@ -3222,6 +3222,114 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         logger.info(f"Saved scenario config to: {filename}")
         return filename
 
+    def generate_magazine_synopsis(self, report: str, scenario_id: str) -> str:
+        """
+        Generate a plain-language magazine-style synopsis from a BFIH analysis report.
+
+        This transforms the technical academic report into an engaging, Atlantic-style
+        magazine article that is accessible to general readers while maintaining
+        the analytical rigor and citing sources.
+
+        Args:
+            report: The full BFIH analysis report (markdown)
+            scenario_id: The scenario ID for naming the output file
+
+        Returns:
+            The magazine synopsis as markdown text
+        """
+        logger.info(f"Generating magazine synopsis for scenario: {scenario_id}")
+
+        # Extract the bibliography section from the original report to preserve it exactly
+        bibliography_section = ""
+        bibliography_markers = ["## 9. Bibliography", "## Bibliography", "## References"]
+        for marker in bibliography_markers:
+            if marker in report:
+                # Find the bibliography section and everything after it
+                bib_start = report.find(marker)
+                # Find where bibliography ends (next major section or end of report)
+                remaining = report[bib_start:]
+                # Look for the next ## section after bibliography, or end of file
+                next_section = remaining.find("\n## ", len(marker))
+                if next_section != -1:
+                    bibliography_section = remaining[:next_section].strip()
+                else:
+                    # Take everything to the end, but stop at "End of BFIH" marker if present
+                    end_marker = remaining.find("**End of BFIH")
+                    if end_marker != -1:
+                        bibliography_section = remaining[:end_marker].strip()
+                    else:
+                        bibliography_section = remaining.strip()
+                break
+
+        prompt = f"""Generate a plain-language synopsis of the following BFIH analysis report.
+
+REQUIREMENTS:
+- Write in plain language that speaks less about the technical methodology
+- Focus on context, inferences, insights, conclusions, and rationale
+- This is NOT an opinion piece or article intended to convince or sway readers
+- Write an information-dense magazine piece like an article in The Atlantic
+- Engage and inform the reader; be useful to them
+- Help readers navigate these ideas to possibly improve their understanding
+- When citing sources, reference them by number (e.g., [1], [2]) matching the bibliography that will be appended
+- Use compelling headlines and subheadings
+- Tell a narrative story with clear structure
+- Present multiple perspectives without advocacy
+- End with actionable takeaways or thought-provoking questions
+
+STRUCTURE GUIDELINES:
+- Start with a compelling hook/headline that captures the core insight
+- Include a brief "accusation" or common misconception section if relevant
+- Walk through the evidence chronologically or thematically
+- Present different perspectives fairly
+- Include a "What You Can Actually Do" or "Key Takeaways" section
+- DO NOT include a References/Bibliography section - it will be appended automatically
+
+LENGTH: Approximately 2000-4000 words (comprehensive but readable)
+
+---
+
+BFIH ANALYSIS REPORT TO TRANSFORM:
+
+{report}
+
+---
+
+Generate the magazine-style synopsis now. Write it as a complete markdown document, but DO NOT include a bibliography section - it will be added automatically from the original report."""
+
+        try:
+            response = self.client.responses.create(
+                model="gpt-4o",  # Use gpt-4o for high-quality writing
+                input=prompt,
+                max_output_tokens=8000,
+            )
+
+            synopsis = response.output_text
+
+            # Add header indicating this is a generated synopsis
+            header = f"""*Generated from BFIH Analysis Report {scenario_id}*
+*For the full technical analysis, see the complete BFIH report.*
+
+---
+
+"""
+            synopsis = header + synopsis
+
+            # Append the original bibliography section
+            if bibliography_section:
+                synopsis = synopsis.rstrip() + "\n\n---\n\n" + bibliography_section
+
+            # Save to file
+            filename = f"{scenario_id}_magazine_synopsis.md"
+            with open(filename, 'w') as f:
+                f.write(synopsis)
+            logger.info(f"Saved magazine synopsis to: {filename}")
+
+            return synopsis
+
+        except Exception as e:
+            logger.error(f"Error generating magazine synopsis: {e}")
+            raise
+
 
 # ============================================================================
 # VECTOR STORE MANAGEMENT (Setup/Maintenance)
