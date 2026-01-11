@@ -3261,30 +3261,80 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                         bibliography_section = remaining.strip()
                 break
 
-        prompt = f"""Generate a plain-language synopsis of the following BFIH analysis report.
+        prompt = f"""Transform the following BFIH analysis report into a compelling, in-depth magazine article in the style of The Atlantic or longform investigative journalism.
 
-REQUIREMENTS:
-- Write in plain language that speaks less about the technical methodology
-- Focus on context, inferences, insights, conclusions, and rationale
-- This is NOT an opinion piece or article intended to convince or sway readers
-- Write an information-dense magazine piece like an article in The Atlantic
-- Engage and inform the reader; be useful to them
-- Help readers navigate these ideas to possibly improve their understanding
-- When citing sources, reference them by number (e.g., [1], [2]) matching the bibliography that will be appended
-- Use compelling headlines and subheadings
-- Tell a narrative story with clear structure
-- Present multiple perspectives without advocacy
-- End with actionable takeaways or thought-provoking questions
+## CRITICAL REQUIREMENTS:
 
-STRUCTURE GUIDELINES:
-- Start with a compelling hook/headline that captures the core insight
-- Include a brief "accusation" or common misconception section if relevant
-- Walk through the evidence chronologically or thematically
-- Present different perspectives fairly
-- Include a "What You Can Actually Do" or "Key Takeaways" section
-- DO NOT include a References/Bibliography section - it will be appended automatically
+### TONE & STYLE:
+- Write in plain language accessible to general readers, NOT academic prose
+- This is NOT an opinion piece - present analysis objectively without advocacy
+- Be information-dense but engaging - every paragraph should teach something
+- Use vivid, specific details from the evidence rather than vague summaries
+- Challenge common assumptions and surface the uncomfortable truths
+- Help readers genuinely understand the complexity, not just summarize conclusions
 
-LENGTH: Approximately 2000-4000 words (comprehensive but readable)
+### MANDATORY STRUCTURE (follow this closely):
+
+1. **COMPELLING HEADLINE** (with italicized subtitle)
+   - Capture the core insight or surprising finding
+   - Subvert expectations if possible
+
+2. **THE ACCUSATION / COMMON BELIEF** (~300-500 words)
+   - What do most people believe about this topic?
+   - What's the conventional narrative or popular misconception?
+   - Set up the tension: "It's a compelling narrative. It's also deeply misleading."
+
+3. **WHAT ACTUALLY HAPPENED: THE EVIDENCE** (~1000-2000 words)
+   - Walk through the evidence chronologically or thematically
+   - Use specific dates, names, numbers, and citations [1], [2], etc.
+   - Structure with clear subheadings (###) for each major piece of evidence or theme
+   - Show, don't just tell - include specific examples and quotes when available
+   - Build a coherent narrative that reveals the real story
+
+4. **THE MULTIPLE PERSPECTIVES** (~800-1200 words)
+   - Present each paradigm's viewpoint as a named perspective
+   - Format as: "### The [Paradigm Name]'s View: [One-line summary]"
+   - Explain how each perspective interprets the same evidence differently
+   - Be fair to each view - steelman, don't strawman
+   - Show why reasonable people can disagree
+
+5. **THE SYNTHESIS: WHAT THE EVIDENCE ACTUALLY SHOWS** (~500-800 words)
+   - What conclusions can we draw with confidence?
+   - Where does uncertainty remain?
+   - What's the nuanced truth that transcends any single perspective?
+
+6. **THE HARD TRUTH: WHY THIS MATTERS** (~400-600 words)
+   - What are the implications of getting this wrong?
+   - What does this reveal about how we think about such issues?
+   - Connect to broader patterns or lessons
+
+7. **WHAT YOU CAN ACTUALLY DO** (~400-600 words)
+   - Concrete, actionable recommendations
+   - Numbered list of specific actions
+   - Questions readers should ask themselves
+   - How to apply these insights
+   - Avoid vague platitudes - be specific
+
+8. **THE UNCOMFORTABLE CONCLUSION** (~300-400 words)
+   - The key insight most people don't want to hear
+   - Why this matters going forward
+   - Provocative final reflection
+
+### FORMATTING:
+- Use # for title, ## for major sections, ### for subsections
+- Use **bold** for emphasis and key terms
+- Use *italics* for publication names and subtle emphasis
+- Use > blockquotes for particularly striking quotes or findings
+- Use numbered citations [1], [2] matching the bibliography
+- TARGET LENGTH: 4000-6000 words (this should be a SUBSTANTIAL, in-depth piece)
+
+### WHAT TO AVOID:
+- DO NOT include a References/Bibliography section (it will be appended automatically)
+- DO NOT use academic jargon or methodology descriptions
+- DO NOT be superficial - dig deep into the evidence
+- DO NOT just summarize - analyze, contextualize, and illuminate
+- DO NOT hedge excessively - make clear claims where evidence supports them
+- DO NOT use generic filler - every sentence should add value
 
 ---
 
@@ -3294,13 +3344,13 @@ BFIH ANALYSIS REPORT TO TRANSFORM:
 
 ---
 
-Generate the magazine-style synopsis now. Write it as a complete markdown document, but DO NOT include a bibliography section - it will be added automatically from the original report."""
+Generate the complete magazine-style article now. Make it rich, detailed, and genuinely illuminating. The goal is that a reader who knows nothing about this topic could read your article and come away with deep understanding and new perspectives. This should be a piece worthy of publication in a major magazine."""
 
         try:
             response = self.client.responses.create(
                 model="gpt-4o",  # Use gpt-4o for high-quality writing
                 input=prompt,
-                max_output_tokens=8000,
+                max_output_tokens=16000,  # Increased for longer, richer output
             )
 
             synopsis = response.output_text
