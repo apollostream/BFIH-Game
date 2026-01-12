@@ -935,9 +935,18 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 if return_citations:
                     # Primary method: Get sources from web_search_call.action.sources
                     # This is the reliable way to get all URLs consulted
+                    web_search_count = 0
                     for output_item in response.output:
                         if hasattr(output_item, 'type') and output_item.type == 'web_search_call':
+                            web_search_count += 1
+                            # Log the search query if available
+                            if hasattr(output_item, 'action'):
+                                query = getattr(output_item.action, 'query', None)
+                                if query:
+                                    logger.info(f"Web search #{web_search_count} query: {query[:100]}...")
+                                    print(f"[Web search #{web_search_count}: {query[:80]}...]")
                             if hasattr(output_item, 'action') and hasattr(output_item.action, 'sources'):
+                                sources_in_call = 0
                                 for source in output_item.action.sources:
                                     url = getattr(source, 'url', '') if hasattr(source, 'url') else (source.get('url', '') if isinstance(source, dict) else '')
                                     title = getattr(source, 'title', '') if hasattr(source, 'title') else (source.get('title', '') if isinstance(source, dict) else '')
@@ -947,6 +956,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                                             'title': title,
                                             'from_sources': True
                                         })
+                                        sources_in_call += 1
+                                logger.info(f"  -> {sources_in_call} sources from search #{web_search_count}")
+                            else:
+                                logger.warning(f"  -> No sources attribute in search #{web_search_count}")
+
+                    if web_search_count > 0:
+                        logger.info(f"Total: {web_search_count} web searches, {len(url_citations)} URLs extracted")
 
                     # Fallback: Also check url_citation annotations in message content
                     if not url_citations:
@@ -1183,170 +1199,158 @@ Focus on actionable steps for applying each forcing function.
         tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
         return self._run_phase(prompt, tools, "Phase 1: Retrieve Methodology")
 
-    def _run_phase_2_evidence(self, request: BFIHAnalysisRequest, methodology: str) -> Tuple[str, List[Dict]]:
-        """Phase 2: Gather evidence via web search using structured output.
-        Returns (markdown_text, structured_evidence)
+    def _run_single_search(self, search_category: str, proposition: str,
+                            hyp_names: List[str]) -> Tuple[List[Dict], List[Dict]]:
+        """Execute a single focused web search and return evidence items + URL citations.
 
-        Uses dual-framing to avoid confirmation bias: generates search queries for
-        both the original proposition AND its logical inverse.
+        Makes one API call with structured output for a specific search category.
         """
-        scenario_json = json.dumps(request.scenario_config, indent=2)
-
-        # Get hypothesis IDs
-        hypotheses = request.scenario_config.get("hypotheses", [])
-        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
-
-        # Generate inverse proposition for balanced evidence gathering
-        inverse_proposition = self._generate_inverse_proposition(request.proposition)
-
         bfih_context = get_bfih_system_context("Evidence Gathering", "2")
         prompt = f"""{bfih_context}
-PROPOSITION (as stated): "{request.proposition}"
-INVERSE FRAMING: "{inverse_proposition}"
+SEARCH CATEGORY: {search_category}
+PROPOSITION: "{proposition}"
 
-HYPOTHESES: {hyp_ids}
-
-SCENARIO CONFIGURATION:
-{scenario_json}
-
-METHODOLOGY CONTEXT:
-{methodology[:3000]}
+HYPOTHESES:
+{chr(10).join(hyp_names)}
 
 YOUR TASK:
-For EACH hypothesis, search for real-world evidence using BOTH framings to avoid confirmation bias.
+Search the web for evidence specifically relevant to: **{search_category}**
 
-DUAL-FRAMING SEARCH STRATEGY (CRITICAL):
-You MUST generate search queries for BOTH perspectives:
-1. Queries assuming the ORIGINAL proposition is true - what evidence would support it?
-2. Queries assuming the INVERSE framing is true - what evidence would support that?
-3. Neutral queries seeking factual data regardless of framing
+Return 4-6 evidence items from your search. Each item needs:
+- evidence_id (unique string like "E1", "E2", etc.)
+- description (specific factual finding)
+- source_name (publication or website name)
+- source_url (MUST be a full URL starting with https:// or http://, or "" if unknown)
+- citation_apa (APA format citation)
+- date_accessed (today's date)
+- supports_hypotheses (list of hypothesis IDs this supports)
+- refutes_hypotheses (list of hypothesis IDs this argues against)
+- evidence_type (one of: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional)
 
-This ensures balanced evidence gathering independent of how the user framed the topic.
-
-For each hypothesis, generate at least:
-- 2 queries that would find supporting evidence if TRUE
-- 2 queries that would find supporting evidence if FALSE
-- 1-2 neutral factual queries
-
-SEARCH TOPICS - Execute searches covering:
-- Funding/investment news and financial data
-- Customer testimonials and case studies
-- Competitor analysis and market position
-- Critical reviews, concerns, and failures
-- Employee reviews (Glassdoor, LinkedIn)
-- Regulatory or legal issues
-- Industry analyst reports
-- Historical context and base rates for similar cases
-- Academic research and expert opinions
-
-## SPECIAL: RECOMMENDATION/CHOICE QUERIES (Best X, Top Options, GOAT, etc.)
-
-If the proposition is asking for recommendations (best restaurants, hotels, products, athletes, etc.):
-
-**GATHER CANDIDATE-SPECIFIC EVIDENCE:**
-1. Search for "best [X] in [Y]" rankings and listicles
-2. Search for reviews of SPECIFIC candidates named in the hypotheses
-3. Capture concrete attributes: prices, ratings, locations, key features
-4. Include BOTH professional reviews AND user reviews
-5. Search for comparison articles that contrast multiple options
-
-**FOR EACH NAMED CANDIDATE, try to find:**
-- Overall rating/score from authoritative sources
-- 2-3 standout features or differentiators
-- Price range or tier
-- Location/availability details
-- Notable pros and cons from reviews
-- Any awards, recognition, or "best of" mentions
-
-**Example searches for "best burgers in Cincinnati":**
-- "best burgers Cincinnati 2024 2025"
-- "[Restaurant Name] reviews ratings"
-- "Cincinnati burger restaurants comparison"
-- "[Restaurant Name] menu prices"
-- "Yelp top rated burgers Cincinnati"
-
-The goal is actionable evidence about specific options, not abstract philosophy.
-
----
-
-Return a JSON object with "evidence_items" array containing 15-25 evidence items.
-- Include evidence that SUPPORTS each hypothesis
-- Include evidence that REFUTES each hypothesis (critical for intellectual honesty)
-- Each item needs: evidence_id, description, source_name, source_url, citation_apa, date_accessed, supports_hypotheses, refutes_hypotheses, evidence_type
-
-**CRITICAL: source_url MUST be a full URL starting with https:// or http://**
-- Example CORRECT: "https://www.tripadvisor.com/Hotel_Review-g12345"
-- Example WRONG: "Tripadvisor review Jul 2025" (this is NOT a URL)
-- Example WRONG: "Dec 2025" (this is a date, NOT a URL)
-- If you cannot find the actual URL, leave source_url as an empty string ""
-
-Evidence types: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional
+**source_url MUST be a real URL like https://example.com or leave empty if unknown**
 """
         try:
-            tools = [{"type": "web_search", "search_context_size": "high"}]
-            result, url_citations = self._run_structured_phase(
-                prompt, "evidence", "Phase 2: Evidence Gathering",
-                tools=tools, return_citations=True
-            )
-            evidence_items = result.get("evidence_items", [])
-
-            # Populate source_url from url_citations if not already set
-            # Build a lookup by title (case-insensitive, partial match)
-            citation_url_map = {}
-            for citation in url_citations:
-                if citation.get('url') and citation.get('title'):
-                    # Store with lowercase title for matching
-                    title_key = citation['title'].lower().strip()
-                    citation_url_map[title_key] = citation['url']
-
-            # Try to match evidence items with citations
-            for item in evidence_items:
-                if not item.get('source_url') or item['source_url'].strip() == '':
-                    source_name = item.get('source_name', '').lower().strip()
-                    citation_text = item.get('citation_apa', '').lower()
-
-                    # Try exact match on source name
-                    for title, url in citation_url_map.items():
-                        if source_name and source_name in title:
-                            item['source_url'] = url
-                            break
-                        # Also try matching parts of the citation
-                        if title in citation_text:
-                            item['source_url'] = url
-                            break
-
-            # If we have unused citations, add them to items without URLs
-            used_urls = {item.get('source_url') for item in evidence_items if item.get('source_url')}
-            unused_citations = [c for c in url_citations if c.get('url') and c['url'] not in used_urls]
-            items_without_urls = [item for item in evidence_items if not item.get('source_url') or item['source_url'].strip() == '']
-
-            # Assign remaining citations to items without URLs (best effort)
-            for item, citation in zip(items_without_urls, unused_citations):
-                item['source_url'] = citation['url']
-
-            # Validate and clean up invalid URLs (must start with http)
-            # LLM sometimes puts dates or descriptions in source_url field
-            invalid_url_count = 0
-            for item in evidence_items:
-                url = item.get('source_url', '').strip()
-                if url and not url.startswith('http'):
-                    # This is not a valid URL - clear it
-                    invalid_url_count += 1
-                    item['source_url'] = ''
-            if invalid_url_count > 0:
-                logger.warning(f"Cleared {invalid_url_count} invalid URLs (non-http values)")
-
-            valid_url_count = sum(1 for item in evidence_items if item.get('source_url', '').startswith('http'))
-            logger.info(f"Populated {valid_url_count} items with valid URLs from {len(url_citations)} citations")
-
-            # Generate markdown summary from structured data
-            markdown_summary = self._generate_evidence_markdown(evidence_items)
-        except Exception as e:
-            logger.error(f"Structured output failed for evidence: {e}, falling back to text extraction")
-            # Fallback to old method
             tools = [{"type": "web_search", "search_context_size": "medium"}]
-            markdown_summary = self._run_phase(prompt, tools, "Phase 2: Evidence Gathering (fallback)")
-            evidence_items = self._parse_evidence_json(markdown_summary)
+            result, url_citations = self._run_structured_phase(
+                prompt, "evidence", f"Search: {search_category[:40]}",
+                tools=tools, return_citations=True, model=self.model
+            )
+            return result.get("evidence_items", []), url_citations
+        except Exception as e:
+            logger.warning(f"Search '{search_category}' failed: {e}")
+            return [], []
+
+    def _run_phase_2_evidence(self, request: BFIHAnalysisRequest, methodology: str) -> Tuple[str, List[Dict]]:
+        """Phase 2: Gather evidence via MULTIPLE focused web searches.
+        Returns (markdown_text, structured_evidence)
+
+        Makes 4-5 separate API calls, each targeting a different search category,
+        to guarantee diverse evidence sources. Testing confirms that a single API
+        call only performs one web search regardless of prompting.
+        """
+        hypotheses = request.scenario_config.get("hypotheses", [])
+        hyp_names = [f"{h.get('id', f'H{i}')}: {h.get('title', h.get('name', ''))}"
+                     for i, h in enumerate(hypotheses)]
+        proposition = request.proposition
+
+        # Extract candidate names for targeted searches
+        candidate_names = []
+        for h in hypotheses:
+            title = h.get("title", h.get("name", ""))
+            if title and title not in ["Catch-all", "Other", "None of the above"]:
+                candidate_names.append(title)
+
+        # Define focused search categories - each becomes a separate API call
+        search_categories = [
+            f"Rankings and best-of lists for: {proposition}",
+            f"User reviews and ratings for: {proposition}",
+            f"Critical reviews, complaints, and problems with: {proposition}",
+            f"Expert analysis and professional reviews of: {proposition}",
+        ]
+
+        # Add candidate-specific searches
+        for candidate in candidate_names[:3]:  # Limit to top 3 candidates
+            search_categories.append(f"Detailed reviews of: {candidate}")
+
+        logger.info(f"Starting multi-search evidence gathering: {len(search_categories)} focused searches")
+        print(f"\n[Starting {len(search_categories)} focused evidence searches]")
+
+        all_evidence = []
+        all_citations = []
+
+        for i, category in enumerate(search_categories, 1):
+            logger.info(f"Search {i}/{len(search_categories)}: {category[:60]}...")
+            print(f"[Search {i}/{len(search_categories)}: {category[:50]}...]")
+
+            items, citations = self._run_single_search(category, proposition, hyp_names)
+
+            # Renumber evidence IDs to avoid collisions
+            base_id = len(all_evidence) + 1
+            for j, item in enumerate(items):
+                item["evidence_id"] = f"E{base_id + j}"
+
+            all_evidence.extend(items)
+            all_citations.extend(citations)
+            logger.info(f"  -> {len(items)} items, {len(citations)} citations")
+
+        logger.info(f"Multi-search complete: {len(all_evidence)} evidence items, {len(all_citations)} citations")
+        print(f"[Multi-search complete: {len(all_evidence)} evidence items from {len(search_categories)} searches]")
+
+        # Now process the combined evidence
+        evidence_items = all_evidence
+        url_citations = all_citations
+
+        # Populate source_url from url_citations if not already set
+        # Build a lookup by title (case-insensitive, partial match)
+        citation_url_map = {}
+        for citation in url_citations:
+            if citation.get('url') and citation.get('title'):
+                # Store with lowercase title for matching
+                title_key = citation['title'].lower().strip()
+                citation_url_map[title_key] = citation['url']
+
+        # Try to match evidence items with citations
+        for item in evidence_items:
+            if not item.get('source_url') or item['source_url'].strip() == '':
+                source_name = item.get('source_name', '').lower().strip()
+                citation_text = item.get('citation_apa', '').lower()
+
+                # Try exact match on source name
+                for title, url in citation_url_map.items():
+                    if source_name and source_name in title:
+                        item['source_url'] = url
+                        break
+                    # Also try matching parts of the citation
+                    if title in citation_text:
+                        item['source_url'] = url
+                        break
+
+        # If we have unused citations, add them to items without URLs
+        used_urls = {item.get('source_url') for item in evidence_items if item.get('source_url')}
+        unused_citations = [c for c in url_citations if c.get('url') and c['url'] not in used_urls]
+        items_without_urls = [item for item in evidence_items if not item.get('source_url') or item['source_url'].strip() == '']
+
+        # Assign remaining citations to items without URLs (best effort)
+        for item, citation in zip(items_without_urls, unused_citations):
+            item['source_url'] = citation['url']
+
+        # Validate and clean up invalid URLs (must start with http)
+        # LLM sometimes puts dates or descriptions in source_url field
+        invalid_url_count = 0
+        for item in evidence_items:
+            url = item.get('source_url', '').strip()
+            if url and not url.startswith('http'):
+                # This is not a valid URL - clear it
+                invalid_url_count += 1
+                item['source_url'] = ''
+        if invalid_url_count > 0:
+            logger.warning(f"Cleared {invalid_url_count} invalid URLs (non-http values)")
+
+        valid_url_count = sum(1 for item in evidence_items if item.get('source_url', '').startswith('http'))
+        logger.info(f"Populated {valid_url_count} items with valid URLs from {len(url_citations)} citations")
+
+        # Generate markdown summary from structured data
+        markdown_summary = self._generate_evidence_markdown(evidence_items)
 
         logger.info(f"Gathered {len(evidence_items)} evidence items")
         return markdown_summary, evidence_items
