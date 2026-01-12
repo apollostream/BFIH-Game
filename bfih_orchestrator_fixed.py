@@ -1249,6 +1249,12 @@ Return a JSON object with "evidence_items" array containing 15-25 evidence items
 - Include evidence that REFUTES each hypothesis (critical for intellectual honesty)
 - Each item needs: evidence_id, description, source_name, source_url, citation_apa, date_accessed, supports_hypotheses, refutes_hypotheses, evidence_type
 
+**CRITICAL: source_url MUST be a full URL starting with https:// or http://**
+- Example CORRECT: "https://www.tripadvisor.com/Hotel_Review-g12345"
+- Example WRONG: "Tripadvisor review Jul 2025" (this is NOT a URL)
+- Example WRONG: "Dec 2025" (this is a date, NOT a URL)
+- If you cannot find the actual URL, leave source_url as an empty string ""
+
 Evidence types: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional
 """
         try:
@@ -1293,7 +1299,20 @@ Evidence types: quantitative, qualitative, expert_testimony, historical_analogy,
             for item, citation in zip(items_without_urls, unused_citations):
                 item['source_url'] = citation['url']
 
-            logger.info(f"Populated {sum(1 for item in evidence_items if item.get('source_url'))} items with URLs from {len(url_citations)} citations")
+            # Validate and clean up invalid URLs (must start with http)
+            # LLM sometimes puts dates or descriptions in source_url field
+            invalid_url_count = 0
+            for item in evidence_items:
+                url = item.get('source_url', '').strip()
+                if url and not url.startswith('http'):
+                    # This is not a valid URL - clear it
+                    invalid_url_count += 1
+                    item['source_url'] = ''
+            if invalid_url_count > 0:
+                logger.warning(f"Cleared {invalid_url_count} invalid URLs (non-http values)")
+
+            valid_url_count = sum(1 for item in evidence_items if item.get('source_url', '').startswith('http'))
+            logger.info(f"Populated {valid_url_count} items with valid URLs from {len(url_citations)} citations")
 
             # Generate markdown summary from structured data
             markdown_summary = self._generate_evidence_markdown(evidence_items)
