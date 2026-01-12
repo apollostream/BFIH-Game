@@ -161,8 +161,11 @@ export const useGameStore = create<GameState>()(
           const paradigmIds = scenarioConfig.paradigms?.map((p) => p.id) || [];
           const firstParadigm = paradigmIds[0] || 'K1';
 
+          // Get scenario ID from root or nested in scenario_metadata
+          const resolvedScenarioId = scenarioConfig.scenario_id || scenarioConfig.scenario_metadata?.scenario_id;
+
           set({
-            scenarioId: scenarioConfig.scenario_id,
+            scenarioId: resolvedScenarioId,
             scenarioConfig,
             analysisResult: analysisResult || null,
             currentPhase: 'setup',
@@ -192,8 +195,11 @@ export const useGameStore = create<GameState>()(
           if (hasPriors) furthestPhase = 'priors';
           if (hasEvidence) furthestPhase = 'report'; // Allow jumping to report for completed scenarios
 
+          // Get scenario ID from root or nested in scenario_metadata
+          const resolvedScenarioId = scenarioConfig.scenario_id || scenarioConfig.scenario_metadata?.scenario_id;
+
           set({
-            scenarioId: scenarioConfig.scenario_id,
+            scenarioId: resolvedScenarioId,
             scenarioConfig,
             currentPhase: 'setup',
             furthestPhase,
