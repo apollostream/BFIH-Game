@@ -3489,12 +3489,26 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 
     def _save_scenario_config(self, scenario_id: str, config: Dict) -> str:
         """
-        Save the generated scenario config to a JSON file.
+        Save the generated scenario config to JSON files.
+
+        Saves to two locations:
+        1. Root directory: scenario_config_{id}.json (for direct access)
+        2. data/scenarios/{id}.json (for API storage backend)
         """
+        # Save to root directory (original behavior)
         filename = f"scenario_config_{scenario_id}.json"
         with open(filename, 'w') as f:
             json.dump(config, f, indent=2)
         logger.info(f"Saved scenario config to: {filename}")
+
+        # Also save to data/scenarios/ for API storage backend
+        storage_dir = Path("./data/scenarios")
+        storage_dir.mkdir(parents=True, exist_ok=True)
+        storage_filename = storage_dir / f"{scenario_id}.json"
+        with open(storage_filename, 'w') as f:
+            json.dump(config, f, indent=2)
+        logger.info(f"Saved scenario config to storage: {storage_filename}")
+
         return filename
 
     def generate_magazine_synopsis(self, report: str, scenario_id: str) -> str:
