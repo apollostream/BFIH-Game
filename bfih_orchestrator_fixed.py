@@ -3610,7 +3610,7 @@ Use this general flow, but invent your own section titles:
 
 5. **How Ideological Lenses Diverge** (~800-1200 words)
    - Show how paradigms with ideological commitments reach different conclusions
-   - Format as: "### [Paradigm Name]: [How it diverges and why]"
+   - Use a third-level heading for each paradigm (e.g., a heading like "The Market Optimists: Why Growth Projections Diverge")
    - Explain what priors or assumptions lead each ideology to its different conclusion
    - This is NOT "alternative valid views" - it's "how ideology distorts assessment"
    - Be fair in representing each view, but clear that K0 has epistemic privilege
@@ -3725,6 +3725,9 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
             )
 
             synopsis = response.output_text
+
+            # Clean up any doubled markdown headers (e.g., "### ###" -> "###")
+            synopsis = re.sub(r'^(#{1,6})\s+\1\s*', r'\1 ', synopsis, flags=re.MULTILINE)
 
             # Add header indicating this is a generated synopsis
             header = f"""*Generated from BFIH Analysis Report {scenario_id}*
