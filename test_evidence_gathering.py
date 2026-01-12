@@ -30,15 +30,15 @@ def test_multi_search_evidence():
 
     # Create a minimal request for testing
     request = BFIHAnalysisRequest(
-        scenario_id="test_hotels",
-        proposition="Lifestyle luxury hotels in Chicago",
+        scenario_id="test_evs",
+        proposition="Best electric vehicles for families in 2025",
         scenario_config={
             "hypotheses": [
-                {"id": "H1", "title": "The Peninsula Chicago", "name": "The Peninsula Chicago"},
-                {"id": "H2", "title": "Park Hyatt Chicago", "name": "Park Hyatt Chicago"},
-                {"id": "H3", "title": "Waldorf Astoria Chicago", "name": "Waldorf Astoria Chicago"},
-                {"id": "H4", "title": "The Langham Chicago", "name": "The Langham Chicago"},
-                {"id": "H0", "title": "Other luxury hotels", "name": "Other luxury hotels"},
+                {"id": "H1", "title": "Tesla Model Y", "name": "Tesla Model Y"},
+                {"id": "H2", "title": "Rivian R1S", "name": "Rivian R1S"},
+                {"id": "H3", "title": "Kia EV9", "name": "Kia EV9"},
+                {"id": "H4", "title": "BMW iX", "name": "BMW iX"},
+                {"id": "H0", "title": "Other family EVs", "name": "Other family EVs"},
             ]
         }
     )
