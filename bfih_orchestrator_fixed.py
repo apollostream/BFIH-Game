@@ -912,8 +912,14 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 # Add tools if provided
                 if tools:
                     request_params["tools"] = tools
+                    include_list = []
                     if any(t.get("type") == "file_search" for t in tools):
-                        request_params["include"] = ["file_search_call.results"]
+                        include_list.append("file_search_call.results")
+                    # Request sources from web_search - this is the reliable way to get URLs
+                    if any(t.get("type") in ("web_search", "web_search_preview") for t in tools):
+                        include_list.append("web_search_call.action.sources")
+                    if include_list:
+                        request_params["include"] = include_list
 
                 # Make the API call (non-streaming for structured output)
                 print(f"[Calling API with structured output schema: {schema_name}...]")
@@ -924,25 +930,44 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 output_text = response.output_text
                 print(f"\n[Received structured output, parsing JSON...]")
 
-                # Extract url_citation annotations if requested
+                # Extract URL sources if requested
                 url_citations = []
                 if return_citations:
-                    # Look for url_citation annotations in the response output
+                    # Primary method: Get sources from web_search_call.action.sources
+                    # This is the reliable way to get all URLs consulted
                     for output_item in response.output:
-                        if hasattr(output_item, 'content'):
-                            for content_item in output_item.content:
-                                if hasattr(content_item, 'annotations'):
-                                    for annotation in content_item.annotations:
-                                        if hasattr(annotation, 'type') and annotation.type == 'url_citation':
-                                            url_citations.append({
-                                                'url': getattr(annotation, 'url', ''),
-                                                'title': getattr(annotation, 'title', ''),
-                                                'start_index': getattr(annotation, 'start_index', 0),
-                                                'end_index': getattr(annotation, 'end_index', 0)
-                                            })
+                        if hasattr(output_item, 'type') and output_item.type == 'web_search_call':
+                            if hasattr(output_item, 'action') and hasattr(output_item.action, 'sources'):
+                                for source in output_item.action.sources:
+                                    url = getattr(source, 'url', '') if hasattr(source, 'url') else (source.get('url', '') if isinstance(source, dict) else '')
+                                    title = getattr(source, 'title', '') if hasattr(source, 'title') else (source.get('title', '') if isinstance(source, dict) else '')
+                                    if url and url.startswith('http'):
+                                        url_citations.append({
+                                            'url': url,
+                                            'title': title,
+                                            'from_sources': True
+                                        })
+
+                    # Fallback: Also check url_citation annotations in message content
+                    if not url_citations:
+                        for output_item in response.output:
+                            if hasattr(output_item, 'content'):
+                                for content_item in output_item.content:
+                                    if hasattr(content_item, 'annotations'):
+                                        for annotation in content_item.annotations:
+                                            if hasattr(annotation, 'type') and annotation.type == 'url_citation':
+                                                url = getattr(annotation, 'url', '')
+                                                if url and url.startswith('http'):
+                                                    url_citations.append({
+                                                        'url': url,
+                                                        'title': getattr(annotation, 'title', ''),
+                                                        'from_sources': False
+                                                    })
+
                     if url_citations:
-                        logger.info(f"Extracted {len(url_citations)} URL citations from web search")
-                        print(f"[Extracted {len(url_citations)} URL citations from web search]")
+                        source_type = "sources" if url_citations[0].get('from_sources') else "annotations"
+                        logger.info(f"Extracted {len(url_citations)} URLs from web_search {source_type}")
+                        print(f"[Extracted {len(url_citations)} URLs from web_search {source_type}]")
 
                 # Parse JSON from output
                 try:
