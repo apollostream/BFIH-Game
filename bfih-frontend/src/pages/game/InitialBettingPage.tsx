@@ -27,18 +27,22 @@ export function InitialBettingPage() {
     bets,
     budget,
     setBet,
-    initializeBets,
+    initializeBetsForScenario,
     getTotalBet,
     hasBets,
   } = useBettingStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
+  // Get scenario ID from config
+  const currentScenarioId = scenarioConfig?.scenario_id || scenarioConfig?.scenario_metadata?.scenario_id;
+
   useEffect(() => {
     setPhase('betting');
-    if (scenarioConfig?.hypotheses) {
-      initializeBets(scenarioConfig.hypotheses.map((h) => h.id));
+    // Initialize bets for this scenario (only resets if scenario changed)
+    if (scenarioConfig?.hypotheses && currentScenarioId) {
+      initializeBetsForScenario(currentScenarioId, scenarioConfig.hypotheses.map((h) => h.id));
     }
-  }, [setPhase, scenarioConfig, initializeBets]);
+  }, [setPhase, scenarioConfig, currentScenarioId, initializeBetsForScenario]);
 
   // Build priors data for visualization
   // Support both 'priors' and 'priors_by_paradigm' field names

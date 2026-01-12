@@ -14,6 +14,9 @@ interface BetHistoryEntry {
 type BetHistoryItem = BetHistoryEntry | BetRound;
 
 interface BettingState {
+  // Scenario tracking (to reset bets when switching scenarios)
+  scenarioId: string | null;
+
   // Budget
   initialBudget: number;
   currentBudget: number;
@@ -43,6 +46,7 @@ interface BettingState {
   // Actions
   initBetting: (settings?: Partial<GameSettings>) => void;
   initializeBets: (hypothesisIds: string[]) => void;
+  initializeBetsForScenario: (scenarioId: string, hypothesisIds: string[]) => void;
   placeBet: (hypothesisId: string, amount: number) => void;
   setBet: (hypothesisId: string, amount: number) => void;
   adjustBet: (hypothesisId: string, newAmount: number) => void;
@@ -65,6 +69,7 @@ export const useBettingStore = create<BettingState>()(
     persist(
       (set, get) => ({
         // Initial state
+        scenarioId: null,
         initialBudget: 100,
         currentBudget: 100,
         budget: 100,
@@ -124,6 +129,20 @@ export const useBettingStore = create<BettingState>()(
             bets[id] = 0;
           });
           set({ bets });
+        },
+
+        initializeBetsForScenario: (scenarioId, hypothesisIds) => {
+          const currentScenarioId = get().scenarioId;
+          // Only reset bets if switching to a different scenario
+          if (currentScenarioId === scenarioId) {
+            return; // Same scenario, keep existing bets
+          }
+          // New scenario - reset bets
+          const bets: Record<string, number> = {};
+          hypothesisIds.forEach((id) => {
+            bets[id] = 0;
+          });
+          set({ scenarioId, bets, betHistory: [], betsLocked: false });
         },
 
         placeBet: (hypothesisId, amount) => {
@@ -280,6 +299,7 @@ export const useBettingStore = create<BettingState>()(
       {
         name: 'bfih-betting-store',
         partialize: (state) => ({
+          scenarioId: state.scenarioId,
           bets: state.bets,
           betHistory: state.betHistory,
           subjectivePriors: state.subjectivePriors,
