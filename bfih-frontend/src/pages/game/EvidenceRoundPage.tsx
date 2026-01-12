@@ -38,9 +38,11 @@ export function EvidenceRoundPage() {
   }, [setPhase]);
 
   // Get clusters for this round - check analysis metadata first, then scenarioConfig
+  // Note: Clusters can be at scenarioConfig.evidence_clusters (legacy) or scenarioConfig.evidence.clusters (current)
   const clusters = useMemo(() => {
     return currentAnalysis?.metadata?.evidence_clusters
       || scenarioConfig?.evidence_clusters
+      || scenarioConfig?.evidence?.clusters
       || [];
   }, [currentAnalysis, scenarioConfig]);
 

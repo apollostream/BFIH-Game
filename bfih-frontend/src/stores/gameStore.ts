@@ -155,7 +155,9 @@ export const useGameStore = create<GameState>()(
 
         // Actions
         initGame: (scenarioConfig, analysisResult) => {
-          const totalRounds = scenarioConfig.evidence_clusters?.length || 0;
+          const totalRounds = scenarioConfig.evidence_clusters?.length
+            || scenarioConfig.evidence?.clusters?.length
+            || 0;
           const paradigmIds = scenarioConfig.paradigms?.map((p) => p.id) || [];
           const firstParadigm = paradigmIds[0] || 'K1';
 

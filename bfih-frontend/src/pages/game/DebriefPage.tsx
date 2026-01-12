@@ -105,8 +105,10 @@ export function DebriefPage() {
     }
 
     // Evidence impact - check analysis metadata first, then scenarioConfig
+    // Note: Clusters can be at scenarioConfig.evidence_clusters (legacy) or scenarioConfig.evidence.clusters (current)
     const clusters = currentAnalysis?.metadata?.evidence_clusters
       || scenarioConfig.evidence_clusters
+      || scenarioConfig.evidence?.clusters
       || [];
     if (clusters.length >= 3) {
       results.push(`${clusters.length} evidence clusters were analyzed, each updating posterior probabilities`);
@@ -180,6 +182,7 @@ export function DebriefPage() {
                 <div className="text-4xl font-bold text-paradigm-k3 mb-1">
                   {currentAnalysis?.metadata?.evidence_clusters?.length
                     || scenarioConfig.evidence_clusters?.length
+                    || scenarioConfig.evidence?.clusters?.length
                     || 0}
                 </div>
                 <div className="text-text-secondary">Evidence Clusters</div>
