@@ -85,6 +85,7 @@ interface VictoryOverlayProps {
   playerRank: number;
   totalCompetitors: number;
   playerPayoff: number;
+  predictionBonus?: number;
   winnerName?: string;
   onClose?: () => void;
   className?: string;
@@ -95,10 +96,12 @@ export function VictoryOverlay({
   playerRank,
   totalCompetitors,
   playerPayoff,
+  predictionBonus = 0,
   winnerName,
   onClose,
   className,
 }: VictoryOverlayProps) {
+  const totalScore = playerPayoff + predictionBonus;
   const isWinner = playerRank === 1;
   const isPodium = playerRank <= 3;
 
@@ -215,17 +218,32 @@ export function VictoryOverlay({
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.5, type: 'spring' }}
-                className={cn(
-                  'inline-flex items-center gap-2 px-6 py-3 rounded-full',
-                  'text-2xl font-bold',
-                  playerPayoff >= 0
-                    ? 'bg-success/20 text-success'
-                    : 'bg-error/20 text-error'
-                )}
+                className="space-y-2"
               >
-                {playerPayoff >= 0 ? '+' : ''}
-                {playerPayoff.toFixed(0)}
-                <span className="text-sm font-normal opacity-80">credits</span>
+                {predictionBonus !== 0 && (
+                  <div className="text-sm text-text-secondary">
+                    <span className={playerPayoff >= 0 ? 'text-success' : 'text-error'}>
+                      {playerPayoff >= 0 ? '+' : ''}{playerPayoff.toFixed(0)} betting
+                    </span>
+                    {' '}+{' '}
+                    <span className={predictionBonus >= 0 ? 'text-success' : 'text-error'}>
+                      {predictionBonus >= 0 ? '+' : ''}{predictionBonus} prediction
+                    </span>
+                  </div>
+                )}
+                <div
+                  className={cn(
+                    'inline-flex items-center gap-2 px-6 py-3 rounded-full',
+                    'text-2xl font-bold',
+                    totalScore >= 0
+                      ? 'bg-success/20 text-success'
+                      : 'bg-error/20 text-error'
+                  )}
+                >
+                  {totalScore >= 0 ? '+' : ''}
+                  {totalScore.toFixed(0)}
+                  <span className="text-sm font-normal opacity-80">total</span>
+                </div>
               </motion.div>
 
               {/* Rank badge */}

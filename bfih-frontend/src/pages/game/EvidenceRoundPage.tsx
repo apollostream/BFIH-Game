@@ -9,7 +9,7 @@ import { EvidenceClusterCard } from '../../components/game/EvidenceCard';
 import { EvidenceMatrixHeatmap } from '../../components/visualizations/EvidenceMatrixHeatmap';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BudgetBar, BetSummary } from '../../components/game/BettingSlider';
-import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
+import { useGameStore, useBettingStore, useAnalysisStore, usePredictionStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, staggerContainerVariants, cardVariants } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
@@ -26,10 +26,17 @@ export function EvidenceRoundPage() {
   } = useGameStore();
   const { bets, budget, getTotalBet, raiseBet } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
+  const {
+    submitted: predictionsSubmitted,
+    results: predictionResults,
+    totalBonus: predictionBonus,
+    calculateResults: calculatePredictionResults,
+  } = usePredictionStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   const [revealedClusters, setRevealedClusters] = useState<string[]>([]);
   const [isRevealing, setIsRevealing] = useState(false);
+  const [showPredictionResults, setShowPredictionResults] = useState(false);
 
   const currentRound = parseInt(roundParam || '1', 10);
 
@@ -87,6 +94,16 @@ export function EvidenceRoundPage() {
     setRevealedClusters(clusters.map((c) => c.cluster_id));
   };
 
+  const allRevealed = revealedClusters.length === clusters.length;
+
+  // Calculate prediction results when all clusters are revealed
+  useEffect(() => {
+    if (allRevealed && predictionsSubmitted && predictionResults.length === 0) {
+      calculatePredictionResults(clusters, activeParadigm);
+      setShowPredictionResults(true);
+    }
+  }, [allRevealed, predictionsSubmitted, predictionResults.length, clusters, activeParadigm, calculatePredictionResults]);
+
   if (!scenarioConfig) {
     return (
       <PageContainer className="flex items-center justify-center min-h-[60vh]">
@@ -102,7 +119,6 @@ export function EvidenceRoundPage() {
     (p) => selectedParadigms.includes(p.id)
   ) || [];
 
-  const allRevealed = revealedClusters.length === clusters.length;
   const totalBet = getTotalBet();
 
   return (
@@ -207,6 +223,69 @@ export function EvidenceRoundPage() {
               </AnimatePresence>
             </motion.div>
 
+            {/* Prediction Results Summary */}
+            {showPredictionResults && predictionResults.length > 0 && (
+              <motion.div
+                variants={cardVariants}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <Card className="p-6 border-2 border-accent">
+                  <h3 className="text-lg font-semibold text-text-primary mb-4">
+                    Prediction Results
+                  </h3>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="text-center p-3 bg-surface-2 rounded-lg">
+                      <div className="text-2xl font-bold text-accent">
+                        {predictionResults.filter(r => r.correct).length} / {predictionResults.length}
+                      </div>
+                      <div className="text-sm text-text-secondary">Correct Predictions</div>
+                    </div>
+                    <div className="text-center p-3 bg-surface-2 rounded-lg">
+                      <div className={`text-2xl font-bold ${predictionBonus >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                        {predictionBonus >= 0 ? '+' : ''}{predictionBonus}
+                      </div>
+                      <div className="text-sm text-text-secondary">Bonus Points</div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {predictionResults.map((result) => {
+                      const hypothesis = scenarioConfig.hypotheses?.find(h => h.id === result.predicted);
+                      const actualHypothesis = scenarioConfig.hypotheses?.find(h => h.id === result.actual);
+                      return (
+                        <div
+                          key={result.clusterId}
+                          className={`p-3 rounded-lg ${result.correct ? 'bg-green-500/10' : 'bg-surface-2'}`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <span className="text-sm font-medium text-text-primary">
+                                {result.clusterName}
+                              </span>
+                              <div className="text-xs text-text-secondary mt-1">
+                                Predicted: {hypothesis?.name || result.predicted || 'None/Mixed'}
+                                {result.actual && result.predicted !== result.actual && (
+                                  <span className="ml-2">
+                                    → Actual: {actualHypothesis?.name || result.actual || 'None/Mixed'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <div className={`text-sm font-semibold ${
+                              result.points > 0 ? 'text-green-500' :
+                              result.points < 0 ? 'text-red-500' : 'text-text-muted'
+                            }`}>
+                              {result.points > 0 ? '+' : ''}{result.points}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              </motion.div>
+            )}
+
             {/* Evidence Matrix Heatmap */}
             {revealedClusters.length > 0 && (
               <motion.div
@@ -293,9 +372,9 @@ export function EvidenceRoundPage() {
         >
           <Button
             variant="ghost"
-            onClick={() => navigate(`/game/${scenarioId}/betting`)}
+            onClick={() => navigate(`/game/${scenarioId}/prediction`)}
           >
-            Back to Betting
+            Back to Predictions
           </Button>
           <Button
             size="lg"

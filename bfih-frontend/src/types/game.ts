@@ -5,16 +5,18 @@ export type GamePhase =
   | 'hypotheses'      // Phase 2: Hypothesis Generation
   | 'priors'          // Phase 3: AI Prior Assignment
   | 'betting'         // Phase 4: Initial Player Betting
-  | 'evidence'        // Phase 5: Evidence Rounds
-  | 'resolution'      // Phase 6: Final Resolution
-  | 'report'          // Phase 7: BFIH Report
-  | 'debrief';        // Phase 8: Post-Game Analysis
+  | 'prediction'      // Phase 5: Evidence Prediction (NEW)
+  | 'evidence'        // Phase 6: Evidence Rounds
+  | 'resolution'      // Phase 7: Final Resolution
+  | 'report'          // Phase 8: BFIH Report
+  | 'debrief';        // Phase 9: Post-Game Analysis
 
 export const GAME_PHASES: GamePhase[] = [
   'setup',
   'hypotheses',
   'priors',
   'betting',
+  'prediction',
   'evidence',
   'resolution',
   'report',
@@ -26,6 +28,7 @@ export const PHASE_LABELS: Record<GamePhase, string> = {
   hypotheses: 'Hypothesis Generation',
   priors: 'Prior Assignment',
   betting: 'Initial Betting',
+  prediction: 'Prediction',
   evidence: 'Evidence Rounds',
   resolution: 'Resolution',
   report: 'BFIH Report',
@@ -37,6 +40,7 @@ export const PHASE_DESCRIPTIONS: Record<GamePhase, string> = {
   hypotheses: 'Explore the AI-generated hypotheses and forcing functions',
   priors: 'Review the AI-assigned prior probabilities',
   betting: 'Place your initial bets on hypotheses',
+  prediction: 'Predict what evidence will show before seeing it',
   evidence: 'Review evidence and adjust your bets',
   resolution: 'See the final posteriors and payoffs',
   report: 'Read the full BFIH analysis report',
@@ -213,3 +217,33 @@ export function calculatePersonaBets(
 
   return bets;
 }
+
+// ============================================================================
+// EVIDENCE PREDICTION SYSTEM
+// ============================================================================
+
+export type PredictionConfidence = 'low' | 'medium' | 'high';
+
+export interface ClusterPrediction {
+  clusterId: string;
+  predictedSupports: string | null;  // hypothesis ID or null for "none/mixed"
+  confidence: PredictionConfidence;
+}
+
+export interface PredictionResult {
+  clusterId: string;
+  clusterName: string;
+  predicted: string | null;
+  actual: string | null;
+  correct: boolean;
+  confidence: PredictionConfidence;
+  points: number;
+}
+
+// Scoring constants for prediction bonus
+export const PREDICTION_POINTS = {
+  correct: 15,
+  correctHighConfidence: 25,
+  wrongHighConfidence: -5,
+  wrong: 0,
+} as const;

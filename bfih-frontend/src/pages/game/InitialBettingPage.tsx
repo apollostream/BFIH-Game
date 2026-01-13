@@ -232,10 +232,10 @@ export function InitialBettingPage() {
             )}
             <Button
               size="lg"
-              onClick={() => navigate(`/game/${scenarioId}/evidence`)}
+              onClick={() => navigate(`/game/${scenarioId}/prediction`)}
               disabled={!canContinue}
             >
-              {hasBets() ? 'Continue to Evidence' : 'Place Some Bets First'}
+              {hasBets() ? 'Continue to Predictions' : 'Place Some Bets First'}
             </Button>
           </div>
         </motion.div>

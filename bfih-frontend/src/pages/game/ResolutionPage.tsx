@@ -10,7 +10,7 @@ import { Leaderboard, VictoryMessage } from '../../components/game/Leaderboard';
 import { VictoryOverlay } from '../../components/game/VictoryOverlay';
 import { HypothesisBarChart } from '../../components/visualizations/HypothesisBarChart';
 import { BeliefSpaceRadar } from '../../components/visualizations/BeliefSpaceRadar';
-import { useGameStore, useBettingStore, useAnalysisStore } from '../../stores';
+import { useGameStore, useBettingStore, useAnalysisStore, usePredictionStore } from '../../stores';
 import { usePhaseNavigation } from '../../hooks';
 import { pageVariants, cardVariants, formatPercent } from '../../utils';
 import type { PosteriorsByParadigm } from '../../types';
@@ -32,6 +32,7 @@ export function ResolutionPage() {
   } = useGameStore();
   const { bets, budget } = useBettingStore();
   const { currentAnalysis } = useAnalysisStore();
+  const { results: predictionResults, totalBonus: predictionBonus, submitted: predictionSubmitted } = usePredictionStore();
   const { handlePhaseClick, completedPhases, furthestPhase, isPhaseNavigable } = usePhaseNavigation();
 
   const [showPayoffs, setShowPayoffs] = useState(false);
@@ -262,6 +263,46 @@ export function ResolutionPage() {
           </motion.div>
         </div>
 
+        {/* Score Breakdown */}
+        {showPayoffs && playerPayoff !== null && (
+          <motion.div
+            variants={cardVariants}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6"
+          >
+            <Card className="p-6">
+              <h2 className="text-xl font-semibold text-text-primary mb-4">
+                Your Score Breakdown
+              </h2>
+              <div className="space-y-3">
+                <div className="flex justify-between items-center py-2 border-b border-surface-2">
+                  <span className="text-text-secondary">Betting Payoff</span>
+                  <span className={`text-lg font-semibold ${playerPayoff >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                    {playerPayoff >= 0 ? '+' : ''}{playerPayoff.toFixed(1)} credits
+                  </span>
+                </div>
+                {predictionSubmitted && predictionResults.length > 0 && (
+                  <div className="flex justify-between items-center py-2 border-b border-surface-2">
+                    <span className="text-text-secondary">
+                      Prediction Bonus ({predictionResults.filter(r => r.correct).length}/{predictionResults.length} correct)
+                    </span>
+                    <span className={`text-lg font-semibold ${predictionBonus >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      {predictionBonus >= 0 ? '+' : ''}{predictionBonus} points
+                    </span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-text-primary font-semibold">Total Score</span>
+                  <span className={`text-xl font-bold ${(playerPayoff + predictionBonus) >= 0 ? 'text-accent' : 'text-red-500'}`}>
+                    {(playerPayoff + predictionBonus) >= 0 ? '+' : ''}{(playerPayoff + predictionBonus).toFixed(1)}
+                  </span>
+                </div>
+              </div>
+            </Card>
+          </motion.div>
+        )}
+
         {/* Visualizations */}
         <div className="grid lg:grid-cols-2 gap-6 mt-6">
           <motion.div variants={cardVariants}>
@@ -313,6 +354,7 @@ export function ResolutionPage() {
         playerRank={playerRank}
         totalCompetitors={leaderboard.length}
         playerPayoff={playerPayoff || 0}
+        predictionBonus={predictionSubmitted ? predictionBonus : 0}
         winnerName={leaderboard[0]?.isPlayer ? undefined : leaderboard[0]?.name}
         onClose={() => setShowVictoryOverlay(false)}
       />

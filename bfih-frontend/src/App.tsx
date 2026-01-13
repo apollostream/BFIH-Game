@@ -9,6 +9,7 @@ import { ScenarioSetupPage } from './pages/game/ScenarioSetupPage';
 import { HypothesisGenerationPage } from './pages/game/HypothesisGenerationPage';
 import { PriorAssignmentPage } from './pages/game/PriorAssignmentPage';
 import { InitialBettingPage } from './pages/game/InitialBettingPage';
+import { EvidencePredictionPage } from './pages/game/EvidencePredictionPage';
 import { EvidenceRoundPage } from './pages/game/EvidenceRoundPage';
 import { ResolutionPage } from './pages/game/ResolutionPage';
 import { ReportPage } from './pages/game/ReportPage';
@@ -33,6 +34,7 @@ function AnimatedRoutes() {
         <Route path="/game/:scenarioId/hypotheses" element={<HypothesisGenerationPage />} />
         <Route path="/game/:scenarioId/priors" element={<PriorAssignmentPage />} />
         <Route path="/game/:scenarioId/betting" element={<InitialBettingPage />} />
+        <Route path="/game/:scenarioId/prediction" element={<EvidencePredictionPage />} />
         <Route path="/game/:scenarioId/evidence" element={<EvidenceRoundPage />} />
         <Route path="/game/:scenarioId/evidence/:round" element={<EvidenceRoundPage />} />
         <Route path="/game/:scenarioId/resolution" element={<ResolutionPage />} />
