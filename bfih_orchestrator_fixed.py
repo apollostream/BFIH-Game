@@ -1200,6 +1200,159 @@ Focus on actionable steps for applying each forcing function.
         tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
         return self._run_phase(prompt, tools, "Phase 1: Retrieve Methodology")
 
+    # =========================================================================
+    # TOPIC-ADAPTIVE EVIDENCE SEARCH SYSTEM
+    # =========================================================================
+    # Different topic types require different search strategies:
+    # - Academic/philosophical topics need journal papers, encyclopedias, scholarly works
+    # - Consumer/product topics need reviews, ratings, comparisons
+    # - Political/policy topics need news, think tanks, government sources
+    # - Scientific topics need research papers, datasets, empirical studies
+
+    TOPIC_SEARCH_TEMPLATES = {
+        "academic": [
+            "peer-reviewed academic papers on {proposition}",
+            "scholarly journal articles about {proposition}",
+            "Stanford Encyclopedia of Philosophy {proposition}",
+            "PhilPapers research on {proposition}",
+            "academic books and monographs on {proposition}",
+            "university research publications {proposition}",
+            "theoretical frameworks for {proposition}",
+            "critical analysis and debates about {proposition}",
+        ],
+        "philosophical": [
+            "philosophy papers on {proposition}",
+            "epistemology research {proposition}",
+            "Stanford Encyclopedia {proposition}",
+            "PhilPapers {proposition}",
+            "philosophical debates about {proposition}",
+            "history of philosophy {proposition}",
+            "contemporary philosophers on {proposition}",
+            "philosophical journals {proposition}",
+        ],
+        "scientific": [
+            "peer-reviewed scientific studies on {proposition}",
+            "empirical research data {proposition}",
+            "meta-analyses and systematic reviews {proposition}",
+            "scientific consensus {proposition}",
+            "research methodology {proposition}",
+            "experimental findings {proposition}",
+            "arXiv papers on {proposition}",
+            "Nature Science journals {proposition}",
+        ],
+        "consumer": [
+            "rankings and best-of lists for {proposition}",
+            "user reviews and ratings {proposition}",
+            "critical reviews and complaints {proposition}",
+            "expert professional reviews {proposition}",
+            "comparison guides {proposition}",
+            "consumer reports {proposition}",
+        ],
+        "political": [
+            "policy analysis {proposition}",
+            "think tank research {proposition}",
+            "government reports {proposition}",
+            "political science research {proposition}",
+            "news analysis {proposition}",
+            "expert political commentary {proposition}",
+            "historical political context {proposition}",
+            "international perspectives {proposition}",
+        ],
+        "historical": [
+            "historical research {proposition}",
+            "primary historical sources {proposition}",
+            "historiography {proposition}",
+            "academic history journals {proposition}",
+            "historical archives {proposition}",
+            "historians' analyses {proposition}",
+        ],
+        "general": [
+            "comprehensive overview {proposition}",
+            "expert analysis {proposition}",
+            "research and evidence {proposition}",
+            "different perspectives on {proposition}",
+            "critical evaluation {proposition}",
+            "supporting evidence {proposition}",
+            "counter-arguments {proposition}",
+        ],
+    }
+
+    def _classify_topic_type(self, proposition: str) -> str:
+        """Classify the proposition into a topic type for search optimization.
+
+        Returns one of: academic, philosophical, scientific, consumer, political, historical, general
+        """
+        prompt = f"""Classify this proposition into ONE of these topic types:
+- academic: scholarly/theoretical topics requiring peer-reviewed sources
+- philosophical: epistemology, ethics, metaphysics, philosophy of mind/science
+- scientific: empirical claims requiring research studies and data
+- consumer: product/service comparisons, purchases, recommendations
+- political: policy, governance, political events, elections
+- historical: past events, historical analysis, historiography
+- general: doesn't clearly fit other categories
+
+PROPOSITION: "{proposition}"
+
+Respond with ONLY the topic type (one word, lowercase). Choose the MOST specific applicable type.
+For questions about philosophical schools, epistemology, or reasoning frameworks, choose "philosophical".
+"""
+        try:
+            response = self.client.responses.create(
+                model="gpt-4o-mini",  # Fast, cheap model for classification
+                input=prompt,
+                max_output_tokens=20,
+            )
+            topic_type = response.output_text.strip().lower()
+            # Validate it's a known type
+            if topic_type in self.TOPIC_SEARCH_TEMPLATES:
+                logger.info(f"Topic classified as: {topic_type}")
+                return topic_type
+            else:
+                logger.warning(f"Unknown topic type '{topic_type}', defaulting to 'general'")
+                return "general"
+        except Exception as e:
+            logger.warning(f"Topic classification failed: {e}, defaulting to 'general'")
+            return "general"
+
+    def _generate_search_categories(self, proposition: str, topic_type: str,
+                                     hypotheses: List[Dict]) -> List[str]:
+        """Generate diverse search categories based on topic type and hypotheses."""
+
+        # Get base templates for this topic type
+        templates = self.TOPIC_SEARCH_TEMPLATES.get(topic_type, self.TOPIC_SEARCH_TEMPLATES["general"])
+
+        # Generate searches from templates
+        searches = []
+        for template in templates:
+            searches.append(template.format(proposition=proposition))
+
+        # Add hypothesis-specific searches
+        for h in hypotheses:
+            title = h.get("title", h.get("name", ""))
+            if title and title.lower() not in ["catch-all", "other", "none of the above", "unforeseen"]:
+                # Add hypothesis-specific search based on topic type
+                if topic_type in ["academic", "philosophical", "scientific"]:
+                    searches.append(f"research papers on {title}")
+                    searches.append(f"scholarly analysis of {title}")
+                elif topic_type == "consumer":
+                    searches.append(f"detailed reviews of {title}")
+                elif topic_type == "political":
+                    searches.append(f"policy analysis {title}")
+                else:
+                    searches.append(f"evidence and analysis: {title}")
+
+        # Deduplicate while preserving order
+        seen = set()
+        unique_searches = []
+        for s in searches:
+            s_lower = s.lower()
+            if s_lower not in seen:
+                seen.add(s_lower)
+                unique_searches.append(s)
+
+        # Limit to reasonable number (10-15 searches)
+        return unique_searches[:15]
+
     def _run_single_search(self, search_category: str, proposition: str,
                             hyp_names: List[str]) -> Tuple[List[Dict], List[Dict]]:
         """Execute a single focused web search and return evidence items + URL citations.
@@ -1217,21 +1370,26 @@ HYPOTHESES:
 YOUR TASK:
 Search the web for evidence specifically relevant to: **{search_category}**
 
-Return 4-6 evidence items from your search. Each item needs:
+Return 6-10 DIVERSE evidence items from your search. IMPORTANT: Each item should come from a DIFFERENT source/publication. Do NOT return multiple items from the same website or encyclopedia entry.
+
+Each item needs:
 - evidence_id (unique string like "E1", "E2", etc.)
-- description (specific factual finding)
+- description (specific factual finding - be detailed and specific)
 - source_name (publication or website name)
 - source_url (MUST be a full URL starting with https:// or http://, or "" if unknown)
-- citation_apa (APA format citation)
+- citation_apa (APA format citation with author, year, title, and source)
 - date_accessed (today's date)
 - supports_hypotheses (list of hypothesis IDs this supports)
 - refutes_hypotheses (list of hypothesis IDs this argues against)
 - evidence_type (one of: quantitative, qualitative, expert_testimony, historical_analogy, policy, institutional)
 
-**source_url MUST be a real URL like https://example.com or leave empty if unknown**
+**CRITICAL**:
+- source_url MUST be a real URL like https://example.com or leave empty if unknown
+- Each evidence item must be from a UNIQUE source - avoid duplicates
+- Prioritize peer-reviewed sources, academic journals, and authoritative publications
 """
         try:
-            tools = [{"type": "web_search", "search_context_size": "medium"}]
+            tools = [{"type": "web_search", "search_context_size": "high"}]
             result, url_citations = self._run_structured_phase(
                 prompt, "evidence", f"Search: {search_category[:40]}",
                 tools=tools, return_citations=True, model=self.model
@@ -1245,33 +1403,24 @@ Return 4-6 evidence items from your search. Each item needs:
         """Phase 2: Gather evidence via MULTIPLE focused web searches.
         Returns (markdown_text, structured_evidence)
 
-        Makes 4-5 separate API calls, each targeting a different search category,
-        to guarantee diverse evidence sources. Testing confirms that a single API
-        call only performs one web search regardless of prompting.
+        Uses topic-adaptive search strategy:
+        1. Classifies the proposition type (academic, philosophical, consumer, etc.)
+        2. Generates domain-appropriate search queries
+        3. Performs 10-15 diverse searches to gather comprehensive evidence
+        4. Deduplicates results by URL to avoid bibliography repetition
         """
         hypotheses = request.scenario_config.get("hypotheses", [])
         hyp_names = [f"{h.get('id', f'H{i}')}: {h.get('title', h.get('name', ''))}"
                      for i, h in enumerate(hypotheses)]
         proposition = request.proposition
 
-        # Extract candidate names for targeted searches
-        candidate_names = []
-        for h in hypotheses:
-            title = h.get("title", h.get("name", ""))
-            if title and title not in ["Catch-all", "Other", "None of the above"]:
-                candidate_names.append(title)
+        # Step 1: Classify topic type for search optimization
+        print(f"\n[Classifying topic type for optimal search strategy...]")
+        topic_type = self._classify_topic_type(proposition)
+        print(f"[Topic classified as: {topic_type}]")
 
-        # Define focused search categories - each becomes a separate API call
-        search_categories = [
-            f"Rankings and best-of lists for: {proposition}",
-            f"User reviews and ratings for: {proposition}",
-            f"Critical reviews, complaints, and problems with: {proposition}",
-            f"Expert analysis and professional reviews of: {proposition}",
-        ]
-
-        # Add candidate-specific searches
-        for candidate in candidate_names[:3]:  # Limit to top 3 candidates
-            search_categories.append(f"Detailed reviews of: {candidate}")
+        # Step 2: Generate domain-specific search categories
+        search_categories = self._generate_search_categories(proposition, topic_type, hypotheses)
 
         logger.info(f"Starting multi-search evidence gathering: {len(search_categories)} focused searches")
         print(f"\n[Starting {len(search_categories)} focused evidence searches]")
@@ -1350,10 +1499,56 @@ Return 4-6 evidence items from your search. Each item needs:
         valid_url_count = sum(1 for item in evidence_items if item.get('source_url', '').startswith('http'))
         logger.info(f"Populated {valid_url_count} items with valid URLs from {len(url_citations)} citations")
 
+        # Step 3: Deduplicate evidence by URL to avoid bibliography repetition
+        # This is critical - same source appearing multiple times (e.g., Stanford Encyclopedia)
+        # makes the bibliography look poor and repetitive
+        seen_urls = set()
+        seen_sources = set()  # Also dedupe by source name for items without URLs
+        deduplicated_evidence = []
+
+        for item in evidence_items:
+            url = item.get('source_url', '').strip()
+            source_name = item.get('source_name', '').lower().strip()
+
+            # Normalize URL for comparison (remove archive dates, trailing slashes)
+            normalized_url = url.lower().rstrip('/')
+            # Remove archive date variations (e.g., /archives/fall2024/ -> /entries/)
+            normalized_url = re.sub(r'/archives/[^/]+/', '/entries/', normalized_url)
+
+            # Check if we've seen this URL or a very similar source
+            is_duplicate = False
+            if normalized_url and normalized_url.startswith('http'):
+                if normalized_url in seen_urls:
+                    is_duplicate = True
+                else:
+                    seen_urls.add(normalized_url)
+            elif source_name:
+                # For items without URLs, dedupe by source name
+                if source_name in seen_sources:
+                    is_duplicate = True
+                else:
+                    seen_sources.add(source_name)
+
+            if not is_duplicate:
+                deduplicated_evidence.append(item)
+            else:
+                logger.debug(f"Removing duplicate: {source_name or url[:50]}")
+
+        # Renumber evidence IDs after deduplication
+        for i, item in enumerate(deduplicated_evidence, 1):
+            item["evidence_id"] = f"E{i}"
+
+        duplicates_removed = len(evidence_items) - len(deduplicated_evidence)
+        if duplicates_removed > 0:
+            logger.info(f"Removed {duplicates_removed} duplicate evidence items")
+            print(f"[Removed {duplicates_removed} duplicate sources from evidence]")
+
+        evidence_items = deduplicated_evidence
+
         # Generate markdown summary from structured data
         markdown_summary = self._generate_evidence_markdown(evidence_items)
 
-        logger.info(f"Gathered {len(evidence_items)} evidence items")
+        logger.info(f"Gathered {len(evidence_items)} unique evidence items")
         return markdown_summary, evidence_items
 
     def _generate_evidence_markdown(self, evidence_items: List[Dict]) -> str:
