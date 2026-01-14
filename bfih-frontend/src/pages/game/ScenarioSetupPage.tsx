@@ -39,6 +39,8 @@ export function ScenarioSetupPage() {
     if (!scenarioId || loading) return;
 
     async function fetchScenario() {
+      if (!scenarioId) return;  // Guard for TypeScript
+
       setLoading(true);
       setError(null);
 
@@ -48,8 +50,8 @@ export function ScenarioSetupPage() {
         loadScenario(config);
 
         // Try to fetch analysis result (may not exist)
-        // Use analysis_id from config if available, otherwise try scenarioId
-        const analysisId = config.analysis_id || config.scenario_config?.analysis_id || scenarioId;
+        // Use scenario_id from metadata if available, otherwise use URL scenarioId
+        const analysisId = config.scenario_metadata?.scenario_id || scenarioId;
         try {
           const analysis = await getAnalysis(analysisId);
           if (analysis && !('error' in analysis)) {
@@ -57,7 +59,7 @@ export function ScenarioSetupPage() {
           }
         } catch {
           // Analysis not found is OK - scenario can work without it
-          console.log('No analysis result for scenario:', scenarioId, '(tried analysis_id:', analysisId, ')');
+          console.log('No analysis result for scenario:', scenarioId);
         }
       } catch (err) {
         console.error('Failed to load scenario:', err);

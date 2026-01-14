@@ -27,6 +27,8 @@ export const DOMAIN_COLORS: Record<Domain, string> = {
   Theological: '#8B5CF6',
   Biological: '#14B8A6',
   Technological: '#F97316',
+  Constitutional_Legal: '#6366F1',
+  Democratic: '#0EA5E9',
 };
 
 // Weight of Evidence colors

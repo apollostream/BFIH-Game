@@ -133,7 +133,7 @@ export function HypothesisCard({
                     <Badge
                       variant={
                         hypothesis.truth_value_type === 'affirm' ? 'success' :
-                        hypothesis.truth_value_type === 'deny' ? 'error' :
+                        hypothesis.truth_value_type === 'deny' ? 'danger' :
                         'warning'
                       }
                       size="sm"
