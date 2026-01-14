@@ -426,11 +426,12 @@ async def submit_analysis(
         # Generate analysis ID
         analysis_id = str(uuid.uuid4())
 
-        # Store request metadata
+        # Store request metadata and initialize status
         storage.store_analysis_request(
             analysis_id=analysis_id,
             request=analysis_request
         )
+        storage.update_analysis_status(analysis_id, "submitted")  # Initialize status immediately
 
         # Run analysis in background with user's credentials
         background_tasks.add_task(
