@@ -130,6 +130,31 @@ async def health_check():
     }
 
 
+@app.get("/api/debug/static")
+async def debug_static():
+    """Debug endpoint to check static file status"""
+    static_dir = Path(__file__).parent / "static"
+    index_path = static_dir / "index.html"
+    assets_dir = static_dir / "assets"
+
+    result = {
+        "static_dir": str(static_dir),
+        "static_dir_exists": static_dir.exists(),
+        "index_html_exists": index_path.exists(),
+        "assets_dir_exists": assets_dir.exists(),
+        "cwd": os.getcwd(),
+        "file_location": str(Path(__file__).parent),
+    }
+
+    if static_dir.exists():
+        try:
+            result["static_contents"] = os.listdir(static_dir)
+        except Exception as e:
+            result["static_contents_error"] = str(e)
+
+    return result
+
+
 @app.post("/api/validate-credentials")
 async def validate_credentials(
     user_openai_api_key: Optional[str] = Header(None, alias="User-OpenAI-API-Key"),
