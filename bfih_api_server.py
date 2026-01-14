@@ -744,13 +744,18 @@ async def generate_synopsis(
 # BACKGROUND TASK
 # ============================================================================
 
-async def _run_analysis(
+def _run_analysis(
     analysis_id: str,
     analysis_request: BFIHAnalysisRequest,
     api_key: Optional[str] = None,
     vector_store_id: Optional[str] = None
 ):
-    """Background task to run BFIH analysis with user-provided credentials."""
+    """Background task to run BFIH analysis with user-provided credentials.
+
+    Note: This is intentionally a sync function (not async) so that FastAPI's
+    BackgroundTasks runs it in a thread pool, preventing it from blocking
+    the main event loop during long-running analysis.
+    """
     try:
         logger.info(f"Starting background analysis: {analysis_id}")
 
