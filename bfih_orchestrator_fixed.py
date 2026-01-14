@@ -3707,46 +3707,164 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 
         return filename
 
-    def generate_magazine_synopsis(self, report: str, scenario_id: str) -> str:
+    # =========================================================================
+    # SYNOPSIS STYLE PROMPTS
+    # =========================================================================
+
+    def _get_gawande_style_prompt(self, report: str) -> str:
         """
-        Generate a plain-language magazine-style synopsis from a BFIH analysis report.
-
-        This transforms the technical academic report into an engaging, Atlantic-style
-        magazine article that is accessible to general readers while maintaining
-        the analytical rigor and citing sources.
-
-        Args:
-            report: The full BFIH analysis report (markdown)
-            scenario_id: The scenario ID for naming the output file
-
-        Returns:
-            The magazine synopsis as markdown text
+        New default style: Gawande scientific narrative + science news feature.
+        Emphasizes wonder over advocacy, preserves complexity, resists false resolution.
         """
-        logger.info(f"Generating magazine synopsis for scenario: {scenario_id}")
+        return f"""Transform the following BFIH analysis report into a science news feature that reports findings accessibly while maintaining intellectual honesty.
 
-        # Extract the bibliography section from the original report to preserve it exactly
-        bibliography_section = ""
-        bibliography_markers = ["## 9. Bibliography", "## Bibliography", "## References"]
-        for marker in bibliography_markers:
-            if marker in report:
-                # Find the bibliography section and everything after it
-                bib_start = report.find(marker)
-                # Find where bibliography ends (next major section or end of report)
-                remaining = report[bib_start:]
-                # Look for the next ## section after bibliography, or end of file
-                next_section = remaining.find("\n## ", len(marker))
-                if next_section != -1:
-                    bibliography_section = remaining[:next_section].strip()
-                else:
-                    # Take everything to the end, but stop at "End of BFIH" marker if present
-                    end_marker = remaining.find("**End of BFIH")
-                    if end_marker != -1:
-                        bibliography_section = remaining[:end_marker].strip()
-                    else:
-                        bibliography_section = remaining.strip()
-                break
+## STYLE: GAWANDE SCIENTIFIC NARRATIVE + SCIENCE NEWS FEATURE
 
-        prompt = f"""Transform the following BFIH analysis report into an in-depth magazine article in the style of The Atlantic or longform explanatory journalism.
+This is a **report of findings** from rigorous Bayesian analysis. Your role combines:
+- **Science journalist** reporting what the analysis found
+- **Gawande-style narrator** who engages with complexity honestly and finds the questions as interesting as the answers
+
+### CORE COMMITMENTS (Gawande-inspired):
+
+1. **Wonder, not advocacy** — Approach the topic with genuine curiosity. The question is often more interesting than the answer. Don't force neat resolutions.
+
+2. **Self-disclosure** — When evidence challenged common assumptions (including the analyst's), acknowledge it: "What emerged was unexpected..." or "The evidence complicated the straightforward narrative..."
+
+3. **Preserve complexity** — Don't force binary framings on probabilistic findings. If something is 60/40, say so. If reasonable people weight evidence differently, show that.
+
+4. **Inconvenient truths** — Include evidence that complicates clean narratives. Don't cherry-pick for a tidy story.
+
+5. **Pre-emptive objections** — Raise counterarguments and limitations before critics would. This builds trust.
+
+6. **Separate simple from complicated** — Some findings are clear; others are irreducibly complex. Distinguish between them honestly.
+
+7. **Multiple perspectives** — Different stakeholders, values, or starting assumptions lead to different weightings. Present this descriptively, not as "one right answer vs. wrong ones."
+
+8. **Strategic evidence integration** — The Bayesian results bolster the narrative; they don't replace it. Weave findings into accessible prose.
+
+9. **Resist false resolution** — If analysis reveals "it depends" or "genuinely uncertain," don't manufacture false clarity. Honest ambiguity is intellectually respectable.
+
+### VOICE & TONE:
+- **Neutral observer** when reporting: "Analysis revealed..." "The evidence indicates..."
+- **Curious guide** when contextualizing: "What's striking here is..." "This fits a pattern worth noting..."
+- **Honest about surprise**: "What the analysis uncovered was not what one might expect..."
+- **Clear and direct** — engaged without drama, respectful of reader intelligence
+- **NOT corrective or adversarial** — no "You might think X, but actually Y..."
+
+### CALIBRATED CONFIDENCE LANGUAGE:
+Match language precisely to evidence strength:
+
+- **High confidence**: "Analysis strongly indicates..." / "Evidence clearly shows..." / "Consistent across multiple lines of evidence..."
+- **Moderate confidence**: "Findings suggest..." / "Analysis indicates..." / "Evidence points toward..."
+- **Lower confidence**: "Preliminary analysis hints..." / "One possible interpretation..." / "May indicate..."
+- **Explicit uncertainty**: "Remains unclear whether..." / "Evidence is mixed on..." / "Analysis cannot determine..."
+- **Never use**: "proves," "establishes," "settles" (unless extraordinary evidence truly warrants it)
+
+### STRUCTURE:
+
+**1. Opening** — Vary to prevent repetitiveness:
+   - **Finding-first**: Lead with the most striking result
+   - **Question-first**: Open with the puzzle the analysis addressed
+   - **Context-first**: Begin with real-world relevance
+   - **Pattern-first**: Start with a surprising insight that emerged
+
+**2. Context** (~300-400 words)
+   - What question motivated the analysis and why it matters
+   - What existing evidence or conventional thinking suggested
+   - Set up genuine curiosity, not a strawman to knock down
+
+**3. The Evidence-Weighted Findings** (~1500-2500 words) — THE CORE
+   - Report what the analysis found when evidence is weighted by reliability and relevance
+   - Organize thematically with ### subheadings
+   - Use calibrated confidence language throughout
+   - Include specific details and citations [1], [2]
+   - **Include inconvenient findings** that complicate simple narratives
+   - Acknowledge what surprised or challenged initial expectations
+
+**4. How Different Weightings Shift the Picture** (~600-800 words)
+   - Different starting values or assumptions lead to different emphasis
+   - Present descriptively: "Those who prioritize X tend to weight this evidence more heavily..."
+   - **NOT "wrong" vs. "right"** — show how reasonable variation in priors yields different conclusions
+   - Include perspectives that genuinely challenge the primary findings
+
+**5. What Remains Uncertain** (~300-400 words)
+   - What the analysis cannot determine
+   - Sensitivity to assumptions
+   - Gaps and limitations acknowledged transparently
+   - **Resist false resolution** — if it's genuinely unclear, say so
+
+**6. Implications & Insights** (~400-600 words)
+   - Patterns that emerge; what findings suggest about broader questions
+   - **Clearly separated from findings**: "If these findings hold..." / "This suggests..."
+   - Different stakeholders may draw different implications — acknowledge this
+
+**7. Practical Considerations** (~400-500 words)
+   - Conditional, not prescriptive: "Given these findings, one might consider..."
+   - Acknowledge that practical application depends on values and context
+   - **Avoid imperatives**
+
+### SPECIAL: RECOMMENDATION/CHOICE QUERIES (Best X, Hotels, Restaurants, Products, GOAT, etc.)
+
+If the analysis is about finding "the best" option (restaurants, hotels, products, athletes, etc.),
+include a **Candidate Comparison Table**:
+
+| Option | Known For | Rating | Price | Best For |
+|--------|-----------|--------|-------|----------|
+| Name   | Key differentiator | Score | Range | User type |
+
+Frame as: "Here are your options with their differentiators. 'Best' depends on your priorities."
+
+**8. Closing Reflection** (~200-300 words)
+   - The question may be more interesting than any single answer
+   - What this reveals about the topic or about how we think about such questions
+   - End thoughtfully, not triumphantly
+
+### WHAT TO AVOID:
+
+**Rhetorical patterns to eliminate:**
+- "Not X, but Y" / "It's not A, it's B" (repetitive, implies reader was wrong)
+- "You might think... but actually..." (condescending)
+- "The myth of..." / "What everyone gets wrong..." (adversarial clickbait)
+- "Here's what X really means" (implies reader ignorance)
+- Forced binary framings when reality is probabilistic
+
+**Framing to avoid:**
+- Treating alternative interpretations as "distorted" or "ideologically biased"
+- Manufacturing false certainty when genuine uncertainty exists
+- Advocacy dressed as analysis
+- Cherry-picking for clean narratives while hiding complicating evidence
+
+### FORMATTING:
+- Use # for title, ## for major sections, ### for subsections
+- Use **bold** for key terms, *italics* for publications
+- Use > blockquotes for striking findings
+- Numbered citations [1], [2] matching bibliography
+- TARGET LENGTH: 4000-5500 words
+- DO NOT include a References/Bibliography section (it will be appended automatically)
+
+### NO EXPLICIT FRAMEWORK REFERENCES:
+**Never use**: "K0", "K1", "H1", "posterior probability", "likelihood ratio", "BFIH", "Bayesian" (technical), "under paradigm..."
+
+**Do use**: "the evidence-weighted assessment," "from an empirical perspective," "analysis found..."
+
+---
+
+BFIH ANALYSIS REPORT TO TRANSFORM:
+
+{report}
+
+---
+
+Generate the article now. Report findings with calibrated confidence, preserve genuine complexity, acknowledge uncertainty honestly, and engage the reader's curiosity without lecturing or advocacy.
+
+CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not summarize or abbreviate. Expand on each section with specific details, examples, and analysis from the source report."""
+
+    def _get_atlantic_style_prompt(self, report: str) -> str:
+        """
+        Original style: Atlantic-style longform with K0 primacy framing.
+        More adversarial/corrective tone, emphasizes how ideological lenses diverge.
+        """
+        return f"""Transform the following BFIH analysis report into an in-depth magazine article in the style of The Atlantic or longform explanatory journalism.
 
 ## CRITICAL REQUIREMENTS:
 
@@ -3911,6 +4029,55 @@ BFIH ANALYSIS REPORT TO TRANSFORM:
 Generate the complete magazine-style article now. Make it rich, detailed, and genuinely illuminating. The goal is that a reader who knows nothing about this topic could read your article and come away with deep understanding and new perspectives. This should be a piece worthy of publication in a major magazine.
 
 CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not summarize or abbreviate. Expand on each section with specific details, examples, and analysis from the source report. A short response is unacceptable."""
+
+    def generate_magazine_synopsis(self, report: str, scenario_id: str, style: str = "gawande") -> str:
+        """
+        Generate a plain-language magazine-style synopsis from a BFIH analysis report.
+
+        This transforms the technical academic report into an engaging magazine article
+        that is accessible to general readers while maintaining analytical rigor and
+        citing sources.
+
+        Args:
+            report: The full BFIH analysis report (markdown)
+            scenario_id: The scenario ID for naming the output file
+            style: Synopsis style - "gawande" (default, science narrative with wonder
+                   and calibrated confidence) or "atlantic" (corrective K0-primacy style)
+
+        Returns:
+            The magazine synopsis as markdown text
+        """
+        logger.info(f"Generating magazine synopsis for scenario: {scenario_id}")
+
+        # Extract the bibliography section from the original report to preserve it exactly
+        bibliography_section = ""
+        bibliography_markers = ["## 9. Bibliography", "## Bibliography", "## References"]
+        for marker in bibliography_markers:
+            if marker in report:
+                # Find the bibliography section and everything after it
+                bib_start = report.find(marker)
+                # Find where bibliography ends (next major section or end of report)
+                remaining = report[bib_start:]
+                # Look for the next ## section after bibliography, or end of file
+                next_section = remaining.find("\n## ", len(marker))
+                if next_section != -1:
+                    bibliography_section = remaining[:next_section].strip()
+                else:
+                    # Take everything to the end, but stop at "End of BFIH" marker if present
+                    end_marker = remaining.find("**End of BFIH")
+                    if end_marker != -1:
+                        bibliography_section = remaining[:end_marker].strip()
+                    else:
+                        bibliography_section = remaining.strip()
+                break
+
+        # Select prompt based on style
+        if style == "atlantic":
+            prompt = self._get_atlantic_style_prompt(report)
+            logger.info("Using Atlantic-style (corrective) prompt")
+        else:
+            prompt = self._get_gawande_style_prompt(report)
+            logger.info("Using Gawande-style (science narrative) prompt")
 
         try:
             response = self.client.responses.create(
@@ -4159,6 +4326,18 @@ if __name__ == "__main__":
         choices=AVAILABLE_REASONING_MODELS,
         help=f"Reasoning model to use (default: o3-mini). Options: {', '.join(AVAILABLE_REASONING_MODELS)}"
     )
+    parser.add_argument(
+        "--synopsis",
+        action="store_true",
+        help="Generate a magazine-style synopsis after analysis"
+    )
+    parser.add_argument(
+        "--synopsis-style",
+        type=str,
+        default="gawande",
+        choices=["gawande", "atlantic"],
+        help="Synopsis style: 'gawande' (science narrative, default) or 'atlantic' (original corrective style)"
+    )
 
     args = parser.parse_args()
 
@@ -4200,6 +4379,19 @@ if __name__ == "__main__":
 
         print(f"\nSaved: {json_file}")
         print(f"Saved: {md_file}")
+
+        # Generate synopsis if requested
+        if args.synopsis:
+            print(f"\nGenerating magazine synopsis ({args.synopsis_style} style)...")
+            synopsis = orchestrator.generate_magazine_synopsis(
+                report=result.report,
+                scenario_id=result.scenario_id,
+                style=args.synopsis_style
+            )
+            synopsis_file = f"{base_name}_synopsis.md"
+            with open(synopsis_file, "w") as f:
+                f.write(synopsis)
+            print(f"Saved: {synopsis_file}")
     else:
         # Run default example
         example_autonomous_analysis()
