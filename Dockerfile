@@ -1,3 +1,21 @@
+# Stage 1: Build React frontend
+FROM node:20-slim AS frontend-builder
+
+WORKDIR /frontend
+
+# Copy package files
+COPY bfih-frontend/package*.json ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy frontend source
+COPY bfih-frontend/ ./
+
+# Build the frontend
+RUN npm run build
+
+# Stage 2: Python backend with frontend
 FROM python:3.11-slim
 
 # Set working directory
@@ -21,6 +39,9 @@ COPY setup_vector_store.py ./
 
 # Copy treatise PDF for user vector store setup
 COPY Intellectual-Honesty_rev-4.pdf ./assets/
+
+# Copy built frontend from Stage 1
+COPY --from=frontend-builder /frontend/dist ./static
 
 # Create data directory
 RUN mkdir -p ./data/analyses ./data/scenarios ./data/status ./logs ./assets

@@ -11,8 +11,10 @@ Endpoints:
 
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from pathlib import Path
 import json
 import logging
 from typing import Dict, Optional
@@ -819,6 +821,36 @@ async def startup_event():
 async def shutdown_event():
     """Cleanup on shutdown"""
     logger.info("BFIH API Server shutting down...")
+
+
+# ============================================================================
+# STATIC FILE SERVING (Frontend)
+# ============================================================================
+
+# Path to built frontend files
+FRONTEND_DIR = Path(__file__).parent / "static"
+
+# Mount static assets (JS, CSS, images) if frontend is built
+if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
+    # Serve static assets from /assets/
+    assets_dir = FRONTEND_DIR / "assets"
+    if assets_dir.exists():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static-assets")
+
+    # Catch-all route for SPA - must be AFTER all API routes
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        """Serve the frontend SPA for any non-API routes."""
+        # Check if requesting a specific file that exists
+        file_path = FRONTEND_DIR / full_path
+        if full_path and file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+        # Otherwise serve index.html for SPA routing
+        return FileResponse(FRONTEND_DIR / "index.html")
+
+    logger.info(f"Frontend mounted from {FRONTEND_DIR}")
+else:
+    logger.warning(f"Frontend not found at {FRONTEND_DIR} - API-only mode")
 
 
 if __name__ == "__main__":
