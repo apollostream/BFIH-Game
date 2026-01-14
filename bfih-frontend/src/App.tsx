@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 
@@ -16,6 +17,12 @@ import { DebriefPage } from './pages/game/DebriefPage';
 
 // Layout
 import { Header } from './components/layout/Header';
+
+// Components
+import { SetupModal } from './components/ui';
+
+// API
+import { isSetupComplete } from './api';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -44,6 +51,29 @@ function AnimatedRoutes() {
 }
 
 function App() {
+  const [showSetup, setShowSetup] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    // Check if setup is needed on initial load
+    const setupDone = isSetupComplete();
+    setShowSetup(!setupDone);
+    setIsReady(true);
+  }, []);
+
+  const handleSetupComplete = () => {
+    setShowSetup(false);
+  };
+
+  // Don't render until we've checked setup status
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-surface-0 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-accent border-t-transparent" />
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-surface-0 text-text-primary">
@@ -51,6 +81,12 @@ function App() {
         <main>
           <AnimatedRoutes />
         </main>
+
+        {/* Setup modal for first-time users */}
+        <SetupModal
+          isOpen={showSetup}
+          onComplete={handleSetupComplete}
+        />
       </div>
     </BrowserRouter>
   );

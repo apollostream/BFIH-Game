@@ -7,6 +7,7 @@ export { Input, Textarea } from './Input';
 export { Slider, RangeSlider } from './Slider';
 export { Tooltip, InfoTooltip, BayesianTooltip } from './Tooltip';
 export { Modal, ConfirmDialog } from './Modal';
+export { SetupModal } from './SetupModal';
 export {
   Skeleton,
   SkeletonText,

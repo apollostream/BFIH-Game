@@ -118,8 +118,25 @@ def clamp_probability(p: float, context: str = "") -> float:
 
 
 # OpenAI Configuration
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
+# Priority: 1. Environment variables, 2. Config file (~/.config/bfih/config.json)
+try:
+    from bfih_config import load_config as load_bfih_config
+    _config = load_bfih_config()
+    OPENAI_API_KEY = _config.openai_api_key
+    TREATISE_VECTOR_STORE_ID = _config.vector_store_id
+    if OPENAI_API_KEY:
+        logger.info("Loaded credentials from config file")
+except ImportError:
+    # Config module not available, use env vars only
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+    TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
+
+# Environment variables always override config file
+if os.getenv("OPENAI_API_KEY"):
+    OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+if os.getenv("TREATISE_VECTOR_STORE_ID"):
+    TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
+
 MODEL = "gpt-4o"
 # Reasoning model for cognitively demanding tasks (paradigm/hypothesis/prior/likelihood)
 # Options: o3-mini (default), o3, o4-mini, gpt-5, gpt-5.2
@@ -159,14 +176,17 @@ Maintain maximum intellectual rigor throughout this phase.
 
 """
 
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable not set")
-
-# Create OpenAI client with extended timeout for long-running operations
-client = OpenAI(
-    api_key=OPENAI_API_KEY,
-    timeout=httpx.Timeout(300.0, connect=30.0)  # 5 min total, 30s connect
-)
+# Create default OpenAI client if credentials are available
+# For multi-tenant mode, credentials can be provided per-request instead
+if OPENAI_API_KEY:
+    client = OpenAI(
+        api_key=OPENAI_API_KEY,
+        timeout=httpx.Timeout(300.0, connect=30.0)  # 5 min total, 30s connect
+    )
+    logger.info("Default OpenAI client initialized")
+else:
+    client = None
+    logger.info("No default API key configured - credentials must be provided per-request")
 
 
 # ============================================================================
@@ -214,9 +234,23 @@ class BFIHOrchestrator:
     Orchestrates full BFIH analysis using OpenAI Responses API
     Coordinates web search, file search, and code execution
     """
-    
-    def __init__(self, vector_store_id: Optional[str] = None):
-        self.client = client
+
+    def __init__(self, vector_store_id: Optional[str] = None, api_key: Optional[str] = None):
+        # Support per-request API keys for multi-tenant deployment
+        if api_key:
+            self.client = OpenAI(
+                api_key=api_key,
+                timeout=httpx.Timeout(300.0, connect=30.0)
+            )
+        elif client is not None:
+            self.client = client  # Use global client from config/env vars
+        else:
+            raise ValueError(
+                "No OpenAI API key configured. Either:\n"
+                "  1. Run 'python bfih_user_setup.py' to set up your credentials, or\n"
+                "  2. Set OPENAI_API_KEY environment variable, or\n"
+                "  3. Provide api_key parameter when creating the orchestrator"
+            )
         self.vector_store_id = vector_store_id or TREATISE_VECTOR_STORE_ID
         self.model = MODEL
         self.reasoning_model = REASONING_MODEL

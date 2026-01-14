@@ -67,8 +67,9 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Binary/large files
+# Binary/large files (except treatise needed for deployment)
 *.pdf
+!Intellectual-Honesty_rev-4.pdf
 
 # HTML exports
 README.html
