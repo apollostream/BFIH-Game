@@ -3708,6 +3708,329 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         return filename
 
     # =========================================================================
+    # BIBLIOGRAPHY CLEANUP
+    # =========================================================================
+
+    def cleanup_bibliography(self, report: str) -> str:
+        """
+        Deduplicate and renumber bibliography entries, updating citations in main text.
+
+        Deduplication is based on:
+        - Normalized title similarity (fuzzy matching)
+        - Overlapping authors
+        - Same publication/journal
+
+        Args:
+            report: The full BFIH report with bibliography
+
+        Returns:
+            Report with deduplicated, renumbered bibliography and updated citations
+        """
+        import re
+        from difflib import SequenceMatcher
+
+        logger.info("Starting bibliography cleanup...")
+
+        # Find bibliography section
+        bib_markers = ["## 9. Bibliography", "## Bibliography", "## References"]
+        bib_start = -1
+        bib_marker_used = ""
+        for marker in bib_markers:
+            if marker in report:
+                bib_start = report.find(marker)
+                bib_marker_used = marker
+                break
+
+        if bib_start == -1:
+            logger.warning("No bibliography section found, skipping cleanup")
+            return report
+
+        # Split into main text and bibliography
+        main_text = report[:bib_start]
+        bib_section = report[bib_start:]
+
+        # Find where bibliography ends (next major section or end)
+        bib_end_match = re.search(r'\n## (?!9\. Bibliography|Bibliography|References)', bib_section)
+        if bib_end_match:
+            bib_content = bib_section[:bib_end_match.start()]
+            after_bib = bib_section[bib_end_match.start():]
+        else:
+            # Check for end marker
+            end_marker = bib_section.find("**End of BFIH")
+            if end_marker != -1:
+                bib_content = bib_section[:end_marker]
+                after_bib = bib_section[end_marker:]
+            else:
+                bib_content = bib_section
+                after_bib = ""
+
+        # Parse bibliography entries - handle both formats:
+        # [1] Author. Title...  OR  1. Author. Title...
+        entry_pattern = r'(?:^\[(\d+)\]|\n(\d+)\.\s+)(.+?)(?=(?:\n\[?\d+[\].]|\Z))'
+        entries = []
+
+        # Try numbered list format first (1. Author...)
+        numbered_pattern = r'^(\d+)\.\s+(.+?)(?=\n\d+\.\s+|\n\n|\Z)'
+        numbered_matches = list(re.finditer(numbered_pattern, bib_content, re.MULTILINE | re.DOTALL))
+
+        if numbered_matches:
+            for match in numbered_matches:
+                num = int(match.group(1))
+                content = match.group(2).strip()
+                entries.append({'num': num, 'content': content, 'original': match.group(0)})
+        else:
+            # Try bracketed format [1] Author...
+            bracketed_pattern = r'\[(\d+)\]\s*(.+?)(?=\[\d+\]|\Z)'
+            bracketed_matches = list(re.finditer(bracketed_pattern, bib_content, re.DOTALL))
+            for match in bracketed_matches:
+                num = int(match.group(1))
+                content = match.group(2).strip()
+                entries.append({'num': num, 'content': content, 'original': match.group(0)})
+
+        if not entries:
+            logger.warning("Could not parse bibliography entries, skipping cleanup")
+            return report
+
+        logger.info(f"Parsed {len(entries)} bibliography entries")
+
+        # Extract metadata from each entry for comparison
+        def extract_metadata(content: str) -> dict:
+            """Extract title, authors, publication, URL from entry."""
+            metadata = {'title': '', 'authors': [], 'publication': '', 'url': '', 'year': ''}
+
+            # Extract URL
+            url_match = re.search(r'https?://[^\s\)]+', content)
+            if url_match:
+                metadata['url'] = url_match.group(0).rstrip('.,;')
+
+            # Extract year
+            year_match = re.search(r'\((\d{4})\)', content)
+            if year_match:
+                metadata['year'] = year_match.group(1)
+
+            # Extract title - usually between year and "Retrieved" or journal name
+            # Pattern: Authors (Year). Title. Publication...
+            title_match = re.search(r'\(\d{4}[^)]*\)[.,]?\s*(.+?)(?:\.\s*(?:Retrieved|In\s|[A-Z][a-z]+\s+(?:Review|Journal|Quarterly|Magazine)))', content)
+            if title_match:
+                metadata['title'] = title_match.group(1).strip().rstrip('.')
+            else:
+                # Fallback: take text between year and first URL or end
+                fallback_match = re.search(r'\(\d{4}[^)]*\)[.,]?\s*(.+?)(?:Retrieved|https?://)', content)
+                if fallback_match:
+                    metadata['title'] = fallback_match.group(1).strip().rstrip('.')
+
+            # Extract authors - text before the year
+            author_match = re.search(r'^([^(]+)\(', content)
+            if author_match:
+                author_text = author_match.group(1).strip().rstrip('.,')
+                # Split on common separators
+                authors = re.split(r',\s*&\s*|,\s*|\s+&\s+', author_text)
+                # Filter out generic placeholders that shouldn't count as real authors
+                generic_authors = {
+                    'et al', 'et al.', 'author', 'authors', 'author(s)',
+                    'author unspecified', 'author unknown', 'unknown',
+                    'anonymous', 'n.d.', 'n.d', 'various', 'staff'
+                }
+                metadata['authors'] = [
+                    a.strip() for a in authors
+                    if a.strip() and a.strip().lower().strip('()') not in generic_authors
+                ]
+
+            # Extract publication/journal
+            pub_patterns = [
+                r'(?:In\s+)?([A-Z][a-zA-Z\s&]+(?:Review|Journal|Quarterly|Magazine|Nexus|Ethics|Episteme|Synthese))',
+                r'(?:In\s+)?([A-Z][a-zA-Z\s&]+Press)',
+            ]
+            for pattern in pub_patterns:
+                pub_match = re.search(pattern, content)
+                if pub_match:
+                    metadata['publication'] = pub_match.group(1).strip()
+                    break
+
+            return metadata
+
+        # Extract metadata for all entries
+        for entry in entries:
+            entry['metadata'] = extract_metadata(entry['content'])
+
+        def normalize_title(title: str) -> str:
+            """Normalize title for comparison."""
+            # Lowercase, remove punctuation, collapse whitespace
+            title = title.lower()
+            title = re.sub(r'[^\w\s]', ' ', title)
+            title = re.sub(r'\s+', ' ', title).strip()
+            return title
+
+        def title_similarity(t1: str, t2: str) -> float:
+            """Calculate similarity between two titles."""
+            n1, n2 = normalize_title(t1), normalize_title(t2)
+            if not n1 or not n2:
+                return 0.0
+            return SequenceMatcher(None, n1, n2).ratio()
+
+        def normalize_author(author: str) -> str:
+            """Normalize author name for comparison."""
+            # Extract last name (usually first word or after comma)
+            author = author.strip().lower()
+            parts = author.split(',')
+            if len(parts) > 1:
+                return parts[0].strip()
+            parts = author.split()
+            if parts:
+                # Last name is usually last, but could be first for "LastName, F."
+                return parts[-1] if len(parts) > 1 else parts[0]
+            return author
+
+        def authors_overlap(a1: list, a2: list) -> bool:
+            """Check if author lists have significant overlap."""
+            if not a1 or not a2:
+                return False
+            norm1 = set(normalize_author(a) for a in a1)
+            norm2 = set(normalize_author(a) for a in a2)
+            # Consider overlap if any author matches
+            return bool(norm1 & norm2)
+
+        def normalize_url(url: str) -> str:
+            """Normalize URL for comparison."""
+            url = url.lower().rstrip('/')
+            # Remove common variations
+            url = re.sub(r'/article-abstract/', '/article/', url)
+            url = re.sub(r'/pdf/?$', '', url)
+            url = re.sub(r'https?://(www\.)?', '', url)
+            return url
+
+        def are_duplicates(e1: dict, e2: dict) -> bool:
+            """Determine if two entries are duplicates."""
+            m1, m2 = e1['metadata'], e2['metadata']
+
+            # Same URL (normalized)
+            if m1['url'] and m2['url']:
+                if normalize_url(m1['url']) == normalize_url(m2['url']):
+                    return True
+
+            # High title similarity + same publication or overlapping authors
+            if m1['title'] and m2['title']:
+                sim = title_similarity(m1['title'], m2['title'])
+                if sim > 0.85:
+                    # Very high similarity - likely duplicate
+                    if sim > 0.95:
+                        return True
+                    # High similarity + same publication
+                    if m1['publication'] and m2['publication']:
+                        if m1['publication'].lower() == m2['publication'].lower():
+                            return True
+                    # High similarity + overlapping authors
+                    if authors_overlap(m1['authors'], m2['authors']):
+                        return True
+
+            return False
+
+        # Find duplicate groups using union-find
+        n = len(entries)
+        parent = list(range(n))
+
+        def find(x):
+            if parent[x] != x:
+                parent[x] = find(parent[x])
+            return parent[x]
+
+        def union(x, y):
+            px, py = find(x), find(y)
+            if px != py:
+                parent[px] = py
+
+        # Compare all pairs
+        for i in range(n):
+            for j in range(i + 1, n):
+                if are_duplicates(entries[i], entries[j]):
+                    union(i, j)
+                    logger.debug(f"Found duplicate: [{entries[i]['num']}] and [{entries[j]['num']}]")
+
+        # Group entries by their root
+        groups = {}
+        for i in range(n):
+            root = find(i)
+            if root not in groups:
+                groups[root] = []
+            groups[root].append(i)
+
+        # Count duplicates found
+        dup_count = sum(1 for g in groups.values() if len(g) > 1)
+        logger.info(f"Found {dup_count} duplicate groups")
+
+        # For each group, pick the best entry (most complete) and build mapping
+        old_to_new = {}  # old_num -> new_num
+        new_entries = []
+        new_num = 1
+
+        # Sort groups by the minimum original entry number to preserve order
+        sorted_groups = sorted(groups.items(), key=lambda x: min(entries[i]['num'] for i in x[1]))
+
+        for root, group_indices in sorted_groups:
+            group_entries = [entries[i] for i in group_indices]
+
+            # Pick the best entry - prefer one with more metadata, longer content
+            def entry_quality(e):
+                m = e['metadata']
+                score = 0
+                if m['title']: score += 2
+                if m['authors']: score += len(m['authors'])
+                if m['publication']: score += 1
+                if m['url']: score += 1
+                if m['year']: score += 1
+                score += len(e['content']) / 100  # Slight preference for longer entries
+                return score
+
+            best_entry = max(group_entries, key=entry_quality)
+
+            # Map all old numbers in this group to the new number
+            for e in group_entries:
+                old_to_new[e['num']] = new_num
+
+            new_entries.append({
+                'num': new_num,
+                'content': best_entry['content'],
+                'original_nums': [e['num'] for e in group_entries]
+            })
+            new_num += 1
+
+        logger.info(f"Reduced from {len(entries)} to {len(new_entries)} unique entries")
+
+        # Update citations in main text
+        def replace_citation(match):
+            old_num = int(match.group(1))
+            new_num = old_to_new.get(old_num, old_num)
+            return f'[{new_num}]'
+
+        # Replace [N] citations
+        updated_main_text = re.sub(r'\[(\d+)\]', replace_citation, main_text)
+
+        # Count how many citations were updated
+        citation_changes = sum(1 for old, new in old_to_new.items() if old != new)
+        logger.info(f"Updated {citation_changes} citation number mappings")
+
+        # Rebuild bibliography section
+        # Find the header and any intro text
+        header_match = re.search(r'(## (?:9\. )?(?:Bibliography|References).*?\n+(?:\*\*[^*]+\*\*\n+)?)', bib_content)
+        if header_match:
+            bib_header = header_match.group(1)
+        else:
+            bib_header = f"{bib_marker_used}\n\n**References (APA Format):**\n\n"
+
+        # Build new bibliography content
+        new_bib_lines = [bib_header.rstrip() + "\n\n"]
+        for entry in new_entries:
+            new_bib_lines.append(f"{entry['num']}. {entry['content']}\n\n")
+
+        new_bib_content = ''.join(new_bib_lines)
+
+        # Reassemble report
+        cleaned_report = updated_main_text + new_bib_content + after_bib
+
+        logger.info("Bibliography cleanup complete")
+        return cleaned_report
+
+    # =========================================================================
     # SYNOPSIS STYLE PROMPTS
     # =========================================================================
 
@@ -4049,7 +4372,10 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
         """
         logger.info(f"Generating magazine synopsis for scenario: {scenario_id}")
 
-        # Extract the bibliography section from the original report to preserve it exactly
+        # Clean up bibliography first (deduplicate and renumber)
+        report = self.cleanup_bibliography(report)
+
+        # Extract the bibliography section from the cleaned report to preserve it exactly
         bibliography_section = ""
         bibliography_markers = ["## 9. Bibliography", "## Bibliography", "## References"]
         for marker in bibliography_markers:
