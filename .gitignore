@@ -32,7 +32,7 @@ bfih_report_auto_*.json
 bfih_report_auto_*.html
 bfih-report-auto_*.md
 bfih-report-auto_*.html
-auto_*_magazine_synopsis.md
+auto_*.md
 auto_*.html
 uploaded_files.json
 *_v2.json
