@@ -296,25 +296,30 @@ async def setup_user(request: SetupRequest):
                 detail="Invalid API key. Please check your OpenAI API key and try again."
             )
 
-        # Create vector store
+        # Create vector store (SDK 2.x uses client.vector_stores, not client.beta.vector_stores)
         logger.info("Creating vector store for user...")
-        vs = user_client.beta.vector_stores.create(name="BFIH_Methodology")
+        vs = user_client.vector_stores.create(name="BFIH_Methodology")
         vector_store_id = vs.id
         logger.info(f"Vector store created: {vector_store_id}")
 
-        # Upload treatise PDF
+        # Upload treatise PDF - first upload file, then add to vector store
         logger.info(f"Uploading treatise from {treatise_path}...")
         with open(treatise_path, "rb") as f:
-            file_response = user_client.beta.vector_stores.files.create(
-                vector_store_id=vector_store_id,
-                file=f
-            )
-        logger.info(f"Treatise uploaded: {file_response.id}")
+            # Upload file to OpenAI
+            uploaded_file = user_client.files.create(file=f, purpose="assistants")
+        logger.info(f"File uploaded: {uploaded_file.id}")
+
+        # Add file to vector store
+        file_response = user_client.vector_stores.files.create(
+            vector_store_id=vector_store_id,
+            file_id=uploaded_file.id
+        )
+        logger.info(f"File added to vector store: {file_response.id}")
 
         # Wait for processing (with timeout)
         logger.info("Waiting for file processing...")
         for i in range(60):  # Wait up to 60 seconds
-            vs_files = user_client.beta.vector_stores.files.list(vector_store_id)
+            vs_files = user_client.vector_stores.files.list(vector_store_id)
             if vs_files.data:
                 status = vs_files.data[0].status
                 if status == "completed":
