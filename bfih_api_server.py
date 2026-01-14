@@ -830,24 +830,50 @@ async def shutdown_event():
 # Path to built frontend files
 FRONTEND_DIR = Path(__file__).parent / "static"
 
-# Mount static assets (JS, CSS, images) if frontend is built
+# Mount static assets if they exist
+assets_dir = FRONTEND_DIR / "assets"
+if assets_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static-assets")
+    logger.info(f"Static assets mounted from {assets_dir}")
+
+
+# Root handler - explicit to ensure / is captured
+@app.get("/")
+async def serve_root():
+    """Serve the frontend index.html at root."""
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(index_path)
+    # Fallback: return API info if no frontend
+    return JSONResponse({
+        "name": "BFIH API Server",
+        "version": "1.0",
+        "docs": "/docs",
+        "status": "Frontend not found - API-only mode"
+    })
+
+
+# Catch-all route for SPA - must be AFTER all API routes
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    """Serve the frontend SPA for any non-API routes."""
+    index_path = FRONTEND_DIR / "index.html"
+
+    # Check if requesting a specific file that exists
+    file_path = FRONTEND_DIR / full_path
+    if full_path and file_path.exists() and file_path.is_file():
+        return FileResponse(file_path)
+
+    # Serve index.html for SPA routing if it exists
+    if index_path.exists():
+        return FileResponse(index_path)
+
+    # No frontend available
+    raise HTTPException(status_code=404, detail="Not found")
+
+
+# Log frontend status
 if FRONTEND_DIR.exists() and (FRONTEND_DIR / "index.html").exists():
-    # Serve static assets from /assets/
-    assets_dir = FRONTEND_DIR / "assets"
-    if assets_dir.exists():
-        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="static-assets")
-
-    # Catch-all route for SPA - must be AFTER all API routes
-    @app.get("/{full_path:path}")
-    async def serve_spa(full_path: str):
-        """Serve the frontend SPA for any non-API routes."""
-        # Check if requesting a specific file that exists
-        file_path = FRONTEND_DIR / full_path
-        if full_path and file_path.exists() and file_path.is_file():
-            return FileResponse(file_path)
-        # Otherwise serve index.html for SPA routing
-        return FileResponse(FRONTEND_DIR / "index.html")
-
     logger.info(f"Frontend mounted from {FRONTEND_DIR}")
 else:
     logger.warning(f"Frontend not found at {FRONTEND_DIR} - API-only mode")
