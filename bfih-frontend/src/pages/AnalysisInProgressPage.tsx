@@ -116,6 +116,7 @@ export function AnalysisInProgressPage() {
               domain: config?.paradigms?.[0]?.name || 'General',
               difficulty_level: 'intermediate',
               scenario_config: config,
+              model: fullResult.metadata?.model,
             });
             console.log('Scenario stored to library:', fullResult.scenario_id);
           } catch (storeErr) {

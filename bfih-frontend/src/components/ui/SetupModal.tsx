@@ -10,6 +10,7 @@ interface SetupModalProps {
 
 export function SetupModal({ isOpen, onComplete }: SetupModalProps) {
   const [apiKey, setApiKey] = useState('');
+  const [displayName, setDisplayName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'processing' | 'success'>('input');
@@ -28,11 +29,23 @@ export function SetupModal({ isOpen, onComplete }: SetupModalProps) {
       return;
     }
 
+    if (!displayName.trim()) {
+      setError('Please enter a display name');
+      return;
+    }
+
+    // Validate display name (alphanumeric, underscores, hyphens, 3-20 chars)
+    const nameRegex = /^[a-zA-Z0-9_-]{3,20}$/;
+    if (!nameRegex.test(displayName.trim())) {
+      setError('Display name must be 3-20 characters (letters, numbers, underscores, hyphens)');
+      return;
+    }
+
     setIsLoading(true);
     setStep('processing');
 
     try {
-      const response = await runSetup(apiKey.trim());
+      const response = await runSetup(apiKey.trim(), displayName.trim());
 
       if (response.error) {
         setError(response.error);
@@ -82,6 +95,30 @@ export function SetupModal({ isOpen, onComplete }: SetupModalProps) {
             </div>
 
             <div>
+              <label htmlFor="displayName" className="block text-sm font-medium text-text-primary mb-2">
+                Display Name
+              </label>
+              <input
+                type="text"
+                id="displayName"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                placeholder="your_name"
+                autoComplete="off"
+                className={cn(
+                  'w-full px-4 py-3 rounded-lg',
+                  'bg-surface-0 border border-border',
+                  'text-text-primary placeholder:text-text-muted',
+                  'focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent',
+                  'text-sm'
+                )}
+              />
+              <p className="mt-1 text-xs text-text-muted">
+                This name will appear on scenarios you create (3-20 characters)
+              </p>
+            </div>
+
+            <div>
               <label htmlFor="apiKey" className="block text-sm font-medium text-text-primary mb-2">
                 OpenAI API Key
               </label>
@@ -97,14 +134,14 @@ export function SetupModal({ isOpen, onComplete }: SetupModalProps) {
                   'bg-surface-0 border border-border',
                   'text-text-primary placeholder:text-text-muted',
                   'focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent',
-                  'font-mono text-sm',
-                  error && 'border-error focus:ring-error'
+                  'font-mono text-sm'
                 )}
               />
-              {error && (
-                <p className="mt-2 text-sm text-error">{error}</p>
-              )}
             </div>
+
+            {error && (
+              <p className="text-sm text-error">{error}</p>
+            )}
 
             <div className="p-3 bg-warning/10 border border-warning/30 rounded-lg">
               <p className="text-sm text-warning">
@@ -116,7 +153,7 @@ export function SetupModal({ isOpen, onComplete }: SetupModalProps) {
 
           <button
             type="submit"
-            disabled={isLoading || !apiKey.trim()}
+            disabled={isLoading || !apiKey.trim() || !displayName.trim()}
             className={cn(
               'w-full py-3 rounded-lg font-medium',
               'bg-accent text-white',

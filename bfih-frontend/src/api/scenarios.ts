@@ -37,6 +37,7 @@ export async function storeScenario(scenario: {
   domain: string;
   difficulty_level: string;
   scenario_config: ScenarioConfig;
+  model?: string;
 }): Promise<{ scenario_id: string; status: string; created_at: string }> {
   const response = await post<{ scenario_id: string; status: string; created_at: string }>(
     '/api/scenario',

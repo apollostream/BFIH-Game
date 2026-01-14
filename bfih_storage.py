@@ -4,7 +4,8 @@ Handles persistence of analysis results, scenarios, and metadata
 
 Supports:
 - File-based storage (JSON) for MVP
-- PostgreSQL integration (for production)
+- Google Cloud Storage (for production)
+- PostgreSQL integration (optional)
 - Redis caching layer
 """
 
@@ -15,8 +16,17 @@ from typing import Dict, List, Optional
 from pathlib import Path
 from datetime import datetime
 from abc import ABC, abstractmethod
+from io import BytesIO
 
 logger = logging.getLogger(__name__)
+
+# Try to import GCS - optional dependency
+try:
+    from google.cloud import storage as gcs
+    GCS_AVAILABLE = True
+except ImportError:
+    GCS_AVAILABLE = False
+    logger.info("google-cloud-storage not installed, GCS backend unavailable")
 
 
 # ============================================================================
@@ -174,12 +184,14 @@ class FileStorageBackend(StorageBackend):
                         metadata = config.get('scenario_metadata', {})
                         narrative = config.get('scenario_narrative', {})
                         wrapper_id = data.get('scenario_id')
+                        creator = data.get('creator', '')
                     else:
                         # Direct format
                         config = data
                         metadata = config.get('scenario_metadata', {})
                         narrative = config.get('scenario_narrative', {})
                         wrapper_id = None
+                        creator = metadata.get('creator', '')
 
                     # Get title from multiple possible locations (prefer research_question as it's the proposition)
                     title = (
@@ -193,18 +205,238 @@ class FileStorageBackend(StorageBackend):
                     # Get scenario_id
                     scenario_id = wrapper_id or metadata.get('scenario_id') or config.get('scenario_id') or f.stem
 
+                    # Get topic from domain or extract from metadata
+                    topic = metadata.get('topic') or metadata.get('domain', 'general')
+
+                    # Get model from config or metadata
+                    model = (
+                        data.get('model') or
+                        config.get('reasoning_model') or
+                        metadata.get('model') or
+                        ''
+                    )
+
                     summary = {
                         'scenario_id': scenario_id,
                         'title': title,
                         'domain': metadata.get('domain', 'general'),
+                        'topic': topic,
                         'difficulty_level': metadata.get('difficulty_level', 'medium'),
                         'created_date': metadata.get('created_date', ''),
+                        'creator': creator or metadata.get('creator', 'anonymous'),
+                        'model': model,
                     }
                     scenarios.append(summary)
 
             return scenarios
         except Exception as e:
             logger.error(f"Error listing scenarios: {str(e)}")
+            return []
+
+
+# ============================================================================
+# GOOGLE CLOUD STORAGE BACKEND (Production)
+# ============================================================================
+
+class GCSStorageBackend(StorageBackend):
+    """Google Cloud Storage backend for persistent, shared storage"""
+
+    def __init__(self, bucket_name: str, prefix: str = "bfih"):
+        if not GCS_AVAILABLE:
+            raise RuntimeError("google-cloud-storage package not installed")
+
+        self.client = gcs.Client()
+        self.bucket = self.client.bucket(bucket_name)
+        self.prefix = prefix
+
+        # Paths within the bucket
+        self.analysis_prefix = f"{prefix}/analyses"
+        self.scenario_prefix = f"{prefix}/scenarios"
+        self.status_prefix = f"{prefix}/status"
+
+        logger.info(f"GCSStorageBackend initialized: gs://{bucket_name}/{prefix}")
+
+    def _get_blob(self, path: str) -> gcs.Blob:
+        """Get a blob reference"""
+        return self.bucket.blob(path)
+
+    def _read_json(self, path: str) -> Optional[Dict]:
+        """Read JSON from GCS"""
+        try:
+            blob = self._get_blob(path)
+            if not blob.exists():
+                return None
+            content = blob.download_as_text()
+            return json.loads(content)
+        except Exception as e:
+            logger.error(f"Error reading from GCS {path}: {str(e)}")
+            return None
+
+    def _write_json(self, path: str, data: Dict) -> bool:
+        """Write JSON to GCS"""
+        try:
+            blob = self._get_blob(path)
+            blob.upload_from_string(
+                json.dumps(data, indent=2),
+                content_type='application/json'
+            )
+            return True
+        except Exception as e:
+            logger.error(f"Error writing to GCS {path}: {str(e)}")
+            return False
+
+    def _write_text(self, path: str, text: str) -> bool:
+        """Write text to GCS"""
+        try:
+            blob = self._get_blob(path)
+            blob.upload_from_string(text, content_type='text/plain')
+            return True
+        except Exception as e:
+            logger.error(f"Error writing text to GCS {path}: {str(e)}")
+            return False
+
+    def _read_text(self, path: str) -> Optional[str]:
+        """Read text from GCS"""
+        try:
+            blob = self._get_blob(path)
+            if not blob.exists():
+                return None
+            return blob.download_as_text()
+        except Exception as e:
+            logger.error(f"Error reading text from GCS {path}: {str(e)}")
+            return None
+
+    def store_analysis_result(self, analysis_id: str, result: Dict) -> bool:
+        """Store analysis result to GCS"""
+        path = f"{self.analysis_prefix}/{analysis_id}.json"
+        success = self._write_json(path, result)
+        if success:
+            logger.info(f"Stored analysis result to GCS: {analysis_id}")
+        return success
+
+    def retrieve_analysis_result(self, analysis_id: str) -> Optional[Dict]:
+        """Retrieve analysis result from GCS"""
+        path = f"{self.analysis_prefix}/{analysis_id}.json"
+        return self._read_json(path)
+
+    def store_scenario_config(self, scenario_id: str, config: Dict) -> bool:
+        """Store scenario configuration to GCS"""
+        path = f"{self.scenario_prefix}/{scenario_id}.json"
+        success = self._write_json(path, config)
+        if success:
+            logger.info(f"Stored scenario config to GCS: {scenario_id}")
+        return success
+
+    def retrieve_scenario_config(self, scenario_id: str) -> Optional[Dict]:
+        """Retrieve scenario configuration from GCS"""
+        path = f"{self.scenario_prefix}/{scenario_id}.json"
+        return self._read_json(path)
+
+    def store_analysis_request(self, analysis_id: str, request: Dict) -> bool:
+        """Store analysis request metadata to GCS"""
+        path = f"{self.status_prefix}/{analysis_id}_request.json"
+        return self._write_json(path, request)
+
+    def update_analysis_status(self, analysis_id: str, status: str) -> bool:
+        """Update analysis status in GCS"""
+        path = f"{self.status_prefix}/{analysis_id}_status.txt"
+        content = f"{status}\n{datetime.utcnow().isoformat()}"
+        success = self._write_text(path, content)
+        if success:
+            logger.info(f"Updated analysis status in GCS: {analysis_id} -> {status}")
+        return success
+
+    def get_analysis_status(self, analysis_id: str) -> Optional[Dict]:
+        """Get analysis status from GCS"""
+        path = f"{self.status_prefix}/{analysis_id}_status.txt"
+        content = self._read_text(path)
+        if not content:
+            return None
+
+        lines = content.strip().split('\n')
+        return {
+            "analysis_id": analysis_id,
+            "status": lines[0],
+            "timestamp": lines[1] if len(lines) > 1 else None
+        }
+
+    def list_scenarios(self, limit: int = 50, offset: int = 0) -> List[Dict]:
+        """List all stored scenarios from GCS with summary information"""
+        try:
+            # List all scenario blobs
+            blobs = list(self.bucket.list_blobs(prefix=f"{self.scenario_prefix}/"))
+
+            # Filter to only .json files and sort by updated time (newest first)
+            json_blobs = [b for b in blobs if b.name.endswith('.json')]
+            json_blobs.sort(key=lambda b: b.updated or datetime.min, reverse=True)
+
+            # Apply pagination
+            json_blobs = json_blobs[offset:offset+limit]
+
+            scenarios = []
+            for blob in json_blobs:
+                try:
+                    content = blob.download_as_text()
+                    data = json.loads(content)
+
+                    # Handle two formats (same logic as FileStorageBackend)
+                    if 'scenario_config' in data:
+                        config = data.get('scenario_config', {})
+                        metadata = config.get('scenario_metadata', {})
+                        narrative = config.get('scenario_narrative', {})
+                        wrapper_id = data.get('scenario_id')
+                        creator = data.get('creator', '')
+                    else:
+                        config = data
+                        metadata = config.get('scenario_metadata', {})
+                        narrative = config.get('scenario_narrative', {})
+                        wrapper_id = None
+                        creator = metadata.get('creator', '')
+
+                    # Extract scenario_id from blob name if not in data
+                    blob_id = blob.name.split('/')[-1].replace('.json', '')
+
+                    # Get title from multiple possible locations
+                    title = (
+                        narrative.get('research_question') or
+                        narrative.get('title') or
+                        metadata.get('title') or
+                        config.get('proposition') or
+                        f"Analysis {metadata.get('scenario_id', blob_id)}"
+                    )
+
+                    scenario_id = wrapper_id or metadata.get('scenario_id') or config.get('scenario_id') or blob_id
+
+                    # Get topic from domain or extract from title
+                    topic = metadata.get('topic') or metadata.get('domain', 'general')
+
+                    # Get model from config or metadata
+                    model = (
+                        data.get('model') or
+                        config.get('reasoning_model') or
+                        metadata.get('model') or
+                        ''
+                    )
+
+                    summary = {
+                        'scenario_id': scenario_id,
+                        'title': title,
+                        'domain': metadata.get('domain', 'general'),
+                        'topic': topic,
+                        'difficulty_level': metadata.get('difficulty_level', 'medium'),
+                        'created_date': metadata.get('created_date', ''),
+                        'creator': creator or metadata.get('creator', 'anonymous'),
+                        'model': model,
+                        'updated': blob.updated.isoformat() if blob.updated else '',
+                    }
+                    scenarios.append(summary)
+                except Exception as e:
+                    logger.error(f"Error parsing scenario blob {blob.name}: {str(e)}")
+                    continue
+
+            return scenarios
+        except Exception as e:
+            logger.error(f"Error listing scenarios from GCS: {str(e)}")
             return []
 
 

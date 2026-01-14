@@ -27,7 +27,7 @@ from bfih_orchestrator_fixed import (
     BFIHAnalysisRequest,
     BFIHAnalysisResult
 )
-from bfih_storage import StorageManager
+from bfih_storage import StorageManager, GCSStorageBackend, GCS_AVAILABLE
 
 
 # ============================================================================
@@ -86,7 +86,15 @@ app.add_middleware(
 # Note: orchestrator is now created per-request to support user-provided API keys
 # Default orchestrator for backwards compatibility (uses env vars if available)
 _default_orchestrator = None
-storage = StorageManager()
+
+# Initialize storage - use GCS if configured, otherwise file-based
+GCS_BUCKET_NAME = os.getenv("GCS_BUCKET_NAME")
+if GCS_BUCKET_NAME and GCS_AVAILABLE:
+    logger.info(f"Using GCS storage backend: {GCS_BUCKET_NAME}")
+    storage = StorageManager(backend=GCSStorageBackend(GCS_BUCKET_NAME))
+else:
+    logger.info("Using file-based storage backend")
+    storage = StorageManager()
 
 
 def get_default_orchestrator() -> Optional[BFIHOrchestrator]:
@@ -494,10 +502,13 @@ async def get_analysis(analysis_id: str):
 
 
 @app.post("/api/scenario")
-async def store_scenario(scenario: Dict):
+async def store_scenario(
+    scenario: Dict,
+    user_display_name: Optional[str] = Header(None, alias="User-Display-Name")
+):
     """
     Store a scenario configuration for later use
-    
+
     Request body:
     {
         "scenario_id": "s_001_startup_success",
@@ -506,7 +517,7 @@ async def store_scenario(scenario: Dict):
         "difficulty_level": "medium",
         "scenario_config": {...}
     }
-    
+
     Returns:
     {
         "scenario_id": "s_001_startup_success",
@@ -521,15 +532,23 @@ async def store_scenario(scenario: Dict):
                 status_code=400,
                 detail="Missing required fields: scenario_id, scenario_config"
             )
-        
+
+        # Add creator to scenario data
+        scenario["creator"] = user_display_name or "anonymous"
+
+        # Extract model from scenario_config if not already provided
+        if not scenario.get("model"):
+            config = scenario.get("scenario_config", {})
+            scenario["model"] = config.get("reasoning_model", "")
+
         # Store scenario
         storage.store_scenario_config(
             scenario_id=scenario["scenario_id"],
             config=scenario
         )
-        
-        logger.info(f"Stored scenario: {scenario['scenario_id']}")
-        
+
+        logger.info(f"Stored scenario: {scenario['scenario_id']} by {scenario['creator']}")
+
         return {
             "scenario_id": scenario["scenario_id"],
             "status": "stored",

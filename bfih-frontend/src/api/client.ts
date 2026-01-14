@@ -10,29 +10,43 @@ const STORAGE_KEYS = {
   API_KEY: 'bfih_openai_api_key',
   VECTOR_STORE_ID: 'bfih_vector_store_id',
   SETUP_COMPLETE: 'bfih_setup_complete',
+  DISPLAY_NAME: 'bfih_display_name',
 };
 
 // ============================================================================
 // Credential Management
 // ============================================================================
 
-export function getStoredCredentials(): { apiKey: string | null; vectorStoreId: string | null } {
+export function getStoredCredentials(): { apiKey: string | null; vectorStoreId: string | null; displayName: string | null } {
   return {
     apiKey: localStorage.getItem(STORAGE_KEYS.API_KEY),
     vectorStoreId: localStorage.getItem(STORAGE_KEYS.VECTOR_STORE_ID),
+    displayName: localStorage.getItem(STORAGE_KEYS.DISPLAY_NAME),
   };
 }
 
-export function saveCredentials(apiKey: string, vectorStoreId: string): void {
+export function saveCredentials(apiKey: string, vectorStoreId: string, displayName?: string): void {
   localStorage.setItem(STORAGE_KEYS.API_KEY, apiKey);
   localStorage.setItem(STORAGE_KEYS.VECTOR_STORE_ID, vectorStoreId);
   localStorage.setItem(STORAGE_KEYS.SETUP_COMPLETE, 'true');
+  if (displayName) {
+    localStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, displayName);
+  }
+}
+
+export function getDisplayName(): string {
+  return localStorage.getItem(STORAGE_KEYS.DISPLAY_NAME) || 'anonymous';
+}
+
+export function setDisplayName(name: string): void {
+  localStorage.setItem(STORAGE_KEYS.DISPLAY_NAME, name);
 }
 
 export function clearCredentials(): void {
   localStorage.removeItem(STORAGE_KEYS.API_KEY);
   localStorage.removeItem(STORAGE_KEYS.VECTOR_STORE_ID);
   localStorage.removeItem(STORAGE_KEYS.SETUP_COMPLETE);
+  localStorage.removeItem(STORAGE_KEYS.DISPLAY_NAME);
 }
 
 export function isSetupComplete(): boolean {
@@ -59,12 +73,15 @@ export async function apiClient<T>(
 
     // Add credentials for authenticated endpoints (unless skipped)
     if (!skipCredentials) {
-      const { apiKey, vectorStoreId } = getStoredCredentials();
+      const { apiKey, vectorStoreId, displayName } = getStoredCredentials();
       if (apiKey) {
         headers['User-OpenAI-API-Key'] = apiKey;
       }
       if (vectorStoreId) {
         headers['User-Vector-Store-ID'] = vectorStoreId;
+      }
+      if (displayName) {
+        headers['User-Display-Name'] = displayName;
       }
     }
 
@@ -128,10 +145,10 @@ interface SetupResponse {
 }
 
 /**
- * Run first-time setup with user's API key.
+ * Run first-time setup with user's API key and display name.
  * Creates a vector store and uploads the BFIH methodology.
  */
-export async function runSetup(apiKey: string): Promise<ApiResponse<SetupResponse>> {
+export async function runSetup(apiKey: string, displayName?: string): Promise<ApiResponse<SetupResponse>> {
   const response = await apiClient<SetupResponse>(
     '/api/setup',
     {
@@ -143,7 +160,7 @@ export async function runSetup(apiKey: string): Promise<ApiResponse<SetupRespons
 
   // If successful, save credentials
   if (response.data?.success && response.data.vector_store_id) {
-    saveCredentials(apiKey, response.data.vector_store_id);
+    saveCredentials(apiKey, response.data.vector_store_id, displayName);
   }
 
   return response;

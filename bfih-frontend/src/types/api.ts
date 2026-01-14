@@ -73,8 +73,12 @@ export interface ScenarioSummary {
   scenario_id: string;
   title: string;
   domain: string;
+  topic?: string;
   difficulty_level: string;
   created_date: string;
+  creator?: string;
+  model?: string;
+  updated?: string;
 }
 
 export interface HealthCheckResponse {
