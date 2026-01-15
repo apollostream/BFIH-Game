@@ -4684,7 +4684,7 @@ and likelihood ratios indicating strength of support or refutation.*
 
         for h in hypotheses:
             h_id = h.get("id", "H?")
-            h_name = h.get("name", "Unknown")[:30]
+            h_name = h.get("name", "Unknown")
             prior = k0_priors.get(h_id, 0)
             if isinstance(prior, dict):
                 prior = prior.get("probability", 0)
@@ -4692,12 +4692,11 @@ and likelihood ratios indicating strength of support or refutation.*
             status, penwidth = get_hypothesis_status(h_id, posterior)
             color = get_hypothesis_color(h_id, h)
 
-            # Truncate name for display
+            # Word-wrap hypothesis name for display (max 35 chars per line)
             display_name = h_name.replace('"', '\\"')
-            if len(display_name) > 25:
-                display_name = display_name[:22] + "..."
+            wrapped_name = word_wrap(display_name, 35)
 
-            lines.append(f'        {sanitize_id(h_id)} [label="{h_id}: {display_name}\\n\\nPrior: {prior:.2f}\\nPosterior: {posterior:.3f}\\nStatus: {status}",')
+            lines.append(f'        {sanitize_id(h_id)} [label="{h_id}: {wrapped_name}\\n\\nPrior: {prior:.2f}\\nPosterior: {posterior:.3f}\\nStatus: {status}",')
             lines.append(f'            shape=box, style="filled,rounded", fillcolor="{color}", penwidth={penwidth}];')
             lines.append("")
 
@@ -4717,7 +4716,8 @@ and likelihood ratios indicating strength of support or refutation.*
 
         for i, cluster in enumerate(evidence_clusters):
             c_id = cluster.get("cluster_id", f"C{i+1}")
-            c_name = cluster.get("cluster_name", cluster.get("description", "Evidence"))[:40]
+            c_name = cluster.get("cluster_name", cluster.get("description", "Evidence"))
+            c_description = cluster.get("description", "")
             # Get item count from evidence_ids (list of IDs) or evidence_items (list of objects)
             evidence_ids = cluster.get("evidence_ids", [])
             items = cluster.get("evidence_items", [])
@@ -4740,20 +4740,30 @@ and likelihood ratios indicating strength of support or refutation.*
 
             color_idx = i % len(cluster_colors)
 
+            # Word-wrap cluster name for subgraph label
+            wrapped_c_name = word_wrap(c_name, 40)
             lines.append(f"    subgraph cluster_{sanitize_id(c_id)} {{")
-            lines.append(f'        label="{c_id}: {c_name}\\n({item_count} items)";')
+            lines.append(f'        label="{c_id}: {wrapped_c_name}\\n({item_count} items)";')
             lines.append('        style="filled,rounded";')
             lines.append(f'        fillcolor="{cluster_colors[color_idx]}";')
             lines.append("        fontsize=10;")
             lines.append("")
 
-            # Summary for cluster node
+            # Create descriptive node label from description
+            # Take first ~80 chars of description, word-wrapped
+            if c_description and len(c_description) > 10:
+                short_desc = c_description[:100].rsplit(' ', 1)[0] if len(c_description) > 100 else c_description
+                short_desc = short_desc.replace('"', '\\"')
+                node_label = word_wrap(short_desc, 35)
+            else:
+                node_label = word_wrap(c_name, 35)
+
             woe_str = ""
             if best_h and best_h in metrics:
                 woe = metrics[best_h].get("WoE_dB", 0)
-                woe_str = f"\\nWoE to {best_h}: {woe} dB"
+                woe_str = f"\\n\\nWoE to {best_h}: {woe:.1f} dB"
 
-            lines.append(f'        {sanitize_id(c_id)}_node [label="Evidence cluster\\n{item_count} items{woe_str}",')
+            lines.append(f'        {sanitize_id(c_id)}_node [label="{node_label}\\n({item_count} items){woe_str}",')
             lines.append(f'                 shape=ellipse, style="filled", fillcolor="{node_colors[color_idx]}"];')
             lines.append("    }")
             lines.append("")
@@ -5032,22 +5042,26 @@ and likelihood ratios indicating strength of support or refutation.*
         top_h_id, top_posterior = sorted_posts[0] if sorted_posts else ("?", 0)
         second_h_id, second_posterior = sorted_posts[1] if len(sorted_posts) > 1 else ("?", 0)
 
-        # Get hypothesis names
+        # Get hypothesis name for conclusion
         top_h_name = top_h_id
         for h in hypotheses:
             if h.get("id") == top_h_id:
-                top_h_name = h.get("name", top_h_id)[:35]
+                top_h_name = h.get("name", top_h_id)
                 break
 
         confidence = "High" if top_posterior > 0.7 else ("Moderate" if top_posterior > 0.5 else "Low")
         margin = top_posterior - second_posterior
 
+        # Word-wrap the hypothesis name for the conclusion label
+        display_h_name = top_h_name.replace('"', '\\"')
+        wrapped_h_name = word_wrap(display_h_name, 30)
+
         summary_label = (
             f"ANALYSIS CONCLUSION\\n\\n"
             f"Leading Hypothesis: {top_h_id}\\n"
-            f"({top_h_name[:30]}...)\\n\\n"
+            f"({wrapped_h_name})\\n\\n"
             f"Posterior: {top_posterior*100:.1f}%\\n"
-            f"Margin over #{2}: {margin*100:.1f}%\\n"
+            f"Margin over #2: {margin*100:.1f}%\\n"
             f"Confidence: {confidence}\\n\\n"
             f"Status: {verdict}"
         )
