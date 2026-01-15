@@ -4819,7 +4819,7 @@ and likelihood ratios indicating strength of support or refutation.*
                         if p.get("id") == p_id:
                             p_name = p.get("name", p_id)[:15]
                             break
-                    lines.append(f'        paradigm_{sanitize_id(p_id)} [label="{p_name}\\n{top_h[0]}: {top_h[1]*100:.1f}%", style="filled", fillcolor="#E6CCFF"];')
+                    lines.append(f'        paradigm_{sanitize_id(p_id)} [label="{p_id}: {p_name}\\n{top_h[0]}: {top_h[1]*100:.1f}%", style="filled", fillcolor="#E6CCFF"];')
 
             lines.append("    }")
             lines.append("")
@@ -4912,8 +4912,12 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append('                         fontsize=10, penwidth=1.5];')
         lines.append("")
 
-        # Connect posterior summary to synthesis
-        lines.append('    posterior_summary -> bayesian_synthesis [style=solid];')
+        # Connect paradigm nodes to synthesis (not posterior_summary)
+        if len(posteriors) > 1:
+            for p_id in posteriors.keys():
+                lines.append(f'    paradigm_{sanitize_id(p_id)} -> bayesian_synthesis [style=dashed, color="#666666"];')
+        else:
+            lines.append('    posterior_summary -> bayesian_synthesis [style=solid];')
         lines.append("")
 
         # ============================================================
