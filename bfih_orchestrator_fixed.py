@@ -4544,21 +4544,30 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
 
     def _insert_visualization_into_report(self, report: str, svg_path: str) -> str:
         """
-        Insert visualization reference into the BFIH report.
+        Insert visualization inline into the BFIH report.
 
-        Adds the visualization after the Executive Summary section.
+        Reads the SVG file and embeds it directly in the report for web compatibility.
 
         Args:
             report: The markdown report
             svg_path: Path to the SVG file
 
         Returns:
-            Updated report with visualization reference
+            Updated report with embedded visualization
         """
         import os
 
-        # Get just the filename for the reference
-        svg_filename = os.path.basename(svg_path)
+        # Read the SVG content for inline embedding
+        svg_content = ""
+        try:
+            with open(svg_path, 'r') as f:
+                svg_content = f.read()
+            # Wrap in a div for styling control
+            svg_embed = f'<div class="bfih-visualization" style="width:100%;overflow-x:auto;">\n{svg_content}\n</div>'
+        except Exception as e:
+            logger.warning(f"Could not read SVG file for embedding: {e}")
+            svg_filename = os.path.basename(svg_path)
+            svg_embed = f'![BFIH Evidence Flow](./{svg_filename})'
 
         visualization_section = f"""
 ## Evidence Flow Visualization
@@ -4566,7 +4575,7 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
 The following diagram shows the flow of evidence through the Bayesian analysis framework,
 illustrating how evidence clusters support or refute each hypothesis.
 
-![BFIH Evidence Flow](./{svg_filename})
+{svg_embed}
 
 *Figure: Evidence flow diagram showing hypotheses (boxes), evidence clusters (ellipses),
 and likelihood ratios indicating strength of support or refutation.*
