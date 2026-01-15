@@ -404,6 +404,22 @@ class BFIHOrchestrator:
             result.metadata["evidence_items"] = evidence_items
             result.metadata["evidence_clusters"] = enriched_clusters
 
+            # Generate evidence flow visualization if Graphviz is available
+            try:
+                viz_output = self.generate_evidence_flow_visualization(result, output_dir=".")
+                if viz_output.get("svg"):
+                    result.metadata["visualization"] = {
+                        "dot": viz_output["dot"],
+                        "svg": viz_output["svg"]
+                    }
+                    # Insert visualization reference into report
+                    result.report = self._insert_visualization_into_report(
+                        result.report, viz_output["svg"]
+                    )
+                    logger.info(f"Generated evidence flow visualization: {viz_output['svg']}")
+            except Exception as viz_error:
+                logger.warning(f"Could not generate visualization: {viz_error}")
+
             logger.info(f"BFIH analysis completed successfully: {analysis_id}")
             logger.info(f"Duration: {duration_seconds:.1f}s")
             logger.info(f"Evidence: {len(evidence_items)} items in {len(evidence_clusters)} clusters")
@@ -4475,6 +4491,56 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
     # =========================================================================
     # GRAPHVIZ VISUALIZATION
     # =========================================================================
+
+    def _insert_visualization_into_report(self, report: str, svg_path: str) -> str:
+        """
+        Insert visualization reference into the BFIH report.
+
+        Adds the visualization after the Executive Summary section.
+
+        Args:
+            report: The markdown report
+            svg_path: Path to the SVG file
+
+        Returns:
+            Updated report with visualization reference
+        """
+        import os
+
+        # Get just the filename for the reference
+        svg_filename = os.path.basename(svg_path)
+
+        visualization_section = f"""
+## Evidence Flow Visualization
+
+The following diagram shows the flow of evidence through the Bayesian analysis framework,
+illustrating how evidence clusters support or refute each hypothesis.
+
+![BFIH Evidence Flow](./{svg_filename})
+
+*Figure: Evidence flow diagram showing hypotheses (boxes), evidence clusters (ellipses),
+and likelihood ratios indicating strength of support or refutation.*
+
+"""
+        # Find a good insertion point - after Executive Summary or after first ## section
+        insertion_markers = [
+            "## 2. Paradigms",
+            "## 2. Research Paradigms",
+            "## Paradigms",
+        ]
+
+        for marker in insertion_markers:
+            if marker in report:
+                # Insert before the marker
+                return report.replace(marker, visualization_section + marker)
+
+        # Fallback: insert after first ## section
+        first_section_end = report.find("\n## ", report.find("## ") + 1)
+        if first_section_end > 0:
+            return report[:first_section_end] + "\n" + visualization_section + report[first_section_end:]
+
+        # Last resort: prepend to report
+        return visualization_section + report
 
     def generate_evidence_flow_dot(self, result: 'BFIHAnalysisResult') -> str:
         """
