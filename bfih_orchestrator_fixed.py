@@ -885,12 +885,12 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 return response.output_text
 
-            except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout, RuntimeError) as e:
                 last_error = e
                 if attempt < max_retries:
                     wait_time = (attempt + 1) * 5  # 5s, 10s backoff
-                    logger.warning(f"{phase_name} failed with {type(e).__name__}, retrying in {wait_time}s...")
-                    print(f"\n[Connection error, retrying in {wait_time}s...]")
+                    logger.warning(f"{phase_name} failed with {type(e).__name__}: {e}, retrying in {wait_time}s...")
+                    print(f"\n[{type(e).__name__}, retrying in {wait_time}s...]")
                     time.sleep(wait_time)
                 else:
                     logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
