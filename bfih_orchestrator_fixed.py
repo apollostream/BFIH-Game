@@ -4740,21 +4740,36 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append("    // ============================================================")
         lines.append("")
 
+        # First, collect all potential edges with their LR values
+        import math
+        all_edges = []
         for cluster in evidence_clusters:
             c_id = cluster.get("cluster_id", "C?")
             metrics_by_paradigm = cluster.get("bayesian_metrics_by_paradigm", {})
             metrics = metrics_by_paradigm.get(primary_paradigm, cluster.get("bayesian_metrics", {}))
 
-            # Create edges to hypotheses with significant LR
             for h_id, m in metrics.items():
                 lr = m.get("LR", 1.0)
                 if isinstance(lr, str):
                     lr = float(lr) if lr != "inf" else 100
+                if lr > 0:  # Avoid log of zero/negative
+                    abs_log_lr = abs(math.log10(lr))
+                    all_edges.append((c_id, h_id, lr, abs_log_lr))
 
-                # Only show edges with meaningful relationships
-                if lr > 1.1 or lr < 0.9:
-                    _, color, penwidth, style = get_edge_style(lr)
-                    lines.append(f'    {sanitize_id(c_id)}_node -> {sanitize_id(h_id)} [label="LR: {lr:.2f}", color="{color}", penwidth={penwidth}, style={style}];')
+        # Find top 3 by abs(log10(LR))
+        top_3_edges = set()
+        sorted_by_strength = sorted(all_edges, key=lambda x: x[3], reverse=True)[:3]
+        for edge in sorted_by_strength:
+            top_3_edges.add((edge[0], edge[1]))
+
+        # Create edges: include if LR <= 1/3 or LR >= 3, OR in top 3
+        for c_id, h_id, lr, abs_log_lr in all_edges:
+            is_significant = lr <= (1/3) or lr >= 3
+            is_top_3 = (c_id, h_id) in top_3_edges
+
+            if is_significant or is_top_3:
+                _, color, penwidth, style = get_edge_style(lr)
+                lines.append(f'    {sanitize_id(c_id)}_node -> {sanitize_id(h_id)} [label="LR: {lr:.2f}", color="{color}", penwidth={penwidth}, style={style}];')
 
         lines.append("")
 
