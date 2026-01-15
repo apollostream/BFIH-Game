@@ -5025,22 +5025,6 @@ and likelihood ratios indicating strength of support or refutation.*
                 lines.append(f'    paradigm_{sanitize_id(p_id)} -> final_summary [style=dashed, color="#999999"];')
         lines.append("")
 
-        # ============================================================
-        # Layout hints
-        # ============================================================
-        lines.append("    // ============================================================")
-        lines.append("    // Layout hints")
-        lines.append("    // ============================================================")
-        lines.append("")
-
-        # Cluster nodes on same rank
-        cluster_nodes = " ".join([f"{sanitize_id(c.get('cluster_id', f'C{i+1}'))}_node;" for i, c in enumerate(evidence_clusters)])
-        lines.append(f"    {{rank=same; {cluster_nodes}}}")
-
-        # Hypothesis nodes on same rank
-        hyp_nodes = " ".join([f"{sanitize_id(h.get('id', 'H?'))};" for h in hypotheses])
-        lines.append(f"    {{rank=same; {hyp_nodes}}}")
-
         lines.append("}")
 
         dot_content = "\n".join(lines)
