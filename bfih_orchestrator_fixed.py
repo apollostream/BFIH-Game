@@ -4692,8 +4692,10 @@ and likelihood ratios indicating strength of support or refutation.*
         for i, cluster in enumerate(evidence_clusters):
             c_id = cluster.get("cluster_id", f"C{i+1}")
             c_name = cluster.get("cluster_name", cluster.get("description", "Evidence"))[:40]
+            # Get item count from evidence_ids (list of IDs) or evidence_items (list of objects)
+            evidence_ids = cluster.get("evidence_ids", [])
             items = cluster.get("evidence_items", [])
-            item_count = len(items) if isinstance(items, list) else cluster.get("item_count", 0)
+            item_count = len(evidence_ids) if evidence_ids else (len(items) if isinstance(items, list) else cluster.get("item_count", 0))
 
             # Get Bayesian metrics for primary paradigm
             metrics_by_paradigm = cluster.get("bayesian_metrics_by_paradigm", {})
@@ -4828,6 +4830,97 @@ and likelihood ratios indicating strength of support or refutation.*
                 lines.append(f'    posterior_summary -> paradigm_{sanitize_id(p_id)} [style={style}];')
 
             lines.append("")
+
+        # ============================================================
+        # Evidence Base Assessment
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Evidence Base Assessment")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        # Calculate totals
+        total_evidence = result.metadata.get("evidence_items_count", 0)
+        if not total_evidence:
+            total_evidence = sum(len(c.get("evidence_ids", c.get("evidence_items", []))) for c in evidence_clusters)
+        cluster_count = len(evidence_clusters)
+
+        # Assess evidence quality/diversity
+        paradigm_count = len(posteriors)
+        avg_items_per_cluster = total_evidence / cluster_count if cluster_count > 0 else 0
+
+        # Build assessment label
+        if total_evidence >= 50:
+            quantity_rating = "Extensive"
+        elif total_evidence >= 25:
+            quantity_rating = "Substantial"
+        elif total_evidence >= 10:
+            quantity_rating = "Moderate"
+        else:
+            quantity_rating = "Limited"
+
+        assessment_label = (
+            f"Evidence Base Assessment\\n\\n"
+            f"Total Evidence Items: {total_evidence}\\n"
+            f"Evidence Clusters: {cluster_count}\\n"
+            f"Paradigms Analyzed: {paradigm_count}\\n"
+            f"Avg Items/Cluster: {avg_items_per_cluster:.1f}\\n\\n"
+            f"Coverage: {quantity_rating}"
+        )
+
+        lines.append(f'    evidence_assessment [label="{assessment_label}",')
+        lines.append('                          shape=box, style="filled,rounded", fillcolor="#E6FFE6",')
+        lines.append('                          fontsize=10, penwidth=1.5];')
+        lines.append("")
+
+        # Connect assessment to posterior summary
+        lines.append('    evidence_assessment -> posterior_summary [style=dashed, color="#666666"];')
+        lines.append("")
+
+        # ============================================================
+        # Final Analysis Summary
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Final Analysis Summary")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        # Build final summary
+        top_h_id, top_posterior = sorted_posts[0] if sorted_posts else ("?", 0)
+        second_h_id, second_posterior = sorted_posts[1] if len(sorted_posts) > 1 else ("?", 0)
+
+        # Get hypothesis names
+        top_h_name = top_h_id
+        for h in hypotheses:
+            if h.get("id") == top_h_id:
+                top_h_name = h.get("name", top_h_id)[:35]
+                break
+
+        confidence = "High" if top_posterior > 0.7 else ("Moderate" if top_posterior > 0.5 else "Low")
+        margin = top_posterior - second_posterior
+
+        summary_label = (
+            f"ANALYSIS CONCLUSION\\n\\n"
+            f"Leading Hypothesis: {top_h_id}\\n"
+            f"({top_h_name[:30]}...)\\n\\n"
+            f"Posterior: {top_posterior*100:.1f}%\\n"
+            f"Margin over #{2}: {margin*100:.1f}%\\n"
+            f"Confidence: {confidence}\\n\\n"
+            f"Status: {verdict}"
+        )
+
+        lines.append(f'    final_summary [label="{summary_label}",')
+        lines.append('                    shape=box, style="filled,bold,rounded", fillcolor="#FFE4B5",')
+        lines.append('                    fontsize=11, penwidth=3];')
+        lines.append("")
+
+        # Connect paradigms to final summary (if multiple paradigms exist)
+        if len(posteriors) > 1:
+            for p_id in posteriors.keys():
+                lines.append(f'    paradigm_{sanitize_id(p_id)} -> final_summary [style=dashed, color="#999999"];')
+        else:
+            lines.append('    posterior_summary -> final_summary [style=solid];')
+        lines.append("")
 
         # ============================================================
         # Layout hints
