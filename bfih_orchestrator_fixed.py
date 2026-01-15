@@ -4658,12 +4658,12 @@ and likelihood ratios indicating strength of support or refutation.*
             "    // Graph properties",
             "    rankdir=LR;",
             "    compound=true;",
-            '    fontname="Helvetica,Arial,sans-serif";',
+            '    fontname="Helvetica-Bold,Arial Bold,sans-serif";',
             '    node [fontname="Helvetica,Arial,sans-serif", fontsize=10];',
             '    edge [fontname="Helvetica,Arial,sans-serif", fontsize=8];',
             f'    label="{graph_title}";',
             '    labelloc="t";',
-            '    fontsize=14;',
+            '    fontsize=18;',
             "",
         ]
 
