@@ -4626,6 +4626,29 @@ and likelihood ratios indicating strength of support or refutation.*
             """Convert ID to valid DOT identifier."""
             return id_str.replace("-", "_").replace(" ", "_").lower()
 
+        def word_wrap(text: str, max_width: int = 60) -> str:
+            """Word-wrap text at word boundaries."""
+            words = text.split()
+            lines = []
+            current_line = []
+            current_length = 0
+            for word in words:
+                if current_length + len(word) + 1 <= max_width:
+                    current_line.append(word)
+                    current_length += len(word) + 1
+                else:
+                    if current_line:
+                        lines.append(" ".join(current_line))
+                    current_line = [word]
+                    current_length = len(word)
+            if current_line:
+                lines.append(" ".join(current_line))
+            return "\\n".join(lines)
+
+        # Word-wrap proposition for title
+        wrapped_proposition = word_wrap(result.proposition, 60)
+        graph_title = f"BFIH Analysis of Proposition:\\n\\\"{wrapped_proposition}\\\""
+
         # Build DOT script
         lines = [
             f"// BFIH Evidence Flow: {result.proposition[:60]}...",
@@ -4638,6 +4661,9 @@ and likelihood ratios indicating strength of support or refutation.*
             '    fontname="Helvetica,Arial,sans-serif";',
             '    node [fontname="Helvetica,Arial,sans-serif", fontsize=10];',
             '    edge [fontname="Helvetica,Arial,sans-serif", fontsize=8];',
+            f'    label="{graph_title}";',
+            '    labelloc="t";',
+            '    fontsize=14;',
             "",
         ]
 
