@@ -801,6 +801,31 @@ def _run_analysis(
             # Standard mode: use provided scenario_config
             result = orchestrator.conduct_analysis(analysis_request)
 
+        # Upload visualization to GCS if available
+        viz_meta = result.metadata.get("visualization", {})
+        svg_path = viz_meta.get("svg")
+        if svg_path and os.path.exists(svg_path):
+            try:
+                with open(svg_path, 'r') as f:
+                    svg_content = f.read()
+                # Upload to GCS and get public URL
+                public_url = storage.store_visualization(result.scenario_id, svg_content)
+                if public_url:
+                    # Replace inline SVG with img tag pointing to GCS
+                    import re
+                    img_tag = f'<img src="{public_url}" alt="BFIH Evidence Flow" style="max-width:100%;height:auto;">'
+                    # Replace the div containing inline SVG with img tag
+                    result.report = re.sub(
+                        r'<div class="bfih-visualization"[^>]*>.*?</div>',
+                        f'<div class="bfih-visualization" style="width:100%;overflow-x:auto;">\n{img_tag}\n</div>',
+                        result.report,
+                        flags=re.DOTALL
+                    )
+                    result.metadata["visualization"]["gcs_url"] = public_url
+                    logger.info(f"Uploaded visualization to GCS: {public_url}")
+            except Exception as viz_err:
+                logger.warning(f"Could not upload visualization to GCS: {viz_err}")
+
         # Store result
         storage.store_analysis_result(analysis_id, result)
 

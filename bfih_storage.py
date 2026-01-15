@@ -233,6 +233,29 @@ class FileStorageBackend(StorageBackend):
             logger.error(f"Error listing scenarios: {str(e)}")
             return []
 
+    def store_visualization(self, scenario_id: str, svg_content: str) -> Optional[str]:
+        """
+        Store SVG visualization to local file and return path.
+
+        Args:
+            scenario_id: The scenario/analysis ID
+            svg_content: The SVG file content
+
+        Returns:
+            Path to the SVG file, or None on failure
+        """
+        try:
+            viz_dir = self.base_dir / "visualizations"
+            viz_dir.mkdir(parents=True, exist_ok=True)
+            filepath = viz_dir / f"{scenario_id}-evidence-flow.svg"
+            with open(filepath, 'w') as f:
+                f.write(svg_content)
+            logger.info(f"Stored visualization: {filepath}")
+            return str(filepath)
+        except Exception as e:
+            logger.error(f"Error storing visualization: {str(e)}")
+            return None
+
 
 # ============================================================================
 # GOOGLE CLOUD STORAGE BACKEND (Production)
@@ -439,6 +462,32 @@ class GCSStorageBackend(StorageBackend):
             logger.error(f"Error listing scenarios from GCS: {str(e)}")
             return []
 
+    def store_visualization(self, scenario_id: str, svg_content: str) -> Optional[str]:
+        """
+        Store SVG visualization to GCS and return public URL.
+
+        Args:
+            scenario_id: The scenario/analysis ID
+            svg_content: The SVG file content
+
+        Returns:
+            Public URL to the SVG file, or None on failure
+        """
+        try:
+            path = f"{self.prefix}/visualizations/{scenario_id}-evidence-flow.svg"
+            blob = self._get_blob(path)
+            blob.upload_from_string(svg_content, content_type='image/svg+xml')
+
+            # Make the blob publicly accessible
+            blob.make_public()
+
+            public_url = blob.public_url
+            logger.info(f"Stored visualization to GCS: {public_url}")
+            return public_url
+        except Exception as e:
+            logger.error(f"Error storing visualization to GCS: {str(e)}")
+            return None
+
 
 # ============================================================================
 # MANAGER CLASS (Facade)
@@ -490,6 +539,10 @@ class StorageManager:
     def list_scenarios(self, limit: int = 50, offset: int = 0) -> List[Dict]:
         """List all stored scenarios"""
         return self.backend.list_scenarios(limit, offset)
+
+    def store_visualization(self, scenario_id: str, svg_content: str) -> Optional[str]:
+        """Store SVG visualization and return URL/path"""
+        return self.backend.store_visualization(scenario_id, svg_content)
 
 
 # ============================================================================
