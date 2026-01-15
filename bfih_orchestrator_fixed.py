@@ -4675,7 +4675,7 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append("    // ============================================================")
         lines.append("")
         lines.append("    subgraph cluster_hypotheses {")
-        lines.append(f'        label="Hypothesis Space ({len(hypotheses)} competing explanations)";')
+        lines.append(f'        label="Hypothesis Space ({len(hypotheses)} explanations)";')
         lines.append('        style="filled,rounded";')
         lines.append('        fillcolor="#E8F4F8";')
         lines.append("        fontsize=12;")
@@ -4901,7 +4901,7 @@ and likelihood ratios indicating strength of support or refutation.*
             quantity_rating = "Limited"
 
         assessment_label = (
-            f"Evidence Base Assessment\\n\\n"
+            f"Evidence Assessment\\n\\n"
             f"Total Evidence Items: {total_evidence}\\n"
             f"Evidence Clusters: {cluster_count}\\n"
             f"Paradigms Analyzed: {paradigm_count}\\n"
