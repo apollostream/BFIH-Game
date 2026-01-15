@@ -1584,14 +1584,50 @@ Each item needs:
             else:
                 logger.debug(f"Removing duplicate: {source_name or url[:50]}")
 
+        # Step 4: Content-based deduplication using description similarity
+        # This catches cases where the same study appears from different sources
+        from difflib import SequenceMatcher
+
+        def description_similarity(desc1: str, desc2: str) -> float:
+            """Calculate similarity between two descriptions."""
+            d1 = desc1.lower()[:200]
+            d2 = desc2.lower()[:200]
+            return SequenceMatcher(None, d1, d2).ratio()
+
+        # Find and remove content duplicates (keep the one with better URL/citation)
+        content_duplicates = set()
+        for i, item1 in enumerate(deduplicated_evidence):
+            if i in content_duplicates:
+                continue
+            for j, item2 in enumerate(deduplicated_evidence):
+                if j <= i or j in content_duplicates:
+                    continue
+                desc1 = item1.get('description', '')
+                desc2 = item2.get('description', '')
+                if description_similarity(desc1, desc2) > 0.75:
+                    # Keep the item with a valid URL, or the first one
+                    url1 = item1.get('source_url', '').startswith('http')
+                    url2 = item2.get('source_url', '').startswith('http')
+                    if url2 and not url1:
+                        content_duplicates.add(i)
+                        logger.debug(f"Content duplicate: keeping {item2.get('evidence_id')} over {item1.get('evidence_id')}")
+                    else:
+                        content_duplicates.add(j)
+                        logger.debug(f"Content duplicate: keeping {item1.get('evidence_id')} over {item2.get('evidence_id')}")
+
+        if content_duplicates:
+            deduplicated_evidence = [item for i, item in enumerate(deduplicated_evidence) if i not in content_duplicates]
+            logger.info(f"Removed {len(content_duplicates)} content-similar duplicates")
+            print(f"[Removed {len(content_duplicates)} content-similar evidence items]")
+
         # Renumber evidence IDs after deduplication
         for i, item in enumerate(deduplicated_evidence, 1):
             item["evidence_id"] = f"E{i}"
 
         duplicates_removed = len(evidence_items) - len(deduplicated_evidence)
         if duplicates_removed > 0:
-            logger.info(f"Removed {duplicates_removed} duplicate evidence items")
-            print(f"[Removed {duplicates_removed} duplicate sources from evidence]")
+            logger.info(f"Removed {duplicates_removed} total duplicate evidence items")
+            print(f"[Removed {duplicates_removed} total duplicate sources from evidence]")
 
         evidence_items = deduplicated_evidence
 
