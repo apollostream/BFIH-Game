@@ -4753,8 +4753,8 @@ and likelihood ratios indicating strength of support or refutation.*
 
                 # Only show edges with meaningful relationships
                 if lr > 1.1 or lr < 0.9:
-                    label, color, penwidth, style = get_edge_style(lr)
-                    lines.append(f'    {sanitize_id(c_id)}_node -> {sanitize_id(h_id)} [label="{label}\\nLR: {lr:.2f}", color="{color}", penwidth={penwidth}, style={style}];')
+                    _, color, penwidth, style = get_edge_style(lr)
+                    lines.append(f'    {sanitize_id(c_id)}_node -> {sanitize_id(h_id)} [label="LR: {lr:.2f}", color="{color}", penwidth={penwidth}, style={style}];')
 
         lines.append("")
 
