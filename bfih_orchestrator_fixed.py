@@ -4914,10 +4914,6 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append('                          fontsize=10, penwidth=1.5];')
         lines.append("")
 
-        # Connect assessment to posterior summary
-        lines.append('    evidence_assessment -> posterior_summary [style=dashed, color="#666666"];')
-        lines.append("")
-
         # ============================================================
         # Bayesian Synthesis
         # ============================================================
