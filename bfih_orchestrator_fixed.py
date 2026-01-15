@@ -4472,6 +4472,412 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
             logger.error(f"Error generating magazine synopsis: {e}")
             raise
 
+    # =========================================================================
+    # GRAPHVIZ VISUALIZATION
+    # =========================================================================
+
+    def generate_evidence_flow_dot(self, result: 'BFIHAnalysisResult') -> str:
+        """
+        Generate Graphviz DOT visualization of BFIH evidence flow.
+
+        Creates a visual representation showing:
+        - Hypotheses with priors, posteriors, and status
+        - Evidence clusters with item counts and Bayesian metrics
+        - Evidence-to-hypothesis flow edges with likelihood ratios
+        - Paradigm comparison
+        - Final verdict
+
+        Args:
+            result: BFIHAnalysisResult containing analysis data
+
+        Returns:
+            DOT script as string
+        """
+        logger.info(f"Generating evidence flow DOT for: {result.scenario_id}")
+
+        # Extract data from result
+        scenario_config = result.scenario_config or {}
+        hypotheses = scenario_config.get("hypotheses", [])
+        paradigms = scenario_config.get("paradigms", [])
+        priors_by_paradigm = scenario_config.get("priors_by_paradigm", {})
+        posteriors = result.posteriors or {}
+        evidence_clusters = result.metadata.get("evidence_clusters", [])
+
+        # Use K0 (empirical) as primary paradigm, fallback to first available
+        primary_paradigm = "K0"
+        if primary_paradigm not in posteriors and posteriors:
+            primary_paradigm = list(posteriors.keys())[0]
+
+        k0_posteriors = posteriors.get(primary_paradigm, {})
+        k0_priors = priors_by_paradigm.get(primary_paradigm, {})
+
+        # Determine hypothesis status based on posteriors
+        def get_hypothesis_status(h_id: str, post: float) -> tuple:
+            """Return (status_label, penwidth) based on posterior probability."""
+            sorted_posts = sorted(k0_posteriors.values(), reverse=True)
+            if post == sorted_posts[0]:
+                return "STRONGEST", 3
+            elif len(sorted_posts) > 1 and post == sorted_posts[1]:
+                return "STRONG", 2.5
+            elif post >= 0.10:
+                return "MODERATE", 2
+            else:
+                return "WEAK", 1
+
+        # Hypothesis colors based on type
+        def get_hypothesis_color(h_id: str, hypothesis: dict) -> str:
+            """Return fill color based on hypothesis stance."""
+            stance = hypothesis.get("stance", "").lower()
+            if stance == "true" or "true" in hypothesis.get("name", "").lower():
+                return "#CCFFCC"  # Green - proposition true
+            elif stance == "false" or "false" in hypothesis.get("name", "").lower():
+                return "#FF9999"  # Red - proposition false
+            elif "partial" in stance or "conditional" in hypothesis.get("name", "").lower():
+                return "#FFFF99"  # Yellow - partial
+            elif h_id == "H0":
+                return "#E0E0E0"  # Gray - catch-all
+            else:
+                return "#B3D9FF"  # Blue - domain-specific
+
+        # Edge styling based on likelihood ratio
+        def get_edge_style(lr: float) -> tuple:
+            """Return (label, color, penwidth, style) based on LR."""
+            if lr >= 3.0:
+                return "Strong support", "#CC0000", 3, "solid"
+            elif lr >= 2.0:
+                return "Moderate support", "#CC6600", 2.5, "solid"
+            elif lr >= 1.2:
+                return "Weak support", "#999900", 2, "solid"
+            elif lr > 0.8:
+                return "Neutral", "#999999", 1, "dashed"
+            elif lr > 0.5:
+                return "Weak refutation", "#666666", 1, "dotted"
+            else:
+                return "Refutation", "#333333", 1.5, "dotted"
+
+        # Helper to sanitize IDs for DOT (no hyphens, special chars)
+        def sanitize_id(id_str: str) -> str:
+            """Convert ID to valid DOT identifier."""
+            return id_str.replace("-", "_").replace(" ", "_").lower()
+
+        # Build DOT script
+        lines = [
+            f"// BFIH Evidence Flow: {result.proposition[:60]}...",
+            "// Auto-generated visualization of Bayesian analysis structure",
+            "",
+            "digraph BFIHEvidenceFlow {",
+            "    // Graph properties",
+            "    rankdir=LR;",
+            "    compound=true;",
+            '    fontname="Helvetica,Arial,sans-serif";',
+            '    node [fontname="Helvetica,Arial,sans-serif", fontsize=10];',
+            '    edge [fontname="Helvetica,Arial,sans-serif", fontsize=8];',
+            "",
+        ]
+
+        # ============================================================
+        # Hypothesis nodes
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Hypothesis Space")
+        lines.append("    // ============================================================")
+        lines.append("")
+        lines.append("    subgraph cluster_hypotheses {")
+        lines.append(f'        label="Hypothesis Space ({len(hypotheses)} competing explanations)";')
+        lines.append('        style="filled,rounded";')
+        lines.append('        fillcolor="#E8F4F8";')
+        lines.append("        fontsize=12;")
+        lines.append("        penwidth=2;")
+        lines.append("")
+
+        for h in hypotheses:
+            h_id = h.get("id", "H?")
+            h_name = h.get("name", "Unknown")[:30]
+            prior = k0_priors.get(h_id, 0)
+            if isinstance(prior, dict):
+                prior = prior.get("probability", 0)
+            posterior = k0_posteriors.get(h_id, 0)
+            status, penwidth = get_hypothesis_status(h_id, posterior)
+            color = get_hypothesis_color(h_id, h)
+
+            # Truncate name for display
+            display_name = h_name.replace('"', '\\"')
+            if len(display_name) > 25:
+                display_name = display_name[:22] + "..."
+
+            lines.append(f'        {sanitize_id(h_id)} [label="{h_id}: {display_name}\\n\\nPrior: {prior:.2f}\\nPosterior: {posterior:.3f}\\nStatus: {status}",')
+            lines.append(f'            shape=box, style="filled,rounded", fillcolor="{color}", penwidth={penwidth}];')
+            lines.append("")
+
+        lines.append("    }")
+        lines.append("")
+
+        # ============================================================
+        # Evidence cluster nodes
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Evidence Clusters")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        cluster_colors = ["#FFE6E6", "#FFFCE6", "#FFF0E6", "#E6F3FF", "#F0E6FF", "#E6FFE6"]
+        node_colors = ["#FFCCCC", "#FFFFCC", "#FFE6CC", "#CCE6FF", "#E6CCFF", "#CCFFCC"]
+
+        for i, cluster in enumerate(evidence_clusters):
+            c_id = cluster.get("cluster_id", f"C{i+1}")
+            c_name = cluster.get("cluster_name", cluster.get("description", "Evidence"))[:40]
+            items = cluster.get("evidence_items", [])
+            item_count = len(items) if isinstance(items, list) else cluster.get("item_count", 0)
+
+            # Get Bayesian metrics for primary paradigm
+            metrics_by_paradigm = cluster.get("bayesian_metrics_by_paradigm", {})
+            metrics = metrics_by_paradigm.get(primary_paradigm, cluster.get("bayesian_metrics", {}))
+
+            # Find strongest supported hypothesis
+            best_h = None
+            best_lr = 0
+            for h_id, m in metrics.items():
+                lr = m.get("LR", 0)
+                if isinstance(lr, str):
+                    lr = float(lr) if lr != "inf" else 100
+                if lr > best_lr:
+                    best_lr = lr
+                    best_h = h_id
+
+            color_idx = i % len(cluster_colors)
+
+            lines.append(f"    subgraph cluster_{sanitize_id(c_id)} {{")
+            lines.append(f'        label="{c_id}: {c_name}\\n({item_count} items)";')
+            lines.append('        style="filled,rounded";')
+            lines.append(f'        fillcolor="{cluster_colors[color_idx]}";')
+            lines.append("        fontsize=10;")
+            lines.append("")
+
+            # Summary for cluster node
+            woe_str = ""
+            if best_h and best_h in metrics:
+                woe = metrics[best_h].get("WoE_dB", 0)
+                woe_str = f"\\nWoE to {best_h}: {woe} dB"
+
+            lines.append(f'        {sanitize_id(c_id)}_node [label="Evidence cluster\\n{item_count} items{woe_str}",')
+            lines.append(f'                 shape=ellipse, style="filled", fillcolor="{node_colors[color_idx]}"];')
+            lines.append("    }")
+            lines.append("")
+
+        # ============================================================
+        # Evidence-to-hypothesis edges
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Evidence flows to hypotheses")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        for cluster in evidence_clusters:
+            c_id = cluster.get("cluster_id", "C?")
+            metrics_by_paradigm = cluster.get("bayesian_metrics_by_paradigm", {})
+            metrics = metrics_by_paradigm.get(primary_paradigm, cluster.get("bayesian_metrics", {}))
+
+            # Create edges to hypotheses with significant LR
+            for h_id, m in metrics.items():
+                lr = m.get("LR", 1.0)
+                if isinstance(lr, str):
+                    lr = float(lr) if lr != "inf" else 100
+
+                # Only show edges with meaningful relationships
+                if lr > 1.1 or lr < 0.9:
+                    label, color, penwidth, style = get_edge_style(lr)
+                    lines.append(f'    {sanitize_id(c_id)}_node -> {sanitize_id(h_id)} [label="{label}\\nLR: {lr:.2f}", color="{color}", penwidth={penwidth}, style={style}];')
+
+        lines.append("")
+
+        # ============================================================
+        # Posterior summary node
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Posterior Summary")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        # Sort posteriors for display
+        sorted_posts = sorted(k0_posteriors.items(), key=lambda x: x[1], reverse=True)
+        post_lines = "\\n".join([f"{h}: {p*100:.1f}%" for h, p in sorted_posts[:5]])
+
+        # Determine verdict
+        top_h, top_p = sorted_posts[0] if sorted_posts else ("?", 0)
+        if top_p > 0.7:
+            verdict = "STRONGLY SUPPORTED"
+        elif top_p > 0.5:
+            verdict = "SUPPORTED"
+        elif top_p > 0.35:
+            verdict = "PARTIALLY VALIDATED"
+        else:
+            verdict = "UNCERTAIN"
+
+        lines.append(f'    posterior_summary [label="{primary_paradigm} Posteriors\\n\\n{post_lines}\\n\\nVerdict: {verdict}",')
+        lines.append('                        shape=box, style="filled,rounded", fillcolor="#FFF4E6",')
+        lines.append('                        fontsize=11, penwidth=2];')
+        lines.append("")
+
+        # Connect hypotheses to summary
+        for h in hypotheses:
+            h_id = h.get("id", "H?")
+            post = k0_posteriors.get(h_id, 0)
+            style = "solid" if post > 0.1 else "dashed"
+            lines.append(f'    {sanitize_id(h_id)} -> posterior_summary [style={style}];')
+
+        lines.append("")
+
+        # ============================================================
+        # Paradigm comparison (if multiple paradigms)
+        # ============================================================
+        if len(posteriors) > 1:
+            lines.append("    // ============================================================")
+            lines.append("    // Paradigm Comparison")
+            lines.append("    // ============================================================")
+            lines.append("")
+            lines.append("    subgraph cluster_paradigm_compare {")
+            lines.append('        label="Cross-Paradigm Comparison";')
+            lines.append('        style="filled,rounded";')
+            lines.append('        fillcolor="#F0E6FF";')
+            lines.append("        fontsize=11;")
+            lines.append("")
+
+            for p_id, p_posts in posteriors.items():
+                if p_posts:
+                    top_h = max(p_posts.items(), key=lambda x: x[1])
+                    p_name = p_id
+                    # Try to get paradigm name
+                    for p in paradigms:
+                        if p.get("id") == p_id:
+                            p_name = p.get("name", p_id)[:15]
+                            break
+                    lines.append(f'        paradigm_{sanitize_id(p_id)} [label="{p_name}\\n{top_h[0]}: {top_h[1]*100:.1f}%", style="filled", fillcolor="#E6CCFF"];')
+
+            lines.append("    }")
+            lines.append("")
+
+            # Connect summary to paradigms
+            for p_id in posteriors.keys():
+                style = "solid" if p_id == primary_paradigm else "dashed"
+                lines.append(f'    posterior_summary -> paradigm_{sanitize_id(p_id)} [style={style}];')
+
+            lines.append("")
+
+        # ============================================================
+        # Layout hints
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Layout hints")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        # Cluster nodes on same rank
+        cluster_nodes = " ".join([f"{sanitize_id(c.get('cluster_id', f'C{i+1}'))}_node;" for i, c in enumerate(evidence_clusters)])
+        lines.append(f"    {{rank=same; {cluster_nodes}}}")
+
+        # Hypothesis nodes on same rank
+        hyp_nodes = " ".join([f"{sanitize_id(h.get('id', 'H?'))};" for h in hypotheses])
+        lines.append(f"    {{rank=same; {hyp_nodes}}}")
+
+        lines.append("}")
+
+        dot_content = "\n".join(lines)
+        logger.info(f"Generated DOT script: {len(lines)} lines")
+
+        return dot_content
+
+    def render_dot_to_svg(self, dot_content: str, output_path: str) -> Optional[str]:
+        """
+        Render DOT content to SVG using Graphviz.
+
+        Args:
+            dot_content: DOT script as string
+            output_path: Path for output SVG file
+
+        Returns:
+            Path to SVG file if successful, None otherwise
+        """
+        import subprocess
+        import shutil
+
+        # Check if Graphviz is installed
+        if not shutil.which('dot'):
+            logger.warning("Graphviz 'dot' command not found. Install with: apt install graphviz")
+            return None
+
+        try:
+            result = subprocess.run(
+                ['dot', '-Tsvg'],
+                input=dot_content,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                logger.error(f"Graphviz error: {result.stderr}")
+                return None
+
+            with open(output_path, 'w') as f:
+                f.write(result.stdout)
+
+            logger.info(f"Rendered SVG to: {output_path}")
+            return output_path
+
+        except subprocess.TimeoutExpired:
+            logger.error("Graphviz rendering timed out")
+            return None
+        except Exception as e:
+            logger.error(f"Error rendering DOT to SVG: {e}")
+            return None
+
+    def generate_evidence_flow_visualization(
+        self,
+        result: 'BFIHAnalysisResult',
+        output_dir: str = ".",
+        embed_in_report: bool = False
+    ) -> Dict[str, Optional[str]]:
+        """
+        Generate complete evidence flow visualization (DOT + SVG).
+
+        Args:
+            result: BFIHAnalysisResult containing analysis data
+            output_dir: Directory for output files
+            embed_in_report: If True, return SVG content for embedding
+
+        Returns:
+            Dict with paths: {"dot": path, "svg": path, "svg_content": content if embed}
+        """
+        import os
+
+        scenario_id = result.scenario_id
+        dot_path = os.path.join(output_dir, f"{scenario_id}-evidence-flow.dot")
+        svg_path = os.path.join(output_dir, f"{scenario_id}-evidence-flow.svg")
+
+        # Generate DOT
+        dot_content = self.generate_evidence_flow_dot(result)
+
+        # Save DOT file
+        with open(dot_path, 'w') as f:
+            f.write(dot_content)
+        logger.info(f"Saved DOT file: {dot_path}")
+
+        # Render to SVG
+        svg_result = self.render_dot_to_svg(dot_content, svg_path)
+
+        output = {
+            "dot": dot_path,
+            "svg": svg_result,
+            "svg_content": None
+        }
+
+        # Read SVG content if embedding requested
+        if embed_in_report and svg_result:
+            with open(svg_path, 'r') as f:
+                output["svg_content"] = f.read()
+
+        return output
+
 
 # ============================================================================
 # VECTOR STORE MANAGEMENT (Setup/Maintenance)
