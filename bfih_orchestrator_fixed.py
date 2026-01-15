@@ -4070,139 +4070,135 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 
     def _get_gawande_style_prompt(self, report: str) -> str:
         """
-        New default style: Gawande scientific narrative + science news feature.
-        Emphasizes wonder over advocacy, preserves complexity, resists false resolution.
+        Gawande scientific narrative style: wonder over advocacy, complexity preserved,
+        false resolution resisted. Optimized for economy and non-redundancy.
         """
-        return f"""Transform the following BFIH analysis report into a science news feature that reports findings accessibly while maintaining intellectual honesty.
+        return f"""Transform the following BFIH analysis report into a magazine-style feature that reports findings accessibly while maintaining intellectual honesty.
 
-## STYLE: GAWANDE SCIENTIFIC NARRATIVE + SCIENCE NEWS FEATURE
+## STYLE: GAWANDE SCIENTIFIC NARRATIVE
 
-This is a **report of findings** from rigorous Bayesian analysis. Your role combines:
-- **Science journalist** reporting what the analysis found
-- **Gawande-style narrator** who engages with complexity honestly and finds the questions as interesting as the answers
+Your role: **Science journalist** reporting what rigorous analysis found, with Gawande-style engagement with complexity.
 
-### CORE COMMITMENTS (Gawande-inspired):
+### CORE COMMITMENTS:
 
-1. **Wonder, not advocacy** — Approach the topic with genuine curiosity. The question is often more interesting than the answer. Don't force neat resolutions.
-
-2. **Self-disclosure** — When evidence challenged common assumptions (including the analyst's), acknowledge it: "What emerged was unexpected..." or "The evidence complicated the straightforward narrative..."
-
-3. **Preserve complexity** — Don't force binary framings on probabilistic findings. If something is 60/40, say so. If reasonable people weight evidence differently, show that.
-
-4. **Inconvenient truths** — Include evidence that complicates clean narratives. Don't cherry-pick for a tidy story.
-
-5. **Pre-emptive objections** — Raise counterarguments and limitations before critics would. This builds trust.
-
-6. **Separate simple from complicated** — Some findings are clear; others are irreducibly complex. Distinguish between them honestly.
-
-7. **Multiple perspectives** — Different stakeholders, values, or starting assumptions lead to different weightings. Present this descriptively, not as "one right answer vs. wrong ones."
-
-8. **Strategic evidence integration** — The Bayesian results bolster the narrative; they don't replace it. Weave findings into accessible prose.
-
-9. **Resist false resolution** — If analysis reveals "it depends" or "genuinely uncertain," don't manufacture false clarity. Honest ambiguity is intellectually respectable.
+1. **Wonder, not advocacy** — Genuine curiosity. The question is often as interesting as the answer.
+2. **Preserve complexity** — If something is 60/40, say so. Don't force binaries.
+3. **Inconvenient truths** — Include evidence that complicates clean narratives.
+4. **Resist false resolution** — If genuinely uncertain, say so. Honest ambiguity is respectable.
 
 ### VOICE & TONE:
-- **Neutral observer** when reporting: "Analysis revealed..." "The evidence indicates..."
-- **Curious guide** when contextualizing: "What's striking here is..." "This fits a pattern worth noting..."
-- **Honest about surprise**: "What the analysis uncovered was not what one might expect..."
+- **Neutral observer**: "Analysis revealed..." "The evidence indicates..."
+- **Curious guide**: "What's striking here is..." "This fits a pattern worth noting..."
 - **Clear and direct** — engaged without drama, respectful of reader intelligence
-- **NOT corrective or adversarial** — no "You might think X, but actually Y..."
 
 ### CALIBRATED CONFIDENCE LANGUAGE:
-Match language precisely to evidence strength:
+- **High confidence**: "Evidence clearly shows..." / "Consistent across multiple sources..."
+- **Moderate confidence**: "Findings suggest..." / "Evidence points toward..."
+- **Lower confidence**: "One possible interpretation..." / "May indicate..."
+- **Uncertainty**: "Remains unclear..." / "Evidence is mixed..."
 
-- **High confidence**: "Analysis strongly indicates..." / "Evidence clearly shows..." / "Consistent across multiple lines of evidence..."
-- **Moderate confidence**: "Findings suggest..." / "Analysis indicates..." / "Evidence points toward..."
-- **Lower confidence**: "Preliminary analysis hints..." / "One possible interpretation..." / "May indicate..."
-- **Explicit uncertainty**: "Remains unclear whether..." / "Evidence is mixed on..." / "Analysis cannot determine..."
-- **Never use**: "proves," "establishes," "settles" (unless extraordinary evidence truly warrants it)
+---
 
-### STRUCTURE:
+## CRITICAL: AVOID REDUNDANCY
 
-**1. Opening** — Vary to prevent repetitiveness:
-   - **Finding-first**: Lead with the most striking result
-   - **Question-first**: Open with the puzzle the analysis addressed
-   - **Context-first**: Begin with real-world relevance
-   - **Pattern-first**: Start with a surprising insight that emerged
+This is the most important instruction. Previous synopses suffered from severe redundancy.
 
-**2. Context** (~300-400 words)
-   - What question motivated the analysis and why it matters
-   - What existing evidence or conventional thinking suggested
-   - Set up genuine curiosity, not a strawman to knock down
+**Rules:**
+1. **State the core finding ONCE** — in the opening or early in the piece. Then MOVE FORWARD.
+2. **Do NOT re-summarize** the main conclusion in each section.
+3. **Trust the reader** to remember what you've told them.
+4. **Each section must add NEW information** — if you're restating earlier points, cut it.
+5. **Reference, don't repeat** — "As noted above..." or "Given this..." rather than re-explaining.
+6. **No meta-commentary loops** — Don't keep explaining what "partially validated" means or why "it depends."
 
-**3. The Evidence-Weighted Findings** (~1500-2500 words) — THE CORE
-   - Report what the analysis found when evidence is weighted by reliability and relevance
-   - Organize thematically with ### subheadings
-   - Use calibrated confidence language throughout
-   - Include specific details and citations [1], [2]
-   - **Include inconvenient findings** that complicate simple narratives
-   - Acknowledge what surprised or challenged initial expectations
+**Redundancy patterns to eliminate:**
+- Restating the core finding in the opening, then again in "findings," then again in "implications," then again in closing
+- Multiple paragraphs explaining that "affordable" has different definitions
+- Repeating that "reasonable people can disagree" in multiple sections
+- Re-explaining the same evidence cluster's conclusion in different words
 
-**4. How Different Weightings Shift the Picture** (~600-800 words)
-   - Different starting values or assumptions lead to different emphasis
-   - Present descriptively: "Those who prioritize X tend to weight this evidence more heavily..."
-   - **NOT "wrong" vs. "right"** — show how reasonable variation in priors yields different conclusions
-   - Include perspectives that genuinely challenge the primary findings
+---
 
-**5. What Remains Uncertain** (~300-400 words)
-   - What the analysis cannot determine
-   - Sensitivity to assumptions
-   - Gaps and limitations acknowledged transparently
-   - **Resist false resolution** — if it's genuinely unclear, say so
+## STRUCTURE (5 sections, not 8)
 
-**6. Implications & Insights** (~400-600 words)
-   - Patterns that emerge; what findings suggest about broader questions
-   - **Clearly separated from findings**: "If these findings hold..." / "This suggests..."
-   - Different stakeholders may draw different implications — acknowledge this
+**1. Opening** (~400-500 words)
+   - Hook the reader with a vivid frame or striking finding
+   - State the core finding ONCE, clearly and memorably
+   - Provide essential context for why this matters
+   - This is the ONLY place you fully state the main conclusion
 
-**7. Practical Considerations** (~400-500 words)
-   - Conditional, not prescriptive: "Given these findings, one might consider..."
-   - Acknowledge that practical application depends on values and context
-   - **Avoid imperatives**
+**2. The Evidence** (~1200-1800 words) — THE CORE
+   - What the analysis found, organized thematically with ### subheadings
+   - Specific details, citations [1], [2], concrete examples
+   - Include complicating evidence and genuine uncertainties INLINE (not as separate section)
+   - If different weightings lead to different conclusions, mention it ONCE within the relevant subsection
+   - Each subsection should teach something NEW
 
-### SPECIAL: RECOMMENDATION/CHOICE QUERIES (Best X, Hotels, Restaurants, Products, GOAT, etc.)
+**3. What This Means** (~500-700 words)
+   - Implications and practical considerations COMBINED
+   - What patterns emerge; what this suggests for decisions or thinking
+   - Conditional framing: "If these findings hold..." / "Given this evidence, one might consider..."
+   - Do NOT re-summarize the findings — assume the reader just read them
 
-If the analysis is about finding "the best" option (restaurants, hotels, products, athletes, etc.),
-include a **Candidate Comparison Table**:
+**4. Closing** (~200-300 words)
+   - One memorable insight or reflection
+   - What this reveals about the topic or how we think about such questions
+   - End thoughtfully — no triumphant declarations, no re-summarizing
+   - The reader should feel they've learned something, not been lectured
+
+### SPECIAL: RECOMMENDATION/CHOICE QUERIES
+
+If analyzing "the best" option (restaurants, hotels, products, etc.), include a comparison table:
 
 | Option | Known For | Rating | Price | Best For |
 |--------|-----------|--------|-------|----------|
 | Name   | Key differentiator | Score | Range | User type |
 
-Frame as: "Here are your options with their differentiators. 'Best' depends on your priorities."
+Place this in "What This Means" section.
 
-**8. Closing Reflection** (~200-300 words)
-   - The question may be more interesting than any single answer
-   - What this reveals about the topic or about how we think about such questions
-   - End thoughtfully, not triumphantly
+---
 
-### WHAT TO AVOID:
+## WHAT TO AVOID
+
+**Redundancy traps:**
+- "As discussed earlier... [then re-discussing it]"
+- Separate sections for "What Remains Uncertain" (integrate inline instead)
+- Separate sections for "How Different Weightings Shift" (one paragraph max, in Evidence)
+- "Practical Considerations" that just restate implications
+- Closing that summarizes instead of reflecting
 
 **Rhetorical patterns to eliminate:**
-- "Not X, but Y" / "It's not A, it's B" (repetitive, implies reader was wrong)
-- "You might think... but actually..." (condescending)
-- "The myth of..." / "What everyone gets wrong..." (adversarial clickbait)
-- "Here's what X really means" (implies reader ignorance)
+- "Not X, but Y" / "You might think... but actually..."
+- "The myth of..." / "What everyone gets wrong..."
 - Forced binary framings when reality is probabilistic
 
-**Framing to avoid:**
-- Treating alternative interpretations as "distorted" or "ideologically biased"
-- Manufacturing false certainty when genuine uncertainty exists
-- Advocacy dressed as analysis
-- Cherry-picking for clean narratives while hiding complicating evidence
+**Never use:**
+- Framework jargon: "K0", "K1", "H1", "posterior probability", "BFIH", "Bayesian"
+- Meta-references: "the analysis found" (repeatedly), "under paradigm..."
 
-### FORMATTING:
+**Do use:**
+- "Evidence suggests..." / "From an empirical perspective..." / "The assessment indicates..."
+
+---
+
+## FORMATTING:
 - Use # for title, ## for major sections, ### for subsections
 - Use **bold** for key terms, *italics* for publications
-- Use > blockquotes for striking findings
+- Use > blockquotes sparingly for striking findings
 - Numbered citations [1], [2] matching bibliography
-- TARGET LENGTH: 4000-5500 words
-- DO NOT include a References/Bibliography section (it will be appended automatically)
+- DO NOT include a References/Bibliography section (appended automatically)
 
-### NO EXPLICIT FRAMEWORK REFERENCES:
-**Never use**: "K0", "K1", "H1", "posterior probability", "likelihood ratio", "BFIH", "Bayesian" (technical), "under paradigm..."
+---
 
-**Do use**: "the evidence-weighted assessment," "from an empirical perspective," "analysis found..."
+## SELF-EDIT CHECKLIST (apply before finalizing):
+
+Before completing your response, verify:
+- [ ] Have I stated the main finding more than twice? If so, CUT redundant instances.
+- [ ] Does each section heading introduce genuinely NEW content?
+- [ ] Is there any paragraph that re-explains something from an earlier section? CUT IT.
+- [ ] Could "What This Means" stand alone without re-summarizing findings? If not, revise.
+- [ ] Does my closing add a new thought, or just restate the opening? Must be NEW.
+- [ ] Total length: 2,500-3,500 words. If longer, cut redundancy.
 
 ---
 
@@ -4212,9 +4208,9 @@ BFIH ANALYSIS REPORT TO TRANSFORM:
 
 ---
 
-Generate the article now. Report findings with calibrated confidence, preserve genuine complexity, acknowledge uncertainty honestly, and engage the reader's curiosity without lecturing or advocacy.
+Generate the article now. Prioritize DENSITY over LENGTH. Every paragraph must earn its place. A tight 3,000-word piece that moves forward without repetition is far better than a 5,000-word piece that restates itself.
 
-CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not summarize or abbreviate. Expand on each section with specific details, examples, and analysis from the source report."""
+TARGET LENGTH: 2,500-3,500 words. Quality over quantity."""
 
     def _get_atlantic_style_prompt(self, report: str) -> str:
         """
