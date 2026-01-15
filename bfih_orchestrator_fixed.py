@@ -4878,6 +4878,108 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append("")
 
         # ============================================================
+        # Bayesian Synthesis
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Bayesian Synthesis")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        # Calculate prior-to-posterior shifts for top hypotheses
+        synthesis_lines = ["BAYESIAN SYNTHESIS\\n"]
+        for h_id, post in sorted_posts[:3]:  # Top 3 hypotheses
+            prior = k0_priors.get(h_id, 0)
+            if isinstance(prior, dict):
+                prior = prior.get("probability", 0)
+            shift = post - prior
+            shift_dir = "+" if shift > 0 else ""
+            synthesis_lines.append(f"{h_id}: {prior*100:.0f}% → {post*100:.1f}% ({shift_dir}{shift*100:.1f}%)")
+
+        # Calculate total weight of evidence
+        total_woe = 0
+        for cluster in evidence_clusters:
+            metrics = cluster.get("bayesian_metrics_by_paradigm", {}).get(primary_paradigm, {})
+            for h_id, m in metrics.items():
+                woe = m.get("WoE_dB", 0)
+                if isinstance(woe, (int, float)):
+                    total_woe += abs(woe)
+
+        synthesis_lines.append(f"\\nTotal WoE: {total_woe:.1f} dB")
+        synthesis_label = "\\n".join(synthesis_lines)
+
+        lines.append(f'    bayesian_synthesis [label="{synthesis_label}",')
+        lines.append('                         shape=box, style="filled,rounded", fillcolor="#E6F3FF",')
+        lines.append('                         fontsize=10, penwidth=1.5];')
+        lines.append("")
+
+        # Connect posterior summary to synthesis
+        lines.append('    posterior_summary -> bayesian_synthesis [style=solid];')
+        lines.append("")
+
+        # ============================================================
+        # Key Insights
+        # ============================================================
+        lines.append("    // ============================================================")
+        lines.append("    // Key Insights")
+        lines.append("    // ============================================================")
+        lines.append("")
+
+        # Generate insights based on analysis
+        insights = ["KEY INSIGHTS\\n"]
+
+        # Insight 1: Paradigm agreement/disagreement
+        paradigm_winners = {}
+        for p_id, p_posts in posteriors.items():
+            if p_posts:
+                winner = max(p_posts.items(), key=lambda x: x[1])
+                paradigm_winners[p_id] = winner[0]
+
+        unique_winners = set(paradigm_winners.values())
+        if len(unique_winners) == 1:
+            insights.append(f"• All {len(paradigm_winners)} paradigms agree on {list(unique_winners)[0]}")
+        else:
+            insights.append(f"• {len(unique_winners)} different conclusions across paradigms")
+
+        # Insight 2: Evidence strength
+        strong_support_count = 0
+        strong_refute_count = 0
+        for cluster in evidence_clusters:
+            metrics = cluster.get("bayesian_metrics_by_paradigm", {}).get(primary_paradigm, {})
+            for h_id, m in metrics.items():
+                lr = m.get("LR", 1.0)
+                if isinstance(lr, (int, float)):
+                    if lr >= 3.0:
+                        strong_support_count += 1
+                    elif lr <= 0.33:
+                        strong_refute_count += 1
+
+        insights.append(f"• {strong_support_count} strong support signals")
+        insights.append(f"• {strong_refute_count} strong refutation signals")
+
+        # Insight 3: Decisive margin (calculate here for use in insights)
+        top_h_id, top_posterior = sorted_posts[0] if sorted_posts else ("?", 0)
+        second_h_id, second_posterior = sorted_posts[1] if len(sorted_posts) > 1 else ("?", 0)
+        margin = top_posterior - second_posterior
+
+        if margin > 0.5:
+            insights.append(f"• Decisive margin ({margin*100:.0f}%) over alternatives")
+        elif margin > 0.2:
+            insights.append(f"• Clear margin ({margin*100:.0f}%) over alternatives")
+        else:
+            insights.append(f"• Narrow margin ({margin*100:.0f}%) - some uncertainty")
+
+        insights_label = "\\n".join(insights)
+
+        lines.append(f'    key_insights [label="{insights_label}",')
+        lines.append('                   shape=box, style="filled,rounded", fillcolor="#FFF0F5",')
+        lines.append('                   fontsize=10, penwidth=1.5];')
+        lines.append("")
+
+        # Connect synthesis to insights
+        lines.append('    bayesian_synthesis -> key_insights [style=solid];')
+        lines.append("")
+
+        # ============================================================
         # Final Analysis Summary
         # ============================================================
         lines.append("    // ============================================================")
@@ -4914,12 +5016,13 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append('                    fontsize=11, penwidth=3];')
         lines.append("")
 
-        # Connect paradigms to final summary (if multiple paradigms exist)
+        # Connect insights to final summary
+        lines.append('    key_insights -> final_summary [style=solid, penwidth=2];')
+
+        # Also connect paradigms to final summary for cross-validation context
         if len(posteriors) > 1:
             for p_id in posteriors.keys():
                 lines.append(f'    paradigm_{sanitize_id(p_id)} -> final_summary [style=dashed, color="#999999"];')
-        else:
-            lines.append('    posterior_summary -> final_summary [style=solid];')
         lines.append("")
 
         # ============================================================
