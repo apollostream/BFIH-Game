@@ -466,11 +466,127 @@ async def submit_analysis(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _backfill_visualization(result_dict: Dict) -> Dict:
+    """
+    Generate and store visualization for legacy analyses that don't have one.
+
+    Args:
+        result_dict: Analysis result dictionary
+
+    Returns:
+        Updated result dictionary with visualization (or original if generation fails)
+    """
+    import re
+
+    # Check if visualization already exists
+    viz_meta = result_dict.get('metadata', {}).get('visualization', {})
+    if viz_meta.get('gcs_url'):
+        return result_dict  # Already has visualization
+
+    # Check if we have the required data to generate a visualization
+    scenario_config = result_dict.get('scenario_config')
+    posteriors = result_dict.get('posteriors')
+    if not scenario_config or not posteriors:
+        logger.debug(f"Cannot backfill visualization - missing scenario_config or posteriors")
+        return result_dict
+
+    try:
+        logger.info(f"Backfilling visualization for {result_dict.get('scenario_id', 'unknown')}")
+
+        # Create a BFIHAnalysisResult object from the dict
+        analysis_result = BFIHAnalysisResult(
+            analysis_id=result_dict.get('analysis_id', ''),
+            scenario_id=result_dict.get('scenario_id', ''),
+            proposition=result_dict.get('proposition', ''),
+            report=result_dict.get('report', ''),
+            posteriors=posteriors,
+            metadata=result_dict.get('metadata', {}),
+            created_at=result_dict.get('created_at', ''),
+            scenario_config=scenario_config
+        )
+
+        # Create orchestrator just for visualization (no API key needed)
+        orchestrator = BFIHOrchestrator()
+
+        # Generate DOT content
+        dot_content = orchestrator.generate_evidence_flow_dot(analysis_result)
+
+        # Render to SVG
+        import subprocess
+        import shutil
+
+        if not shutil.which('dot'):
+            logger.warning("Graphviz not available for backfill")
+            return result_dict
+
+        svg_result = subprocess.run(
+            ['dot', '-Tsvg'],
+            input=dot_content,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if svg_result.returncode != 0:
+            logger.error(f"Graphviz error during backfill: {svg_result.stderr}")
+            return result_dict
+
+        svg_content = svg_result.stdout
+
+        # Upload to GCS
+        public_url = storage.store_visualization(result_dict['scenario_id'], svg_content)
+
+        if public_url:
+            # Update metadata
+            if 'metadata' not in result_dict:
+                result_dict['metadata'] = {}
+            if 'visualization' not in result_dict['metadata']:
+                result_dict['metadata']['visualization'] = {}
+            result_dict['metadata']['visualization']['gcs_url'] = public_url
+
+            # Update report to include visualization
+            img_tag = f'<img src="{public_url}" alt="BFIH Evidence Flow" style="max-width:100%;height:auto;">'
+            viz_section = f'''
+## Evidence Flow Visualization
+
+The following diagram shows the flow of evidence through the Bayesian analysis framework,
+illustrating how evidence clusters support or refute each hypothesis.
+
+<div class="bfih-visualization" style="width:100%;overflow-x:auto;">
+{img_tag}
+</div>
+
+*Figure: Evidence flow diagram showing hypotheses (boxes), evidence clusters (ellipses),
+and likelihood ratios indicating strength of support or refutation.*
+
+'''
+            # Insert after Executive Summary or at the beginning
+            report = result_dict.get('report', '')
+            if '## 2. Paradigms' in report:
+                report = report.replace('## 2. Paradigms', viz_section + '## 2. Paradigms')
+            elif '## 2. Research Paradigms' in report:
+                report = report.replace('## 2. Research Paradigms', viz_section + '## 2. Research Paradigms')
+            else:
+                # Prepend if no good insertion point
+                report = viz_section + report
+            result_dict['report'] = report
+
+            # Re-store the updated result
+            storage.store_analysis_result(result_dict['analysis_id'], result_dict)
+            logger.info(f"Backfilled visualization: {public_url}")
+
+        return result_dict
+
+    except Exception as e:
+        logger.warning(f"Failed to backfill visualization: {e}")
+        return result_dict
+
+
 @app.get("/api/bfih-analysis/{analysis_id}")
 async def get_analysis(analysis_id: str):
     """
     Retrieve completed BFIH analysis
-    
+
     Returns:
     {
         "analysis_id": "uuid",
@@ -485,15 +601,18 @@ async def get_analysis(analysis_id: str):
     """
     try:
         result = storage.retrieve_analysis_result(analysis_id)
-        
+
         if not result:
             raise HTTPException(
                 status_code=404,
                 detail=f"Analysis not found: {analysis_id}"
             )
-        
+
+        # Backfill visualization if missing
+        result = _backfill_visualization(result)
+
         return result
-        
+
     except HTTPException:
         raise
     except Exception as e:
