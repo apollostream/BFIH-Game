@@ -4609,17 +4609,17 @@ and likelihood ratios indicating strength of support or refutation.*
         def get_edge_style(lr: float) -> tuple:
             """Return (label, color, penwidth, style) based on LR."""
             if lr >= 3.0:
-                return "Strong support", "#CC0000", 3, "solid"
+                return "Strong support", "#006600", 3, "solid"  # Dark green
             elif lr >= 2.0:
-                return "Moderate support", "#CC6600", 2.5, "solid"
+                return "Moderate support", "#228B22", 2.5, "solid"  # Forest green
             elif lr >= 1.2:
-                return "Weak support", "#999900", 2, "solid"
+                return "Weak support", "#66CC66", 2, "solid"  # Light green
             elif lr > 0.8:
-                return "Neutral", "#999999", 1, "dashed"
+                return "Neutral", "#999999", 1, "dashed"  # Gray
             elif lr > 0.5:
-                return "Weak refutation", "#666666", 1, "dotted"
+                return "Weak refutation", "#CC6666", 1, "dotted"  # Light red
             else:
-                return "Refutation", "#333333", 1.5, "dotted"
+                return "Refutation", "#CC0000", 1.5, "dotted"  # Dark red
 
         # Helper to sanitize IDs for DOT (no hyphens, special chars)
         def sanitize_id(id_str: str) -> str:
