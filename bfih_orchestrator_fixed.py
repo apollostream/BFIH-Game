@@ -5020,13 +5020,8 @@ and likelihood ratios indicating strength of support or refutation.*
         lines.append('                    fontsize=11, penwidth=3];')
         lines.append("")
 
-        # Connect insights to final summary
+        # Connect insights to final summary (single parent)
         lines.append('    key_insights -> final_summary [style=solid, penwidth=2];')
-
-        # Also connect paradigms to final summary for cross-validation context
-        if len(posteriors) > 1:
-            for p_id in posteriors.keys():
-                lines.append(f'    paradigm_{sanitize_id(p_id)} -> final_summary [style=dashed, color="#999999"];')
         lines.append("")
 
         lines.append("}")
