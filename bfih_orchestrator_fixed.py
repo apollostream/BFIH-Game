@@ -2105,7 +2105,21 @@ IMPORTANT MARKDOWN FORMATTING:
                                hypotheses: List[Dict],
                                precomputed_cluster_tables: List[Dict] = None) -> str:
         """Phase 5b: Generate Evidence Matrix with full citations and PRE-COMPUTED Bayesian metrics."""
-        evidence_json = json.dumps(evidence_items or [], indent=2)
+        # Slim down evidence items for smaller payload - remove fields not needed for report writing
+        slim_items = []
+        for item in (evidence_items or []):
+            slim_item = {
+                'evidence_id': item.get('evidence_id', ''),
+                'description': item.get('description', '')[:200],  # Truncate long descriptions
+                'source_name': item.get('source_name', ''),
+                'source_url': item.get('source_url', ''),
+                'citation_apa': item.get('citation_apa', '')[:250],  # Truncate long citations
+                'date_accessed': item.get('date_accessed', ''),
+                'evidence_type': item.get('evidence_type', ''),
+            }
+            slim_items.append(slim_item)
+        evidence_json = json.dumps(slim_items)  # No indent = more compact
+
         hyp_ids = [h.get('id', f'H{i}') for i, h in enumerate(hypotheses)]
         precomputed_cluster_tables = precomputed_cluster_tables or []
 
