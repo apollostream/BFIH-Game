@@ -525,7 +525,7 @@ def _backfill_visualization(result_dict: Dict) -> Dict:
         # Generate DOT content
         dot_content = orchestrator.generate_evidence_flow_dot(analysis_result)
 
-        # Render to SVG
+        # Render to PNG
         import subprocess
         import shutil
 
@@ -533,22 +533,21 @@ def _backfill_visualization(result_dict: Dict) -> Dict:
             logger.warning("Graphviz not available for backfill")
             return result_dict
 
-        svg_result = subprocess.run(
-            ['dot', '-Tsvg'],
-            input=dot_content,
+        png_result = subprocess.run(
+            ['dot', '-Tpng', '-Gdpi=150'],  # Higher DPI for better quality
+            input=dot_content.encode('utf-8'),
             capture_output=True,
-            text=True,
             timeout=30
         )
 
-        if svg_result.returncode != 0:
-            logger.error(f"Graphviz error during backfill: {svg_result.stderr}")
+        if png_result.returncode != 0:
+            logger.error(f"Graphviz error during backfill: {png_result.stderr.decode('utf-8')}")
             return result_dict
 
-        svg_content = svg_result.stdout
+        png_content = png_result.stdout
 
         # Upload to GCS
-        public_url = storage.store_visualization(result_dict['scenario_id'], svg_content)
+        public_url = storage.store_visualization(result_dict['scenario_id'], png_content)
 
         if public_url:
             # Update metadata
@@ -558,17 +557,14 @@ def _backfill_visualization(result_dict: Dict) -> Dict:
                 result_dict['metadata']['visualization'] = {}
             result_dict['metadata']['visualization']['gcs_url'] = public_url
 
-            # Update report to include visualization
-            img_tag = f'<img src="{public_url}" alt="BFIH Evidence Flow" style="max-width:100%;height:auto;">'
+            # Update report to include visualization with markdown image syntax
             viz_section = f'''
 ## Evidence Flow Visualization
 
 The following diagram shows the flow of evidence through the Bayesian analysis framework,
 illustrating how evidence clusters support or refute each hypothesis.
 
-<div class="bfih-visualization" style="width:100%;overflow-x:auto;">
-{img_tag}
-</div>
+![BFIH Evidence Flow]({public_url})
 
 *Figure: Evidence flow diagram showing hypotheses (boxes), evidence clusters (ellipses),
 and likelihood ratios indicating strength of support or refutation.*
@@ -577,14 +573,18 @@ and likelihood ratios indicating strength of support or refutation.*
             # Insert after Executive Summary or at the beginning
             report = result_dict.get('report', '')
 
-            # Remove old local SVG references
-            old_viz_pattern = r'!\[BFIH Evidence Flow\]\(\./[^)]+\.svg\)\s*'
+            # Remove old local SVG/PNG references and old HTML img tags
+            old_viz_pattern = r'!\[BFIH Evidence Flow\]\(\./[^)]+\.(svg|png)\)\s*'
             report = re.sub(old_viz_pattern, '', report)
+            # Also remove old HTML visualization divs
+            report = re.sub(r'<div class="bfih-visualization"[^>]*>.*?</div>\s*', '', report, flags=re.DOTALL)
 
             if '## 2. Paradigms' in report:
                 report = report.replace('## 2. Paradigms', viz_section + '## 2. Paradigms')
             elif '## 2. Research Paradigms' in report:
                 report = report.replace('## 2. Research Paradigms', viz_section + '## 2. Research Paradigms')
+            elif '## Methodology' in report:
+                report = report.replace('## Methodology', viz_section + '## Methodology')
             else:
                 # Prepend if no good insertion point
                 report = viz_section + report
@@ -948,24 +948,38 @@ def _run_analysis(
 
         # Upload visualization to GCS if available
         viz_meta = result.metadata.get("visualization", {})
-        svg_path = viz_meta.get("svg")
-        if svg_path and os.path.exists(svg_path):
+        png_path = viz_meta.get("png")
+        if png_path and os.path.exists(png_path):
             try:
-                with open(svg_path, 'r') as f:
-                    svg_content = f.read()
+                with open(png_path, 'rb') as f:
+                    png_content = f.read()
                 # Upload to GCS and get public URL
-                public_url = storage.store_visualization(result.scenario_id, svg_content)
+                public_url = storage.store_visualization(result.scenario_id, png_content)
                 if public_url:
-                    # Replace inline SVG with img tag pointing to GCS
-                    import re
-                    img_tag = f'<img src="{public_url}" alt="BFIH Evidence Flow" style="max-width:100%;height:auto;">'
-                    # Replace the div containing inline SVG with img tag
-                    result.report = re.sub(
-                        r'<div class="bfih-visualization"[^>]*>.*?</div>',
-                        f'<div class="bfih-visualization" style="width:100%;overflow-x:auto;">\n{img_tag}\n</div>',
-                        result.report,
-                        flags=re.DOTALL
-                    )
+                    # Add visualization section with markdown image to report
+                    viz_markdown = f'''
+## Evidence Flow Visualization
+
+The following diagram shows the flow of evidence through the Bayesian analysis framework,
+illustrating how evidence clusters support or refute each hypothesis.
+
+![BFIH Evidence Flow]({public_url})
+
+*Figure: Evidence flow diagram showing hypotheses (boxes), evidence clusters (ellipses),
+and likelihood ratios indicating strength of support or refutation.*
+
+'''
+                    # Insert after Executive Summary or at the beginning
+                    if '## 2. Paradigms' in result.report:
+                        result.report = result.report.replace('## 2. Paradigms', viz_markdown + '## 2. Paradigms')
+                    elif '## 2. Research Paradigms' in result.report:
+                        result.report = result.report.replace('## 2. Research Paradigms', viz_markdown + '## 2. Research Paradigms')
+                    elif '## Methodology' in result.report:
+                        result.report = result.report.replace('## Methodology', viz_markdown + '## Methodology')
+                    else:
+                        # Prepend if no good insertion point
+                        result.report = viz_markdown + result.report
+
                     result.metadata["visualization"]["gcs_url"] = public_url
                     logger.info(f"Uploaded visualization to GCS: {public_url}")
             except Exception as viz_err:

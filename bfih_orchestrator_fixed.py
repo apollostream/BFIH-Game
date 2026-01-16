@@ -417,16 +417,13 @@ class BFIHOrchestrator:
                 import tempfile
                 viz_dir = tempfile.gettempdir()  # Use /tmp for cloud compatibility
                 viz_output = self.generate_evidence_flow_visualization(result, output_dir=viz_dir)
-                if viz_output.get("svg"):
+                if viz_output.get("png"):
                     result.metadata["visualization"] = {
                         "dot": viz_output["dot"],
-                        "svg": viz_output["svg"]
+                        "png": viz_output["png"],
+                        "dot_content": viz_output.get("dot_content")
                     }
-                    # Insert visualization reference into report
-                    result.report = self._insert_visualization_into_report(
-                        result.report, viz_output["svg"]
-                    )
-                    logger.info(f"Generated evidence flow visualization: {viz_output['svg']}")
+                    logger.info(f"Generated evidence flow visualization: {viz_output['png']}")
             except Exception as viz_error:
                 logger.warning(f"Could not generate visualization: {viz_error}")
 
@@ -5196,6 +5193,50 @@ and likelihood ratios indicating strength of support or refutation.*
             logger.error(f"Error rendering DOT to SVG: {e}")
             return None
 
+    def render_dot_to_png(self, dot_content: str, output_path: str) -> Optional[str]:
+        """
+        Render DOT content to PNG using Graphviz.
+
+        Args:
+            dot_content: DOT script as string
+            output_path: Path for output PNG file
+
+        Returns:
+            Path to PNG file if successful, None otherwise
+        """
+        import subprocess
+        import shutil
+
+        # Check if Graphviz is installed
+        if not shutil.which('dot'):
+            logger.warning("Graphviz 'dot' command not found. Install with: apt install graphviz")
+            return None
+
+        try:
+            result = subprocess.run(
+                ['dot', '-Tpng', '-Gdpi=150'],  # Higher DPI for better quality
+                input=dot_content.encode('utf-8'),
+                capture_output=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                logger.error(f"Graphviz error: {result.stderr.decode('utf-8')}")
+                return None
+
+            with open(output_path, 'wb') as f:
+                f.write(result.stdout)
+
+            logger.info(f"Rendered PNG to: {output_path}")
+            return output_path
+
+        except subprocess.TimeoutExpired:
+            logger.error("Graphviz rendering timed out")
+            return None
+        except Exception as e:
+            logger.error(f"Error rendering DOT to PNG: {e}")
+            return None
+
     def generate_evidence_flow_visualization(
         self,
         result: 'BFIHAnalysisResult',
@@ -5203,21 +5244,21 @@ and likelihood ratios indicating strength of support or refutation.*
         embed_in_report: bool = False
     ) -> Dict[str, Optional[str]]:
         """
-        Generate complete evidence flow visualization (DOT + SVG).
+        Generate complete evidence flow visualization (DOT + PNG).
 
         Args:
             result: BFIHAnalysisResult containing analysis data
             output_dir: Directory for output files
-            embed_in_report: If True, return SVG content for embedding
+            embed_in_report: Deprecated, kept for backwards compatibility
 
         Returns:
-            Dict with paths: {"dot": path, "svg": path, "svg_content": content if embed}
+            Dict with paths: {"dot": path, "png": path, "dot_content": DOT source}
         """
         import os
 
         scenario_id = result.scenario_id
         dot_path = os.path.join(output_dir, f"{scenario_id}-evidence-flow.dot")
-        svg_path = os.path.join(output_dir, f"{scenario_id}-evidence-flow.svg")
+        png_path = os.path.join(output_dir, f"{scenario_id}-evidence-flow.png")
 
         # Generate DOT
         dot_content = self.generate_evidence_flow_dot(result)
@@ -5227,19 +5268,14 @@ and likelihood ratios indicating strength of support or refutation.*
             f.write(dot_content)
         logger.info(f"Saved DOT file: {dot_path}")
 
-        # Render to SVG
-        svg_result = self.render_dot_to_svg(dot_content, svg_path)
+        # Render to PNG for better PDF compatibility
+        png_result = self.render_dot_to_png(dot_content, png_path)
 
         output = {
             "dot": dot_path,
-            "svg": svg_result,
-            "svg_content": None
+            "png": png_result,
+            "dot_content": dot_content
         }
-
-        # Read SVG content if embedding requested
-        if embed_in_report and svg_result:
-            with open(svg_path, 'r') as f:
-                output["svg_content"] = f.read()
 
         return output
 

@@ -253,23 +253,23 @@ class FileStorageBackend(StorageBackend):
             logger.error(f"Error listing scenarios: {str(e)}")
             return []
 
-    def store_visualization(self, scenario_id: str, svg_content: str) -> Optional[str]:
+    def store_visualization(self, scenario_id: str, png_content: bytes) -> Optional[str]:
         """
-        Store SVG visualization to local file and return path.
+        Store PNG visualization to local file and return path.
 
         Args:
             scenario_id: The scenario/analysis ID
-            svg_content: The SVG file content
+            png_content: The PNG file content (binary)
 
         Returns:
-            Path to the SVG file, or None on failure
+            Path to the PNG file, or None on failure
         """
         try:
             viz_dir = self.base_dir / "visualizations"
             viz_dir.mkdir(parents=True, exist_ok=True)
-            filepath = viz_dir / f"{scenario_id}-evidence-flow.svg"
-            with open(filepath, 'w') as f:
-                f.write(svg_content)
+            filepath = viz_dir / f"{scenario_id}-evidence-flow.png"
+            with open(filepath, 'wb') as f:
+                f.write(png_content)
             logger.info(f"Stored visualization: {filepath}")
             return str(filepath)
         except Exception as e:
@@ -510,21 +510,21 @@ class GCSStorageBackend(StorageBackend):
             logger.error(f"Error listing scenarios from GCS: {str(e)}")
             return []
 
-    def store_visualization(self, scenario_id: str, svg_content: str) -> Optional[str]:
+    def store_visualization(self, scenario_id: str, png_content: bytes) -> Optional[str]:
         """
-        Store SVG visualization to GCS and return public URL.
+        Store PNG visualization to GCS and return public URL.
 
         Args:
             scenario_id: The scenario/analysis ID
-            svg_content: The SVG file content
+            png_content: The PNG file content (binary)
 
         Returns:
-            Public URL to the SVG file, or None on failure
+            Public URL to the PNG file, or None on failure
         """
         try:
-            path = f"{self.prefix}/visualizations/{scenario_id}-evidence-flow.svg"
+            path = f"{self.prefix}/visualizations/{scenario_id}-evidence-flow.png"
             blob = self._get_blob(path)
-            blob.upload_from_string(svg_content, content_type='image/svg+xml')
+            blob.upload_from_string(png_content, content_type='image/png')
 
             # Make the blob publicly accessible
             blob.make_public()
