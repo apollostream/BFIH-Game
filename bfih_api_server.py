@@ -1263,8 +1263,16 @@ and likelihood ratios indicating strength of support or refutation.*
         logger.info(f"Analysis completed: {analysis_id}")
 
     except Exception as e:
-        logger.error(f"Error in background analysis task: {str(e)}")
-        storage.update_analysis_status(analysis_id, f"failed: {str(e)}")
+        error_msg = str(e)
+        logger.error(f"Error in background analysis task: {error_msg}")
+
+        # Check if this is an authentication/API key error
+        error_lower = error_msg.lower()
+        if "api key" in error_lower or "authentication" in error_lower or "invalid" in error_lower:
+            # Mark as auth error so frontend can detect and prompt for re-setup
+            storage.update_analysis_status(analysis_id, f"auth_error: {error_msg}")
+        else:
+            storage.update_analysis_status(analysis_id, f"failed: {error_msg}")
 
 
 # ============================================================================

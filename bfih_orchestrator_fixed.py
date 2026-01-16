@@ -21,7 +21,7 @@ from pathlib import Path
 import uuid
 from dataclasses import dataclass, asdict
 
-from openai import OpenAI
+from openai import OpenAI, AuthenticationError, APIError
 from dotenv import load_dotenv
 import httpx
 
@@ -892,6 +892,28 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 return response.output_text
 
+            except AuthenticationError as e:
+                # API key errors should fail immediately, no retry
+                logger.error(f"Authentication error in {phase_name}: {e}")
+                raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
+
+            except APIError as e:
+                # Check if it's an auth-related API error (invalid key format, etc.)
+                error_msg = str(e).lower()
+                if "api key" in error_msg or "authentication" in error_msg or "incorrect" in error_msg:
+                    logger.error(f"API key error in {phase_name}: {e}")
+                    raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
+                # Other API errors might be transient, allow retry
+                last_error = e
+                if attempt < max_retries:
+                    wait_time = (attempt + 1) * 5
+                    logger.warning(f"{phase_name} failed with APIError: {e}, retrying in {wait_time}s...")
+                    print(f"\n[APIError, retrying in {wait_time}s...]")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    raise
+
             except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout, RuntimeError) as e:
                 last_error = e
                 if attempt < max_retries:
@@ -1064,6 +1086,28 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                         return result
                     raise ValueError(f"Could not parse JSON from response: {output_text[:500]}")
 
+            except AuthenticationError as e:
+                # API key errors should fail immediately, no retry
+                logger.error(f"Authentication error in {phase_name}: {e}")
+                raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
+
+            except APIError as e:
+                # Check if it's an auth-related API error
+                error_msg = str(e).lower()
+                if "api key" in error_msg or "authentication" in error_msg or "incorrect" in error_msg:
+                    logger.error(f"API key error in {phase_name}: {e}")
+                    raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
+                # Other API errors might be transient, allow retry
+                last_error = e
+                if attempt < max_retries:
+                    wait_time = (attempt + 1) * 5
+                    logger.warning(f"{phase_name} failed with APIError: {e}, retrying in {wait_time}s...")
+                    print(f"\n[APIError, retrying in {wait_time}s...]")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    raise
+
             except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 last_error = e
                 if attempt < max_retries:
@@ -1175,6 +1219,28 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                         print(f"[JSON parse failed, falling back to structured output...]")
                         return self._run_structured_phase(prompt, schema_name, f"{phase_name} (structured fallback)")
                     raise ValueError(f"Could not parse JSON from reasoning response: {output_text[:500]}")
+
+            except AuthenticationError as e:
+                # API key errors should fail immediately, no retry
+                logger.error(f"Authentication error in {phase_name}: {e}")
+                raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
+
+            except APIError as e:
+                # Check if it's an auth-related API error
+                error_msg = str(e).lower()
+                if "api key" in error_msg or "authentication" in error_msg or "incorrect" in error_msg:
+                    logger.error(f"API key error in {phase_name}: {e}")
+                    raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
+                # Other API errors might be transient, allow retry
+                last_error = e
+                if attempt < max_retries:
+                    wait_time = (attempt + 1) * 10
+                    logger.warning(f"{phase_name} failed with APIError: {e}, retrying in {wait_time}s...")
+                    print(f"\n[APIError, retrying in {wait_time}s...]")
+                    time.sleep(wait_time)
+                else:
+                    logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    raise
 
             except (httpx.RemoteProtocolError, httpx.ReadTimeout, httpx.ConnectTimeout) as e:
                 last_error = e

@@ -22,7 +22,7 @@ import { Header } from './components/layout/Header';
 import { SetupModal } from './components/ui';
 
 // API
-import { isSetupComplete } from './api';
+import { checkSetupNeeded } from './api';
 
 function AnimatedRoutes() {
   const location = useLocation();
@@ -55,10 +55,19 @@ function App() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    // Check if setup is needed on initial load
-    const setupDone = isSetupComplete();
-    setShowSetup(!setupDone);
-    setIsReady(true);
+    // Check if setup is needed on initial load (async - checks server status too)
+    const checkSetup = async () => {
+      try {
+        const needsSetup = await checkSetupNeeded();
+        setShowSetup(needsSetup);
+      } catch (error) {
+        // If check fails, assume setup is needed
+        console.error('Failed to check setup status:', error);
+        setShowSetup(true);
+      }
+      setIsReady(true);
+    };
+    checkSetup();
   }, []);
 
   const handleSetupComplete = () => {

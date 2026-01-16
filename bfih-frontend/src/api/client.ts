@@ -128,10 +128,39 @@ export async function post<T>(endpoint: string, body: unknown): Promise<ApiRespo
   });
 }
 
-// Health check
-export async function checkHealth(): Promise<boolean> {
-  const response = await get('/api/health');
-  return response.status === 200;
+// Health check - returns full server status
+interface HealthResponse {
+  status: string;
+  timestamp: string;
+  service: string;
+  requires_api_key: boolean;
+}
+
+export async function checkHealth(): Promise<{ healthy: boolean; requiresApiKey: boolean }> {
+  const response = await get<HealthResponse>('/api/health');
+  return {
+    healthy: response.status === 200,
+    requiresApiKey: response.data?.requires_api_key ?? true, // Default to requiring key if unknown
+  };
+}
+
+// Check if setup is needed (considers both local storage AND server state)
+export async function checkSetupNeeded(): Promise<boolean> {
+  // Check server health and requirements
+  const healthStatus = await checkHealth();
+
+  if (!healthStatus.healthy) {
+    // Server is down, can't determine - assume setup needed
+    return true;
+  }
+
+  if (!healthStatus.requiresApiKey) {
+    // Server has a default API key configured, no setup needed
+    return false;
+  }
+
+  // Server requires API key - check if user has completed setup
+  return !isSetupComplete();
 }
 
 // ============================================================================

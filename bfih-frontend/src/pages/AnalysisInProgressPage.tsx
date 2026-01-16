@@ -19,10 +19,11 @@ const ANALYSIS_PHASES = [
 ];
 
 // Helper to normalize status string
-function normalizeStatus(status: string | undefined | null): 'processing' | 'completed' | 'failed' {
+function normalizeStatus(status: string | undefined | null): 'processing' | 'completed' | 'failed' | 'auth_error' {
   if (!status) return 'processing';
   const s = status.toLowerCase().trim();
   if (s === 'completed') return 'completed';
+  if (s.startsWith('auth_error')) return 'auth_error';
   if (s.startsWith('failed')) return 'failed';
   return 'processing';
 }
@@ -33,7 +34,7 @@ export function AnalysisInProgressPage() {
   const { loadScenario } = useGameStore();
   const { cacheResult, pendingProposition } = useAnalysisStore();
 
-  const [status, setStatus] = useState<'processing' | 'completed' | 'failed'>('processing');
+  const [status, setStatus] = useState<'processing' | 'completed' | 'failed' | 'auth_error'>('processing');
   const [rawStatus, setRawStatus] = useState<string>(''); // For debugging
   const [result, setResult] = useState<BFIHAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -132,6 +133,9 @@ export function AnalysisInProgressPage() {
           console.error('Failed to fetch full result:', fetchErr);
           setError(`Failed to fetch result: ${fetchErr instanceof Error ? fetchErr.message : 'Unknown error'}`);
         }
+      } else if (normalized === 'auth_error') {
+        setStatus('auth_error');
+        setError('Invalid or expired API key. Please reconfigure your API key.');
       } else if (normalized === 'failed') {
         setStatus('failed');
         setError(statusResponse.error || statusResponse.status || 'Analysis failed');
@@ -204,7 +208,18 @@ export function AnalysisInProgressPage() {
 
   const isComplete = status === 'completed';
   const isFailed = status === 'failed';
-  const isProcessing = !isComplete && !isFailed;
+  const isAuthError = status === 'auth_error';
+  const isProcessing = !isComplete && !isFailed && !isAuthError;
+
+  // Handler to clear credentials and show setup modal
+  const handleReconfigureKey = useCallback(() => {
+    // Clear stored credentials to force setup modal to appear
+    localStorage.removeItem('bfih_openai_api_key');
+    localStorage.removeItem('bfih_vector_store_id');
+    localStorage.removeItem('bfih_setup_complete');
+    // Navigate to home which will show setup modal
+    window.location.href = '/';
+  }, []);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -239,7 +254,17 @@ export function AnalysisInProgressPage() {
           <div className="relative z-10">
             {/* Animated Icon */}
             <div className="flex justify-center mb-8">
-              {isFailed ? (
+              {isAuthError ? (
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="w-28 h-28 rounded-full bg-warning/20 border-2 border-warning/40 flex items-center justify-center"
+                >
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-warning">
+                    <path d="M12 9v4m0 4h.01M12 2l10 18H2L12 2z" />
+                  </svg>
+                </motion.div>
+              ) : isFailed ? (
                 <motion.div
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -310,7 +335,8 @@ export function AnalysisInProgressPage() {
             {/* Status Text */}
             <div className="text-center mb-8">
               <h2 className="text-2xl md:text-3xl font-bold text-text-primary mb-3">
-                {isFailed ? 'Analysis Failed' :
+                {isAuthError ? 'API Key Error' :
+                 isFailed ? 'Analysis Failed' :
                  isComplete ? 'Analysis Complete!' :
                  'Analysis in Progress'}
               </h2>
@@ -322,7 +348,8 @@ export function AnalysisInProgressPage() {
                   exit={{ opacity: 0, y: -10 }}
                   className="text-lg text-text-secondary"
                 >
-                  {isFailed ? 'Something went wrong. Please try again.' :
+                  {isAuthError ? 'Your API key is invalid or has expired.' :
+                   isFailed ? 'Something went wrong. Please try again.' :
                    isComplete ? 'Your analysis is ready!' :
                    ANALYSIS_PHASES[currentPhaseIndex]?.label || 'Processing...'}
                 </motion.p>
@@ -411,7 +438,16 @@ export function AnalysisInProgressPage() {
 
             {/* Actions */}
             <div className="flex justify-center gap-4">
-              {isFailed ? (
+              {isAuthError ? (
+                <>
+                  <Button variant="ghost" onClick={() => navigate('/')}>
+                    Back to Home
+                  </Button>
+                  <Button onClick={handleReconfigureKey}>
+                    Reconfigure API Key
+                  </Button>
+                </>
+              ) : isFailed ? (
                 <>
                   <Button variant="ghost" onClick={() => navigate('/')}>
                     Back to Home
