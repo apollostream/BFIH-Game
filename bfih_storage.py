@@ -299,7 +299,7 @@ class GCSStorageBackend(StorageBackend):
 
         logger.info(f"GCSStorageBackend initialized: gs://{bucket_name}/{prefix}")
 
-    def _get_blob(self, path: str) -> gcs.Blob:
+    def _get_blob(self, path: str):
         """Get a blob reference"""
         return self.bucket.blob(path)
 
