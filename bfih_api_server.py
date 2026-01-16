@@ -945,8 +945,13 @@ def _run_analysis(
             except Exception as viz_err:
                 logger.warning(f"Could not upload visualization to GCS: {viz_err}")
 
-        # Store result
+        # Store result by analysis_id
         storage.store_analysis_result(analysis_id, result)
+
+        # Also store by scenario_id for library lookup (if different)
+        if result.scenario_id and result.scenario_id != analysis_id:
+            storage.store_analysis_result(result.scenario_id, result)
+            logger.info(f"Also stored analysis under scenario_id: {result.scenario_id}")
 
         # Update status
         storage.update_analysis_status(analysis_id, "completed")
