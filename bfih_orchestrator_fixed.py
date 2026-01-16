@@ -414,7 +414,9 @@ class BFIHOrchestrator:
 
             # Generate evidence flow visualization if Graphviz is available
             try:
-                viz_output = self.generate_evidence_flow_visualization(result, output_dir=".")
+                import tempfile
+                viz_dir = tempfile.gettempdir()  # Use /tmp for cloud compatibility
+                viz_output = self.generate_evidence_flow_visualization(result, output_dir=viz_dir)
                 if viz_output.get("svg"):
                     result.metadata["visualization"] = {
                         "dot": viz_output["dot"],
