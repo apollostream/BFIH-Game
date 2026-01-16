@@ -137,7 +137,7 @@ if os.getenv("OPENAI_API_KEY"):
 if os.getenv("TREATISE_VECTOR_STORE_ID"):
     TREATISE_VECTOR_STORE_ID = os.getenv("TREATISE_VECTOR_STORE_ID")
 
-MODEL = "gpt-4o"
+MODEL = "o4-mini"
 # Reasoning model for cognitively demanding tasks (paradigm/hypothesis/prior/likelihood)
 # Options: o3-mini (default), o3, o4-mini, gpt-5, gpt-5.2
 REASONING_MODEL = os.getenv("BFIH_REASONING_MODEL", "o3-mini")
@@ -1224,7 +1224,7 @@ Return ONLY the inverse proposition, nothing else."""
 
         try:
             response = self.client.responses.create(
-                model="gpt-4o-mini",  # Fast model for simple task
+                model="o4-mini",  # Fast model for simple task
                 input=prompt,
             )
             inverse = response.output_text.strip().strip('"')
@@ -1355,7 +1355,7 @@ For questions about philosophical schools, epistemology, or reasoning frameworks
 """
         try:
             response = self.client.responses.create(
-                model="gpt-4o-mini",  # Fast, cheap model for classification
+                model="o4-mini",  # Fast, cheap model for classification
                 input=prompt,
                 max_output_tokens=20,
             )
@@ -1743,7 +1743,7 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for likelihood assessment (requires careful evidence-paradigm analysis)
-            # Falls back to structured output (gpt-4o) if JSON parsing fails
+            # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 3: Likelihood Assignment (reasoning)",
                 schema_name="clusters"  # Enables structured output fallback
@@ -2985,7 +2985,7 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for paradigm construction (cognitively demanding task)
-            # Falls back to structured output (gpt-4o) if JSON parsing fails
+            # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 0a: Generate Paradigms (reasoning)",
                 schema_name="paradigms"  # Enables structured output fallback
@@ -3498,7 +3498,7 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for deeper analytical thinking
-            # Falls back to structured output (gpt-4o) if JSON parsing fails
+            # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 0b: Generate Hypotheses + Forcing Functions (reasoning)",
                 schema_name="hypotheses"  # Enables structured output fallback
@@ -3519,7 +3519,7 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 
         except Exception as e:
             logger.warning(f"Reasoning model failed for hypotheses: {e}, falling back to structured output")
-            # Fallback to structured output with gpt-4o
+            # Fallback to structured output with o4-mini
             try:
                 fallback_prompt = prompt.replace("Think step by step", "").replace("```json", "").replace("```", "")
                 result = self._run_structured_phase(
@@ -3717,7 +3717,7 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
 """
         try:
             # Use reasoning model for prior assignment (requires careful paradigm-aware reasoning)
-            # Falls back to structured output (gpt-4o) if JSON parsing fails
+            # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 0c: Assign Priors (reasoning)",
                 schema_name="priors"  # Enables structured output fallback
