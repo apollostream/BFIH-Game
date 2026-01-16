@@ -975,8 +975,11 @@ and likelihood ratios indicating strength of support or refutation.*
 
 '''
                     # Insert after Paradigms section, before Hypothesis Set
+                    logger.info(f"Attempting to insert viz into report. Has '## 2. Hypothesis Set': {'## 2. Hypothesis Set' in result.report}")
+                    original_len = len(result.report)
                     if '## 2. Hypothesis Set' in result.report:
                         result.report = result.report.replace('## 2. Hypothesis Set', viz_markdown + '## 2. Hypothesis Set')
+                        logger.info("Inserted viz before '## 2. Hypothesis Set'")
                     elif '## 1. Paradigms Analyzed' in result.report:
                         # Insert after paradigms section by finding next ## header
                         import re
@@ -987,9 +990,14 @@ and likelihood ratios indicating strength of support or refutation.*
                             count=1,
                             flags=re.DOTALL
                         )
+                        logger.info("Inserted viz after '## 1. Paradigms Analyzed'")
                     else:
                         # Prepend if no good insertion point
                         result.report = viz_markdown + result.report
+                        logger.info("Prepended viz to report")
+
+                    new_len = len(result.report)
+                    logger.info(f"Report length changed from {original_len} to {new_len}")
 
                     result.metadata["visualization"]["gcs_url"] = public_url
                     logger.info(f"Uploaded visualization to GCS: {public_url}")
