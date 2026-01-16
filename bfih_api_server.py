@@ -579,20 +579,36 @@ and likelihood ratios indicating strength of support or refutation.*
             # Also remove old HTML visualization divs
             report = re.sub(r'<div class="bfih-visualization"[^>]*>.*?</div>\s*', '', report, flags=re.DOTALL)
 
-            if '## 2. Hypothesis Set' in report:
-                report = report.replace('## 2. Hypothesis Set', viz_section + '## 2. Hypothesis Set')
-            elif '## 1. Paradigms Analyzed' in report:
-                # Insert after paradigms section by finding next ## header
-                report = re.sub(
-                    r'(## 1\. Paradigms Analyzed.*?)(\n## )',
-                    r'\1\n' + viz_section + r'\2',
-                    report,
-                    count=1,
-                    flags=re.DOTALL
-                )
-            else:
+            # Try various header formats (with or without numbers)
+            inserted = False
+            for hyp_header in ['## Hypothesis Set', '## 2. Hypothesis Set', '## 2 Hypothesis Set']:
+                if hyp_header in report:
+                    report = report.replace(hyp_header, viz_section + hyp_header)
+                    logger.info(f"Backfill: Inserted viz before '{hyp_header}'")
+                    inserted = True
+                    break
+
+            if not inserted:
+                for para_header in ['## Paradigms Analyzed', '## 1. Paradigms Analyzed', '## 1 Paradigms Analyzed']:
+                    if para_header in report:
+                        escaped_header = re.escape(para_header)
+                        new_report = re.sub(
+                            rf'({escaped_header}.*?)(\n## )',
+                            r'\1\n' + viz_section + r'\2',
+                            report,
+                            count=1,
+                            flags=re.DOTALL
+                        )
+                        if new_report != report:
+                            report = new_report
+                            logger.info(f"Backfill: Inserted viz after '{para_header}'")
+                            inserted = True
+                            break
+
+            if not inserted:
                 # Prepend if no good insertion point
                 report = viz_section + report
+                logger.info("Backfill: Prepended viz to report")
             result_dict['report'] = report
 
             # Re-store the updated result under both IDs
@@ -975,23 +991,38 @@ and likelihood ratios indicating strength of support or refutation.*
 
 '''
                     # Insert after Paradigms section, before Hypothesis Set
-                    logger.info(f"Attempting to insert viz into report. Has '## 2. Hypothesis Set': {'## 2. Hypothesis Set' in result.report}")
+                    # Note: Headers may or may not have numbers (e.g., "## Hypothesis Set" or "## 2. Hypothesis Set")
                     original_len = len(result.report)
-                    if '## 2. Hypothesis Set' in result.report:
-                        result.report = result.report.replace('## 2. Hypothesis Set', viz_markdown + '## 2. Hypothesis Set')
-                        logger.info("Inserted viz before '## 2. Hypothesis Set'")
-                    elif '## 1. Paradigms Analyzed' in result.report:
-                        # Insert after paradigms section by finding next ## header
-                        import re
-                        result.report = re.sub(
-                            r'(## 1\. Paradigms Analyzed.*?)(\n## )',
-                            r'\1\n' + viz_markdown + r'\2',
-                            result.report,
-                            count=1,
-                            flags=re.DOTALL
-                        )
-                        logger.info("Inserted viz after '## 1. Paradigms Analyzed'")
-                    else:
+                    inserted = False
+
+                    # Try various header formats
+                    for hyp_header in ['## Hypothesis Set', '## 2. Hypothesis Set', '## 2 Hypothesis Set']:
+                        if hyp_header in result.report:
+                            result.report = result.report.replace(hyp_header, viz_markdown + hyp_header)
+                            logger.info(f"Inserted viz before '{hyp_header}'")
+                            inserted = True
+                            break
+
+                    if not inserted:
+                        # Try inserting after Paradigms section
+                        for para_header in ['## Paradigms Analyzed', '## 1. Paradigms Analyzed', '## 1 Paradigms Analyzed']:
+                            if para_header in result.report:
+                                import re
+                                escaped_header = re.escape(para_header)
+                                new_report = re.sub(
+                                    rf'({escaped_header}.*?)(\n## )',
+                                    r'\1\n' + viz_markdown + r'\2',
+                                    result.report,
+                                    count=1,
+                                    flags=re.DOTALL
+                                )
+                                if new_report != result.report:
+                                    result.report = new_report
+                                    logger.info(f"Inserted viz after '{para_header}'")
+                                    inserted = True
+                                    break
+
+                    if not inserted:
                         # Prepend if no good insertion point
                         result.report = viz_markdown + result.report
                         logger.info("Prepended viz to report")
