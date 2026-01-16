@@ -579,12 +579,17 @@ and likelihood ratios indicating strength of support or refutation.*
             # Also remove old HTML visualization divs
             report = re.sub(r'<div class="bfih-visualization"[^>]*>.*?</div>\s*', '', report, flags=re.DOTALL)
 
-            if '## 2. Paradigms' in report:
-                report = report.replace('## 2. Paradigms', viz_section + '## 2. Paradigms')
-            elif '## 2. Research Paradigms' in report:
-                report = report.replace('## 2. Research Paradigms', viz_section + '## 2. Research Paradigms')
-            elif '## Methodology' in report:
-                report = report.replace('## Methodology', viz_section + '## Methodology')
+            if '## 2. Hypothesis Set' in report:
+                report = report.replace('## 2. Hypothesis Set', viz_section + '## 2. Hypothesis Set')
+            elif '## 1. Paradigms Analyzed' in report:
+                # Insert after paradigms section by finding next ## header
+                report = re.sub(
+                    r'(## 1\. Paradigms Analyzed.*?)(\n## )',
+                    r'\1\n' + viz_section + r'\2',
+                    report,
+                    count=1,
+                    flags=re.DOTALL
+                )
             else:
                 # Prepend if no good insertion point
                 report = viz_section + report
@@ -969,13 +974,19 @@ illustrating how evidence clusters support or refute each hypothesis.
 and likelihood ratios indicating strength of support or refutation.*
 
 '''
-                    # Insert after Executive Summary or at the beginning
-                    if '## 2. Paradigms' in result.report:
-                        result.report = result.report.replace('## 2. Paradigms', viz_markdown + '## 2. Paradigms')
-                    elif '## 2. Research Paradigms' in result.report:
-                        result.report = result.report.replace('## 2. Research Paradigms', viz_markdown + '## 2. Research Paradigms')
-                    elif '## Methodology' in result.report:
-                        result.report = result.report.replace('## Methodology', viz_markdown + '## Methodology')
+                    # Insert after Paradigms section, before Hypothesis Set
+                    if '## 2. Hypothesis Set' in result.report:
+                        result.report = result.report.replace('## 2. Hypothesis Set', viz_markdown + '## 2. Hypothesis Set')
+                    elif '## 1. Paradigms Analyzed' in result.report:
+                        # Insert after paradigms section by finding next ## header
+                        import re
+                        result.report = re.sub(
+                            r'(## 1\. Paradigms Analyzed.*?)(\n## )',
+                            r'\1\n' + viz_markdown + r'\2',
+                            result.report,
+                            count=1,
+                            flags=re.DOTALL
+                        )
                     else:
                         # Prepend if no good insertion point
                         result.report = viz_markdown + result.report
