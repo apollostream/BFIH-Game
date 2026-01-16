@@ -282,6 +282,7 @@ export const useBettingStore = create<BettingState>()(
         resetBetting: () => {
           const { settings } = get();
           set({
+            scenarioId: null,  // Reset scenarioId so next scenario initializes correctly
             initialBudget: settings.initialBudget,
             currentBudget: settings.initialBudget,
             budget: settings.initialBudget,
