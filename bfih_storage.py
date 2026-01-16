@@ -523,17 +523,28 @@ class GCSStorageBackend(StorageBackend):
         """
         try:
             path = f"{self.prefix}/visualizations/{scenario_id}-evidence-flow.png"
+            logger.info(f"Uploading visualization to GCS path: {path}")
+
             blob = self._get_blob(path)
             blob.upload_from_string(png_content, content_type='image/png')
+            logger.info(f"Upload complete, attempting to make public...")
 
-            # Make the blob publicly accessible
-            blob.make_public()
+            # Try to make the blob publicly accessible
+            try:
+                blob.make_public()
+                logger.info("Made blob public successfully")
+            except Exception as pub_err:
+                logger.warning(f"Could not make blob public (may need bucket-level IAM): {pub_err}")
+                # Continue anyway - the URL might still work if bucket has public access
 
-            public_url = blob.public_url
+            # Construct URL manually as fallback
+            public_url = f"https://storage.googleapis.com/{self.bucket.name}/{path}"
             logger.info(f"Stored visualization to GCS: {public_url}")
             return public_url
         except Exception as e:
             logger.error(f"Error storing visualization to GCS: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return None
 
 
@@ -588,9 +599,9 @@ class StorageManager:
         """List all stored scenarios"""
         return self.backend.list_scenarios(limit, offset)
 
-    def store_visualization(self, scenario_id: str, svg_content: str) -> Optional[str]:
-        """Store SVG visualization and return URL/path"""
-        return self.backend.store_visualization(scenario_id, svg_content)
+    def store_visualization(self, scenario_id: str, png_content: bytes) -> Optional[str]:
+        """Store PNG visualization and return URL/path"""
+        return self.backend.store_visualization(scenario_id, png_content)
 
 
 # ============================================================================

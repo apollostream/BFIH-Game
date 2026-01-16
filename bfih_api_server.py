@@ -223,9 +223,29 @@ async def test_visualization():
 
         # Step 4: Upload to GCS
         test_scenario_id = f"test_viz_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
-        public_url = storage.store_visualization(test_scenario_id, png_content)
+
+        # Check storage backend type
+        storage_type = type(storage.backend).__name__
+        results["steps"].append({"step": "storage_check", "status": "OK", "backend": storage_type})
+
+        try:
+            public_url = storage.store_visualization(test_scenario_id, png_content)
+        except Exception as upload_err:
+            import traceback
+            results["steps"].append({
+                "step": "gcs_upload",
+                "status": "FAILED",
+                "error": str(upload_err),
+                "traceback": traceback.format_exc()
+            })
+            return results
+
         if not public_url:
-            results["steps"].append({"step": "gcs_upload", "status": "FAILED", "error": "No URL returned"})
+            results["steps"].append({
+                "step": "gcs_upload",
+                "status": "FAILED",
+                "error": "No URL returned - check Cloud Run logs for detailed error"
+            })
             return results
         results["steps"].append({"step": "gcs_upload", "status": "OK", "url": public_url})
 
