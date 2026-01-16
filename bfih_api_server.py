@@ -579,36 +579,31 @@ and likelihood ratios indicating strength of support or refutation.*
             # Also remove old HTML visualization divs
             report = re.sub(r'<div class="bfih-visualization"[^>]*>.*?</div>\s*', '', report, flags=re.DOTALL)
 
-            # Try various header formats (with or without numbers)
-            inserted = False
-            for hyp_header in ['## Hypothesis Set', '## 2. Hypothesis Set', '## 2 Hypothesis Set']:
-                if hyp_header in report:
-                    report = report.replace(hyp_header, viz_section + hyp_header)
-                    logger.info(f"Backfill: Inserted viz before '{hyp_header}'")
-                    inserted = True
-                    break
+            # Insert before Hypothesis Set section using regex for robust matching
+            # Match "## " followed by optional number/period, then "Hypothesis Set"
+            hyp_pattern = r'(##\s*(?:\d+\.?\s*)?Hypothesis\s+Set)'
+            match = re.search(hyp_pattern, report, re.IGNORECASE)
 
-            if not inserted:
-                for para_header in ['## Paradigms Analyzed', '## 1. Paradigms Analyzed', '## 1 Paradigms Analyzed']:
-                    if para_header in report:
-                        escaped_header = re.escape(para_header)
-                        new_report = re.sub(
-                            rf'({escaped_header}.*?)(\n## )',
-                            r'\1\n' + viz_section + r'\2',
-                            report,
-                            count=1,
-                            flags=re.DOTALL
-                        )
-                        if new_report != report:
-                            report = new_report
-                            logger.info(f"Backfill: Inserted viz after '{para_header}'")
-                            inserted = True
-                            break
-
-            if not inserted:
-                # Prepend if no good insertion point
-                report = viz_section + report
-                logger.info("Backfill: Prepended viz to report")
+            if match:
+                report = report[:match.start()] + viz_section + report[match.start():]
+                logger.info(f"Backfill: Inserted viz before '{match.group(1)}'")
+            else:
+                # Fallback: try to insert after Executive Summary
+                exec_pattern = r'(##\s*Executive\s+Summary.*?)(\n##\s)'
+                new_report = re.sub(
+                    exec_pattern,
+                    r'\1\n' + viz_section + r'\2',
+                    report,
+                    count=1,
+                    flags=re.DOTALL | re.IGNORECASE
+                )
+                if new_report != report:
+                    report = new_report
+                    logger.info("Backfill: Inserted viz after Executive Summary")
+                else:
+                    # Last resort: prepend
+                    report = viz_section + report
+                    logger.info("Backfill: Prepended viz to report")
             result_dict['report'] = report
 
             # Re-store the updated result under both IDs
@@ -990,42 +985,35 @@ illustrating how evidence clusters support or refute each hypothesis.
 and likelihood ratios indicating strength of support or refutation.*
 
 '''
-                    # Insert after Paradigms section, before Hypothesis Set
-                    # Note: Headers may or may not have numbers (e.g., "## Hypothesis Set" or "## 2. Hypothesis Set")
+                    # Insert before Hypothesis Set section using regex for robust matching
+                    import re
                     original_len = len(result.report)
-                    inserted = False
 
-                    # Try various header formats
-                    for hyp_header in ['## Hypothesis Set', '## 2. Hypothesis Set', '## 2 Hypothesis Set']:
-                        if hyp_header in result.report:
-                            result.report = result.report.replace(hyp_header, viz_markdown + hyp_header)
-                            logger.info(f"Inserted viz before '{hyp_header}'")
-                            inserted = True
-                            break
+                    # Match "## " followed by optional number/period, then "Hypothesis Set"
+                    # e.g., "## Hypothesis Set", "## 2. Hypothesis Set", "## 2 Hypothesis Set"
+                    hyp_pattern = r'(##\s*(?:\d+\.?\s*)?Hypothesis\s+Set)'
+                    match = re.search(hyp_pattern, result.report, re.IGNORECASE)
 
-                    if not inserted:
-                        # Try inserting after Paradigms section
-                        for para_header in ['## Paradigms Analyzed', '## 1. Paradigms Analyzed', '## 1 Paradigms Analyzed']:
-                            if para_header in result.report:
-                                import re
-                                escaped_header = re.escape(para_header)
-                                new_report = re.sub(
-                                    rf'({escaped_header}.*?)(\n## )',
-                                    r'\1\n' + viz_markdown + r'\2',
-                                    result.report,
-                                    count=1,
-                                    flags=re.DOTALL
-                                )
-                                if new_report != result.report:
-                                    result.report = new_report
-                                    logger.info(f"Inserted viz after '{para_header}'")
-                                    inserted = True
-                                    break
-
-                    if not inserted:
-                        # Prepend if no good insertion point
-                        result.report = viz_markdown + result.report
-                        logger.info("Prepended viz to report")
+                    if match:
+                        result.report = result.report[:match.start()] + viz_markdown + result.report[match.start():]
+                        logger.info(f"Inserted viz before '{match.group(1)}'")
+                    else:
+                        # Fallback: try to insert after Executive Summary
+                        exec_pattern = r'(##\s*Executive\s+Summary.*?)(\n##\s)'
+                        new_report = re.sub(
+                            exec_pattern,
+                            r'\1\n' + viz_markdown + r'\2',
+                            result.report,
+                            count=1,
+                            flags=re.DOTALL | re.IGNORECASE
+                        )
+                        if new_report != result.report:
+                            result.report = new_report
+                            logger.info("Inserted viz after Executive Summary")
+                        else:
+                            # Last resort: prepend
+                            result.report = viz_markdown + result.report
+                            logger.info("Prepended viz to report")
 
                     new_len = len(result.report)
                     logger.info(f"Report length changed from {original_len} to {new_len}")
