@@ -163,6 +163,141 @@ async def debug_static():
     return result
 
 
+@app.get("/api/test/visualization")
+async def test_visualization():
+    """
+    Test endpoint to verify the full visualization flow:
+    1. Generate DOT content
+    2. Render to PNG
+    3. Upload to GCS
+    4. Insert into sample report
+    5. Return results for verification
+    """
+    import subprocess
+    import shutil
+    import re
+    import tempfile
+
+    results = {
+        "steps": [],
+        "success": False,
+        "error": None
+    }
+
+    try:
+        # Step 1: Check Graphviz
+        if not shutil.which('dot'):
+            results["steps"].append({"step": "graphviz_check", "status": "FAILED", "error": "dot command not found"})
+            return results
+        results["steps"].append({"step": "graphviz_check", "status": "OK"})
+
+        # Step 2: Generate DOT content
+        dot_content = '''digraph TestVisualization {
+            rankdir=TB;
+            node [shape=box, style=filled, fillcolor=lightblue];
+            H1 [label="H1: Test Hypothesis"];
+            H2 [label="H2: Alternative"];
+            node [shape=ellipse, fillcolor=lightyellow];
+            E1 [label="Evidence Cluster 1"];
+            E1 -> H1 [label="+2.5 db"];
+            E1 -> H2 [label="-1.2 db"];
+        }'''
+        results["steps"].append({"step": "dot_generation", "status": "OK", "dot_length": len(dot_content)})
+
+        # Step 3: Render to PNG
+        png_result = subprocess.run(
+            ['dot', '-Tpng', '-Gdpi=150'],
+            input=dot_content.encode('utf-8'),
+            capture_output=True,
+            timeout=30
+        )
+        if png_result.returncode != 0:
+            results["steps"].append({
+                "step": "png_render",
+                "status": "FAILED",
+                "error": png_result.stderr.decode('utf-8')
+            })
+            return results
+        png_content = png_result.stdout
+        results["steps"].append({"step": "png_render", "status": "OK", "png_bytes": len(png_content)})
+
+        # Step 4: Upload to GCS
+        test_scenario_id = f"test_viz_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}"
+        public_url = storage.store_visualization(test_scenario_id, png_content)
+        if not public_url:
+            results["steps"].append({"step": "gcs_upload", "status": "FAILED", "error": "No URL returned"})
+            return results
+        results["steps"].append({"step": "gcs_upload", "status": "OK", "url": public_url})
+
+        # Step 5: Test report insertion
+        sample_report = """# Test Report
+
+## Executive Summary
+
+This is a test.
+
+---
+
+## 1. Paradigms Analyzed
+
+K0: Test paradigm
+
+---
+
+## 2. Hypothesis Set
+
+**H1: Test Hypothesis**
+
+Details here...
+
+---
+
+## 3. Evidence Clusters
+
+Cluster info...
+"""
+        viz_markdown = f'''
+## Evidence Flow Visualization
+
+![BFIH Evidence Flow]({public_url})
+
+*Figure: Test visualization*
+
+'''
+        hyp_pattern = r'(##\s*(?:\d+\.?\s*)?Hypothesis\s+Set)'
+        match = re.search(hyp_pattern, sample_report, re.IGNORECASE)
+
+        if match:
+            new_report = sample_report[:match.start()] + viz_markdown + sample_report[match.start():]
+            results["steps"].append({
+                "step": "report_insertion",
+                "status": "OK",
+                "matched_header": match.group(1),
+                "original_length": len(sample_report),
+                "new_length": len(new_report),
+                "viz_in_report": "![BFIH Evidence Flow]" in new_report
+            })
+        else:
+            results["steps"].append({
+                "step": "report_insertion",
+                "status": "FAILED",
+                "error": "No header match found"
+            })
+            return results
+
+        # All steps passed
+        results["success"] = True
+        results["final_report_preview"] = new_report[:500] + "..."
+        results["visualization_url"] = public_url
+
+    except Exception as e:
+        results["error"] = str(e)
+        import traceback
+        results["traceback"] = traceback.format_exc()
+
+    return results
+
+
 @app.post("/api/validate-credentials")
 async def validate_credentials(
     user_openai_api_key: Optional[str] = Header(None, alias="User-OpenAI-API-Key"),
