@@ -486,6 +486,20 @@ def _backfill_visualization(result_dict: Dict) -> Dict:
     # Check if we have the required data to generate a visualization
     scenario_config = result_dict.get('scenario_config')
     posteriors = result_dict.get('posteriors')
+
+    # If scenario_config is missing, try to fetch it from storage
+    if not scenario_config:
+        scenario_id = result_dict.get('scenario_id')
+        if scenario_id:
+            fetched_config = storage.retrieve_scenario_config(scenario_id)
+            if fetched_config:
+                # Unwrap if in wrapper format
+                if 'scenario_config' in fetched_config:
+                    scenario_config = fetched_config['scenario_config']
+                else:
+                    scenario_config = fetched_config
+                logger.info(f"Fetched scenario_config from storage for {scenario_id}")
+
     if not scenario_config or not posteriors:
         logger.debug(f"Cannot backfill visualization - missing scenario_config or posteriors")
         return result_dict
@@ -562,6 +576,11 @@ and likelihood ratios indicating strength of support or refutation.*
 '''
             # Insert after Executive Summary or at the beginning
             report = result_dict.get('report', '')
+
+            # Remove old local SVG references
+            old_viz_pattern = r'!\[BFIH Evidence Flow\]\(\./[^)]+\.svg\)\s*'
+            report = re.sub(old_viz_pattern, '', report)
+
             if '## 2. Paradigms' in report:
                 report = report.replace('## 2. Paradigms', viz_section + '## 2. Paradigms')
             elif '## 2. Research Paradigms' in report:
@@ -571,9 +590,16 @@ and likelihood ratios indicating strength of support or refutation.*
                 report = viz_section + report
             result_dict['report'] = report
 
-            # Re-store the updated result
-            storage.store_analysis_result(result_dict['analysis_id'], result_dict)
+            # Re-store the updated result under both IDs
+            analysis_id = result_dict.get('analysis_id', '')
+            scenario_id = result_dict.get('scenario_id', '')
+            if analysis_id:
+                storage.store_analysis_result(analysis_id, result_dict)
+            if scenario_id and scenario_id != analysis_id:
+                storage.store_analysis_result(scenario_id, result_dict)
             logger.info(f"Backfilled visualization: {public_url}")
+        else:
+            logger.warning(f"Failed to upload visualization to GCS for {result_dict.get('scenario_id')}")
 
         return result_dict
 

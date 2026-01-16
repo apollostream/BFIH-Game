@@ -1,0 +1,191 @@
+// BFIH Evidence Flow: Is coffee good for your health?...
+// Auto-generated visualization of Bayesian analysis structure
+
+digraph BFIHEvidenceFlow {
+    // Graph properties
+    rankdir=LR;
+    compound=true;
+    fontname="Helvetica-Bold,Arial Bold,sans-serif";
+    node [fontname="Helvetica,Arial,sans-serif", fontsize=10];
+    edge [fontname="Helvetica,Arial,sans-serif", fontsize=8];
+    label="BFIH Analysis of Proposition:\n\"Is coffee good for your health?\"";
+    labelloc="t";
+    fontsize=18;
+
+    // ============================================================
+    // Hypothesis Space
+    // ============================================================
+
+    subgraph cluster_hypotheses {
+        label="Hypothesis Space (6 explanations)";
+        style="filled,rounded";
+        fillcolor="#E8F4F8";
+        fontsize=12;
+        penwidth=2;
+
+        h0 [label="H0: Other/Unforeseen Alternatives\n\nPrior: 0.10\nPosterior: 0.002\nStatus: WEAK",
+            shape=box, style="filled,rounded", fillcolor="#E0E0E0", penwidth=1];
+
+        h1 [label="H1: [Proposition TRUE] - Net Health\nBenefit from Coffee’s Bioactive\nCompounds\n\nPrior: 0.15\nPosterior: 0.204\nStatus: STRONG",
+            shape=box, style="filled,rounded", fillcolor="#CCFFCC", penwidth=2.5];
+
+        h2 [label="H2: [Proposition FALSE] - Adverse\nHealth Outcomes Outweigh Benefits\n\nPrior: 0.25\nPosterior: 0.020\nStatus: WEAK",
+            shape=box, style="filled,rounded", fillcolor="#FF9999", penwidth=1];
+
+        h3 [label="H3: [Proposition PARTIAL] - Benefits\nAre Conditional on Moderation and\nIndividual Differences\n\nPrior: 0.30\nPosterior: 0.772\nStatus: STRONGEST",
+            shape=box, style="filled,rounded", fillcolor="#FFFF99", penwidth=3];
+
+        h4 [label="H4: [Domain-Specific TRUE] - Cultural\nand Social Rituals Enhance Holistic\nWell-Being\n\nPrior: 0.10\nPosterior: 0.002\nStatus: WEAK",
+            shape=box, style="filled,rounded", fillcolor="#CCFFCC", penwidth=1];
+
+        h5 [label="H5: [Domain-Specific FALSE] -\nBiomedical Cautions Limit Coffee’s\nHealth Claims\n\nPrior: 0.10\nPosterior: 0.000\nStatus: WEAK",
+            shape=box, style="filled,rounded", fillcolor="#FF9999", penwidth=1];
+
+    }
+
+    // ============================================================
+    // Evidence Clusters
+    // ============================================================
+
+    subgraph cluster_c1 {
+        label="C1: Physical Health Benefits\n(35 items)";
+        style="filled,rounded";
+        fillcolor="#FFE6E6";
+        fontsize=10;
+
+        c1_node [label="Evidence from meta‐analyses,\nrandomized trials, and large cohort\nstudies largely showing beneficial\n(35 items)\n\nWoE to H3: 5.6 dB",
+                 shape=ellipse, style="filled", fillcolor="#FFCCCC"];
+    }
+
+    subgraph cluster_c2 {
+        label="C2: Adverse Health Outcomes\n(13 items)";
+        style="filled,rounded";
+        fillcolor="#FFFCE6";
+        fontsize=10;
+
+        c2_node [label="Evidence indicating possible\nincreased risks, adverse events, or\nnull associations that suggest\n(13 items)\n\nWoE to H2: 8.5 dB",
+                 shape=ellipse, style="filled", fillcolor="#FFFFCC"];
+    }
+
+    subgraph cluster_c3 {
+        label="C3: Neurological and Cognitive Effects\n(4 items)";
+        style="filled,rounded";
+        fillcolor="#FFF0E6";
+        fontsize=10;
+
+        c3_node [label="Evidence examining the impact of\ncoffee on neurological outcomes,\ncognitive disorders, and\n(4 items)\n\nWoE to H3: 5.3 dB",
+                 shape=ellipse, style="filled", fillcolor="#FFE6CC"];
+    }
+
+    subgraph cluster_c4 {
+        label="C4: Social, Cultural, and Contextual\nEvidence\n(5 items)";
+        style="filled,rounded";
+        fillcolor="#E6F3FF";
+        fontsize=10;
+
+        c4_node [label="Qualitative and contextual\nevidence highlighting\nnon‐biomedical aspects of coffee\nconsumption, such\n(5 items)\n\nWoE to H4: 9.5 dB",
+                 shape=ellipse, style="filled", fillcolor="#CCE6FF"];
+    }
+
+    // ============================================================
+    // Evidence flows to hypotheses
+    // ============================================================
+
+    c1_node -> h0 [label="LR: 0.21", color="#CC0000", penwidth=1.5, style=dotted];
+    c1_node -> h2 [label="LR: 0.09", color="#CC0000", penwidth=1.5, style=dotted];
+    c1_node -> h3 [label="LR: 3.60", color="#006600", penwidth=3, style=solid];
+    c1_node -> h4 [label="LR: 0.10", color="#CC0000", penwidth=1.5, style=dotted];
+    c1_node -> h5 [label="LR: 0.10", color="#CC0000", penwidth=1.5, style=dotted];
+    c2_node -> h0 [label="LR: 0.29", color="#CC0000", penwidth=1.5, style=dotted];
+    c2_node -> h1 [label="LR: 0.28", color="#CC0000", penwidth=1.5, style=dotted];
+    c2_node -> h2 [label="LR: 7.11", color="#006600", penwidth=3, style=solid];
+    c2_node -> h4 [label="LR: 0.14", color="#CC0000", penwidth=1.5, style=dotted];
+    c2_node -> h5 [label="LR: 0.14", color="#CC0000", penwidth=1.5, style=dotted];
+    c3_node -> h0 [label="LR: 0.23", color="#CC0000", penwidth=1.5, style=dotted];
+    c3_node -> h2 [label="LR: 0.20", color="#CC0000", penwidth=1.5, style=dotted];
+    c3_node -> h3 [label="LR: 3.39", color="#006600", penwidth=3, style=solid];
+    c3_node -> h4 [label="LR: 0.11", color="#CC0000", penwidth=1.5, style=dotted];
+    c3_node -> h5 [label="LR: 0.11", color="#CC0000", penwidth=1.5, style=dotted];
+    c4_node -> h4 [label="LR: 9.00", color="#006600", penwidth=3, style=solid];
+
+    // ============================================================
+    // Posterior Summary
+    // ============================================================
+
+    posterior_summary [label="K0 Posteriors\n\nH3: 77.2%\nH1: 20.4%\nH2: 2.0%\nH4: 0.2%\nH0: 0.2%\n\nVerdict: STRONGLY SUPPORTED",
+                        shape=box, style="filled,rounded", fillcolor="#FFF4E6",
+                        fontsize=11, penwidth=2];
+
+    h0 -> posterior_summary [style=dashed];
+    h1 -> posterior_summary [style=solid];
+    h2 -> posterior_summary [style=dashed];
+    h3 -> posterior_summary [style=solid];
+    h4 -> posterior_summary [style=dashed];
+    h5 -> posterior_summary [style=dashed];
+
+    // ============================================================
+    // Paradigm Comparison
+    // ============================================================
+
+    subgraph cluster_paradigm_compare {
+        label="Cross-Paradigm Comparison";
+        style="filled,rounded";
+        fillcolor="#F0E6FF";
+        fontsize=11;
+
+        paradigm_k0 [label="K0: Empirical Conse\nH3: 77.2%", style="filled", fillcolor="#E6CCFF"];
+        paradigm_k0_inv [label="K0-inv: Holistic Tradit\nH3: 64.8%", style="filled", fillcolor="#E6CCFF"];
+        paradigm_k1 [label="K1: Economic Produc\nH3: 71.4%", style="filled", fillcolor="#E6CCFF"];
+        paradigm_k2 [label="K2: Cultural Narrat\nH3: 66.9%", style="filled", fillcolor="#E6CCFF"];
+        paradigm_k3 [label="K3: Biomedical Evid\nH3: 52.0%", style="filled", fillcolor="#E6CCFF"];
+    }
+
+    posterior_summary -> paradigm_k0 [style=solid];
+    posterior_summary -> paradigm_k0_inv [style=dashed];
+    posterior_summary -> paradigm_k1 [style=dashed];
+    posterior_summary -> paradigm_k2 [style=dashed];
+    posterior_summary -> paradigm_k3 [style=dashed];
+
+    // ============================================================
+    // Evidence Base Assessment
+    // ============================================================
+
+    evidence_assessment [label="Evidence Assessment\n\nTotal Evidence Items: 72\nEvidence Clusters: 4\nParadigms Analyzed: 5\nAvg Items/Cluster: 18.0\n\nCoverage: Extensive",
+                          shape=box, style="filled,rounded", fillcolor="#E6FFE6",
+                          fontsize=10, penwidth=1.5];
+
+    // ============================================================
+    // Bayesian Synthesis
+    // ============================================================
+
+    bayesian_synthesis [label="BAYESIAN SYNTHESIS\n\nH3: 30% → 77.2% (+47.2%)\nH1: 15% → 20.4% (+5.4%)\nH2: 25% → 2.0% (-23.0%)\n\nTotal WoE: 152.0 dB",
+                         shape=box, style="filled,rounded", fillcolor="#E6F3FF",
+                         fontsize=10, penwidth=1.5];
+
+    paradigm_k0 -> bayesian_synthesis [style=dashed, color="#666666"];
+    paradigm_k0_inv -> bayesian_synthesis [style=dashed, color="#666666"];
+    paradigm_k1 -> bayesian_synthesis [style=dashed, color="#666666"];
+    paradigm_k2 -> bayesian_synthesis [style=dashed, color="#666666"];
+    paradigm_k3 -> bayesian_synthesis [style=dashed, color="#666666"];
+
+    // ============================================================
+    // Key Insights
+    // ============================================================
+
+    key_insights [label="KEY INSIGHTS\n\n• All 5 paradigms agree on H3\n• 4 strong support signals\n• 12 strong refutation signals\n• Decisive margin (57%) over alternatives",
+                   shape=box, style="filled,rounded", fillcolor="#FFF0F5",
+                   fontsize=10, penwidth=1.5];
+
+    bayesian_synthesis -> key_insights [style=solid];
+
+    // ============================================================
+    // Final Analysis Summary
+    // ============================================================
+
+    final_summary [label="ANALYSIS CONCLUSION\n\nLeading Hypothesis: H3\n([Proposition PARTIAL] -\nBenefits Are Conditional on\nModeration and Individual\nDifferences)\n\nPosterior: 77.2%\nMargin over #2: 56.8%\nConfidence: High\n\nStatus: STRONGLY SUPPORTED",
+                    shape=box, style="filled,bold,rounded", fillcolor="#FFE4B5",
+                    fontsize=11, penwidth=3];
+
+    key_insights -> final_summary [style=solid, penwidth=2];
+
+}
