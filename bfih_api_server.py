@@ -318,6 +318,76 @@ Cluster info...
     return results
 
 
+@app.get("/api/test/backfill/{scenario_id}")
+async def test_backfill(scenario_id: str):
+    """
+    Test the backfill visualization flow for a specific scenario.
+    This simulates what happens when loading a library scenario without visualization.
+    """
+    results = {
+        "scenario_id": scenario_id,
+        "steps": [],
+        "success": False,
+        "error": None
+    }
+
+    try:
+        # Step 1: Retrieve the analysis
+        analysis = storage.retrieve_analysis_result(scenario_id)
+        if not analysis:
+            results["steps"].append({
+                "step": "retrieve_analysis",
+                "status": "FAILED",
+                "error": f"Analysis not found for {scenario_id}"
+            })
+            return results
+        results["steps"].append({
+            "step": "retrieve_analysis",
+            "status": "OK",
+            "has_report": "report" in analysis,
+            "report_length": len(analysis.get("report", ""))
+        })
+
+        # Step 2: Check current visualization status
+        viz_meta = analysis.get("metadata", {}).get("visualization", {})
+        results["steps"].append({
+            "step": "check_viz_status",
+            "status": "OK",
+            "has_gcs_url": bool(viz_meta.get("gcs_url")),
+            "current_gcs_url": viz_meta.get("gcs_url"),
+            "has_viz_in_report": "![BFIH Evidence Flow]" in analysis.get("report", "")
+        })
+
+        # Step 3: Run backfill
+        updated = _backfill_visualization(analysis)
+        new_viz_meta = updated.get("metadata", {}).get("visualization", {})
+        results["steps"].append({
+            "step": "run_backfill",
+            "status": "OK",
+            "new_gcs_url": new_viz_meta.get("gcs_url"),
+            "has_viz_in_report_after": "![BFIH Evidence Flow]" in updated.get("report", ""),
+            "report_length_after": len(updated.get("report", ""))
+        })
+
+        results["success"] = bool(new_viz_meta.get("gcs_url"))
+
+        # Show preview of visualization section
+        report = updated.get("report", "")
+        viz_start = report.find("## Evidence Flow Visualization")
+        if viz_start >= 0:
+            viz_end = report.find("\n## ", viz_start + 1)
+            if viz_end == -1:
+                viz_end = min(viz_start + 500, len(report))
+            results["viz_section_preview"] = report[viz_start:viz_end]
+
+    except Exception as e:
+        results["error"] = str(e)
+        import traceback
+        results["traceback"] = traceback.format_exc()
+
+    return results
+
+
 @app.post("/api/validate-credentials")
 async def validate_credentials(
     user_openai_api_key: Optional[str] = Header(None, alias="User-OpenAI-API-Key"),
