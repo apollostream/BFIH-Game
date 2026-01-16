@@ -965,6 +965,7 @@ def _run_analysis(
         # Upload visualization to GCS if available
         viz_meta = result.metadata.get("visualization", {})
         png_path = viz_meta.get("png")
+        logger.info(f"Visualization check: png_path={png_path}, exists={os.path.exists(png_path) if png_path else 'N/A'}")
         if png_path and os.path.exists(png_path):
             try:
                 with open(png_path, 'rb') as f:
