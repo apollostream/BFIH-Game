@@ -89,15 +89,35 @@ class FileStorageBackend(StorageBackend):
         """Retrieve analysis result from file"""
         try:
             filepath = self.analysis_dir / f"{analysis_id}.json"
-            if not filepath.exists():
-                return None
-            
-            with open(filepath, 'r') as f:
-                return json.load(f)
+            if filepath.exists():
+                with open(filepath, 'r') as f:
+                    return json.load(f)
+
+            # Fallback: search by scenario_id field
+            return self._find_analysis_by_scenario_id(analysis_id)
         except Exception as e:
             logger.error(f"Error retrieving analysis result: {str(e)}")
             return None
-    
+
+    def _find_analysis_by_scenario_id(self, scenario_id: str) -> Optional[Dict]:
+        """Search through analyses to find one matching the given scenario_id"""
+        try:
+            for filepath in self.analysis_dir.glob("*.json"):
+                try:
+                    with open(filepath, 'r') as f:
+                        data = json.load(f)
+                    if data.get('scenario_id') == scenario_id:
+                        logger.info(f"Found analysis by scenario_id search: {scenario_id}")
+                        # Cache it under scenario_id for future lookups
+                        self.store_analysis_result(scenario_id, data)
+                        return data
+                except Exception:
+                    continue
+            return None
+        except Exception as e:
+            logger.error(f"Error searching analyses by scenario_id: {e}")
+            return None
+
     def store_scenario_config(self, scenario_id: str, config: Dict) -> bool:
         """Store scenario configuration to file"""
         try:
@@ -340,7 +360,35 @@ class GCSStorageBackend(StorageBackend):
     def retrieve_analysis_result(self, analysis_id: str) -> Optional[Dict]:
         """Retrieve analysis result from GCS"""
         path = f"{self.analysis_prefix}/{analysis_id}.json"
-        return self._read_json(path)
+        result = self._read_json(path)
+        if result:
+            return result
+
+        # Fallback: search for analysis by scenario_id field
+        # This handles legacy analyses stored only by analysis_id (UUID)
+        return self._find_analysis_by_scenario_id(analysis_id)
+
+    def _find_analysis_by_scenario_id(self, scenario_id: str) -> Optional[Dict]:
+        """Search through analyses to find one matching the given scenario_id"""
+        try:
+            blobs = list(self.bucket.list_blobs(prefix=f"{self.analysis_prefix}/"))
+            for blob in blobs:
+                if not blob.name.endswith('.json'):
+                    continue
+                try:
+                    content = blob.download_as_text()
+                    data = json.loads(content)
+                    if data.get('scenario_id') == scenario_id:
+                        logger.info(f"Found analysis by scenario_id search: {scenario_id}")
+                        # Cache it under scenario_id for future lookups
+                        self.store_analysis_result(scenario_id, data)
+                        return data
+                except Exception:
+                    continue
+            return None
+        except Exception as e:
+            logger.error(f"Error searching analyses by scenario_id: {e}")
+            return None
 
     def store_scenario_config(self, scenario_id: str, config: Dict) -> bool:
         """Store scenario configuration to GCS"""
