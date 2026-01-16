@@ -235,7 +235,15 @@ class BFIHOrchestrator:
     Coordinates web search, file search, and code execution
     """
 
-    def __init__(self, vector_store_id: Optional[str] = None, api_key: Optional[str] = None):
+    def __init__(self, vector_store_id: Optional[str] = None, api_key: Optional[str] = None, skip_api_init: bool = False):
+        # Support visualization-only mode (no API calls needed)
+        if skip_api_init:
+            self.client = None
+            self.vector_store_id = None
+            self.model = None
+            self.reasoning_model = None
+            return
+
         # Support per-request API keys for multi-tenant deployment
         if api_key:
             self.client = OpenAI(

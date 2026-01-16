@@ -520,7 +520,7 @@ def _backfill_visualization(result_dict: Dict) -> Dict:
         )
 
         # Create orchestrator just for visualization (no API key needed)
-        orchestrator = BFIHOrchestrator()
+        orchestrator = BFIHOrchestrator(skip_api_init=True)
 
         # Generate DOT content
         dot_content = orchestrator.generate_evidence_flow_dot(analysis_result)
