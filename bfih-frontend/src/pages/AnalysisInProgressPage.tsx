@@ -116,10 +116,11 @@ export function AnalysisInProgressPage() {
     const apiBase = import.meta.env.VITE_API_URL || '';
     const eventSource = new EventSource(`${apiBase}/api/analysis-status/${id}/stream`);
 
-    eventSource.addEventListener('status', (event) => {
+    // Handler for processing SSE data (works for both named and unnamed events)
+    const handleSSEData = (data: string) => {
       try {
-        const statusResponse = JSON.parse(event.data);
-        console.log('SSE status update:', statusResponse);
+        const statusResponse = JSON.parse(data);
+        console.log('SSE parsed:', statusResponse?.sse_iteration, statusResponse?.progress_log_count);
         setRawStatus(JSON.stringify(statusResponse, null, 2));
         setPollCount(c => c + 1);
 

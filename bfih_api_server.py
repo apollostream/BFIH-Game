@@ -1267,9 +1267,11 @@ class ProgressLogHandler(logging.Handler):
                 if not any(skip in message for skip in ['Updated analysis status', 'Status callback', 'progress_log']):
                     success = self.storage_manager.append_progress_log(self.analysis_id, message)
                     self.message_count += 1
+                    if not success:
+                        logger.warning(f"ProgressLogHandler: append_progress_log FAILED for {self.analysis_id}, msg #{self.message_count}")
                     # Log every 10th message to confirm handler is working
                     if self.message_count % 10 == 0:
-                        logger.info(f"ProgressLogHandler captured {self.message_count} messages for {self.analysis_id}")
+                        logger.info(f"ProgressLogHandler captured {self.message_count} messages for {self.analysis_id} (written to storage)")
         except Exception as e:
             # Log errors instead of silently swallowing them
             logger.warning(f"ProgressLogHandler error: {e}")
@@ -1292,6 +1294,8 @@ def _run_analysis(
     orchestrator_logger = logging.getLogger('bfih_orchestrator_fixed')
     orchestrator_logger.addHandler(progress_handler)
     logger.info(f"Attached ProgressLogHandler to orchestrator logger for {analysis_id} (handlers: {len(orchestrator_logger.handlers)})")
+    # Test that handler captures messages from orchestrator logger
+    orchestrator_logger.info(f"[TEST] ProgressLogHandler attached for {analysis_id}")
 
     try:
         logger.info(f"Starting background analysis: {analysis_id}")
