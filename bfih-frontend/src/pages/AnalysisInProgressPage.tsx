@@ -10,13 +10,32 @@ import { getAnalysisStatus, getAnalysis, storeScenario } from '../api';
 import { pageVariants } from '../utils';
 import type { BFIHAnalysisResult } from '../types';
 
+// All phases in order (autonomous mode includes 0a-0c, then 1-5)
 const ANALYSIS_PHASES = [
   { id: 'paradigms', label: 'Generating Paradigms', icon: '🎭' },
   { id: 'hypotheses', label: 'Creating Hypotheses', icon: '💡' },
+  { id: 'priors', label: 'Assigning Priors', icon: '🎲' },
+  { id: 'methodology', label: 'Retrieving Methodology', icon: '📚' },
   { id: 'evidence', label: 'Gathering Evidence', icon: '🔍' },
+  { id: 'likelihoods', label: 'Assigning Likelihoods', icon: '⚖️' },
   { id: 'computation', label: 'Computing Posteriors', icon: '📊' },
   { id: 'report', label: 'Writing Report', icon: '📝' },
 ];
+
+// Extract phase from status string like "processing:phase:evidence"
+function extractPhaseFromStatus(status: string | undefined | null): string | null {
+  if (!status) return null;
+  // Format: "processing:phase:XXX" -> extract XXX
+  const match = status.match(/processing:phase:(\w+)/);
+  return match ? match[1] : null;
+}
+
+// Get phase index from phase ID
+function getPhaseIndex(phaseId: string | null): number {
+  if (!phaseId) return 0;
+  const index = ANALYSIS_PHASES.findIndex(p => p.id === phaseId);
+  return index >= 0 ? index : 0;
+}
 
 // Helper to normalize status string
 function normalizeStatus(status: string | undefined | null): 'processing' | 'completed' | 'failed' | 'auth_error' {
@@ -94,6 +113,13 @@ export function AnalysisInProgressPage() {
       console.log('Status response:', statusResponse);
 
       const normalized = normalizeStatus(statusResponse.status);
+
+      // Extract real phase from status (e.g., "processing:phase:evidence" -> "evidence")
+      const currentPhase = extractPhaseFromStatus(statusResponse.status);
+      if (currentPhase) {
+        const phaseIdx = getPhaseIndex(currentPhase);
+        setCurrentPhaseIndex(phaseIdx);
+      }
 
       if (normalized === 'completed') {
         console.log('Status is completed, fetching full result...');
@@ -192,15 +218,8 @@ export function AnalysisInProgressPage() {
     return () => clearInterval(timer);
   }, [status]);
 
-  // Simulate phase progression based on time
-  useEffect(() => {
-    if (status === 'completed' || status === 'failed') return;
-
-    const phaseTimer = setInterval(() => {
-      setCurrentPhaseIndex(i => Math.min(i + 1, ANALYSIS_PHASES.length - 1));
-    }, 12000);
-    return () => clearInterval(phaseTimer);
-  }, [status]);
+  // Phase progression is now driven by real backend status updates
+  // (extracted from status response in checkStatus callback)
 
   // Manual start game handler
   const handleStartGame = useCallback(() => {

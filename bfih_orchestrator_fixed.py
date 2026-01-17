@@ -235,7 +235,19 @@ class BFIHOrchestrator:
     Coordinates web search, file search, and code execution
     """
 
-    def __init__(self, vector_store_id: Optional[str] = None, api_key: Optional[str] = None, skip_api_init: bool = False):
+    def __init__(self, vector_store_id: Optional[str] = None, api_key: Optional[str] = None, skip_api_init: bool = False,
+                 status_callback: Optional[callable] = None):
+        """
+        Initialize the orchestrator.
+
+        Args:
+            vector_store_id: Optional vector store ID for file search
+            api_key: Optional OpenAI API key (for multi-tenant deployment)
+            skip_api_init: If True, skip API client initialization (for visualization-only mode)
+            status_callback: Optional callback function(phase: str) to report progress
+        """
+        self.status_callback = status_callback
+
         # Support visualization-only mode (no API calls needed)
         if skip_api_init:
             self.client = None
@@ -263,7 +275,15 @@ class BFIHOrchestrator:
         self.model = MODEL
         self.reasoning_model = REASONING_MODEL
         logger.info(f"Using reasoning model: {self.reasoning_model} for hypothesis generation")
-        
+
+    def _report_status(self, phase: str):
+        """Report current phase to status callback if configured."""
+        if self.status_callback:
+            try:
+                self.status_callback(phase)
+            except Exception as e:
+                logger.warning(f"Status callback failed: {e}")
+
     def conduct_analysis(self, request: BFIHAnalysisRequest) -> BFIHAnalysisResult:
         """
         Main entry point: Conduct full BFIH analysis using phased approach.
@@ -293,12 +313,15 @@ class BFIHOrchestrator:
 
         try:
             # Phase 1: Retrieve methodology from vector store
+            self._report_status("phase:methodology")
             methodology = self._run_phase_1_methodology(request)
 
             # Phase 2: Gather evidence via web search (returns structured evidence)
+            self._report_status("phase:evidence")
             evidence_text, evidence_items = self._run_phase_2_evidence(request, methodology)
 
             # Phase 3: Assign likelihoods to evidence (returns structured clusters)
+            self._report_status("phase:likelihoods")
             likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
                 request, evidence_text, evidence_items
             )
@@ -361,9 +384,10 @@ class BFIHOrchestrator:
 
             precomputed_joint_table = self._format_joint_metrics_table(joint_metrics, hyp_ids)
 
-            # Compute paradigm-specific posteriors using Python (authoritative source)
+            # Phase 4: Compute paradigm-specific posteriors using Python (authoritative source)
             # NOTE: Phase 4 code_interpreter was removed - it produced inconsistent posteriors
             # that didn't account for paradigm-specific priors and likelihoods
+            self._report_status("phase:computation")
             posteriors_by_paradigm = self._compute_paradigm_posteriors(
                 request.scenario_config, evidence_clusters
             )
@@ -374,6 +398,7 @@ class BFIHOrchestrator:
             )
 
             # Phase 5: Generate final report (pass pre-computed Bayesian tables AND paradigm posteriors)
+            self._report_status("phase:report")
             bfih_report = self._run_phase_5_report(
                 request, methodology, evidence_text, likelihoods_text,
                 evidence_items, enriched_clusters,
@@ -2893,14 +2918,17 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
         logger.info(f"{'='*60}")
 
         # Phase 0a: Generate paradigms
+        self._report_status("phase:paradigms")
         paradigms = self._generate_paradigms(proposition, domain)
 
         # Phase 0b: Generate hypotheses with forcing functions + MECE synthesis
+        self._report_status("phase:hypotheses")
         hypotheses, forcing_functions_log = self._generate_hypotheses_with_forcing_functions(
             proposition, paradigms, difficulty
         )
 
         # Phase 0c: Assign priors per paradigm (BEFORE evidence, based only on background context)
+        self._report_status("phase:priors")
         priors_by_paradigm = self._assign_priors(hypotheses, paradigms, proposition)
 
         # Build scenario_config dynamically
