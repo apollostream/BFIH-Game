@@ -489,6 +489,8 @@ class GCSStorageBackend(StorageBackend):
         success = self._write_text(path, content)
         if success:
             logger.info(f"Updated analysis status in GCS: {analysis_id} -> {status}")
+        else:
+            logger.error(f"FAILED to update analysis status in GCS: {analysis_id} -> {status}")
         return success
 
     def get_analysis_status(self, analysis_id: str) -> Optional[Dict]:

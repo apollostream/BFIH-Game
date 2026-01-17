@@ -1013,6 +1013,7 @@ async def get_analysis_status(analysis_id: str):
     """Get status of analysis (processing, completed, failed) including progress log."""
     try:
         status = storage.get_analysis_status(analysis_id)
+        logger.debug(f"Status check for {analysis_id}: {status}")
 
         if not status:
             raise HTTPException(
@@ -1023,6 +1024,12 @@ async def get_analysis_status(analysis_id: str):
         # Include progress log for real-time updates
         progress_log = storage.get_progress_log(analysis_id)
         status["progress_log"] = progress_log
+        status["progress_log_count"] = len(progress_log)  # Debug: show how many messages we have
+        status["server_time"] = datetime.utcnow().isoformat()  # Debug: confirm fresh response
+
+        # Log when status is completed or failed for debugging
+        if status.get("status") in ["completed", "failed"] or (status.get("status") or "").startswith("failed"):
+            logger.info(f"Terminal status for {analysis_id}: {status.get('status')}")
 
         # Return with no-cache headers to ensure fresh status on every poll
         return JSONResponse(
@@ -1039,6 +1046,54 @@ async def get_analysis_status(analysis_id: str):
     except Exception as e:
         logger.error(f"Error getting analysis status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+from sse_starlette.sse import EventSourceResponse
+import asyncio
+
+@app.get("/api/analysis-status/{analysis_id}/stream")
+async def stream_analysis_status(analysis_id: str):
+    """Stream status updates using Server-Sent Events (SSE) for real-time UI sync."""
+
+    async def event_generator():
+        last_log_count = 0
+        last_status = None
+
+        while True:
+            try:
+                status = storage.get_analysis_status(analysis_id)
+                if not status:
+                    yield {"event": "error", "data": json.dumps({"error": "Analysis not found"})}
+                    break
+
+                progress_log = storage.get_progress_log(analysis_id)
+                current_log_count = len(progress_log)
+                current_status = status.get("status")
+
+                # Only send update if something changed
+                if current_log_count != last_log_count or current_status != last_status:
+                    status["progress_log"] = progress_log
+                    status["progress_log_count"] = current_log_count
+                    status["server_time"] = datetime.utcnow().isoformat()
+
+                    yield {"event": "status", "data": json.dumps(status)}
+
+                    last_log_count = current_log_count
+                    last_status = current_status
+
+                # Check for terminal state
+                if current_status in ["completed"] or (current_status or "").startswith("failed"):
+                    yield {"event": "complete", "data": json.dumps({"status": current_status})}
+                    break
+
+                await asyncio.sleep(1)  # Check every 1 second
+
+            except Exception as e:
+                logger.error(f"SSE error for {analysis_id}: {e}")
+                yield {"event": "error", "data": json.dumps({"error": str(e)})}
+                break
+
+    return EventSourceResponse(event_generator())
 
 
 class SynopsisRequest(BaseModel):
@@ -1181,19 +1236,24 @@ class ProgressLogHandler(logging.Handler):
         self.storage_manager = storage_manager
         self.analysis_id = analysis_id
         self.setLevel(logging.INFO)
-        # Filter to only capture orchestrator and api server logs
         self.setFormatter(logging.Formatter('%(message)s'))
+        self.message_count = 0
 
     def emit(self, record):
         try:
-            # Only capture INFO level and above from relevant modules
+            # Only capture INFO level and above
             if record.levelno >= logging.INFO:
                 message = self.format(record)
                 # Skip very verbose or internal messages
-                if not any(skip in message for skip in ['Updated analysis status', 'Status callback']):
-                    self.storage_manager.append_progress_log(self.analysis_id, message)
-        except Exception:
-            pass  # Don't let logging errors break the analysis
+                if not any(skip in message for skip in ['Updated analysis status', 'Status callback', 'progress_log']):
+                    success = self.storage_manager.append_progress_log(self.analysis_id, message)
+                    self.message_count += 1
+                    # Log every 10th message to confirm handler is working
+                    if self.message_count % 10 == 0:
+                        logger.info(f"ProgressLogHandler captured {self.message_count} messages for {self.analysis_id}")
+        except Exception as e:
+            # Log errors instead of silently swallowing them
+            logger.warning(f"ProgressLogHandler error: {e}")
 
 
 def _run_analysis(
@@ -1212,6 +1272,7 @@ def _run_analysis(
     progress_handler = ProgressLogHandler(storage, analysis_id)
     orchestrator_logger = logging.getLogger('bfih_orchestrator_fixed')
     orchestrator_logger.addHandler(progress_handler)
+    logger.info(f"Attached ProgressLogHandler to orchestrator logger for {analysis_id} (handlers: {len(orchestrator_logger.handlers)})")
 
     try:
         logger.info(f"Starting background analysis: {analysis_id}")
@@ -1221,7 +1282,10 @@ def _run_analysis(
 
         # Status callback to report phase progress
         def status_callback(phase: str):
-            storage.update_analysis_status(analysis_id, f"processing:{phase}")
+            logger.info(f"Status callback invoked: {analysis_id} -> processing:{phase}")
+            success = storage.update_analysis_status(analysis_id, f"processing:{phase}")
+            if not success:
+                logger.error(f"Status callback FAILED to update: {analysis_id} -> processing:{phase}")
 
         # Create orchestrator with user's credentials (or fall back to env vars)
         orchestrator = get_orchestrator_for_request(api_key, vector_store_id, status_callback)

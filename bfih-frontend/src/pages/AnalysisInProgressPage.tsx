@@ -6,12 +6,9 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useGameStore } from '../stores';
 import { useAnalysisStore } from '../stores/analysisStore';
-import { getAnalysisStatus, getAnalysis, storeScenario } from '../api';
+import { getAnalysis } from '../api';
 import { pageVariants } from '../utils';
 import type { BFIHAnalysisResult, ProgressLogEntry } from '../types';
-
-// Maximum polling time before giving up (15 minutes)
-const MAX_POLL_TIME_MS = 15 * 60 * 1000;
 
 // All phases in order (autonomous mode includes 0a-0c, then 1-5)
 const ANALYSIS_PHASES = [
@@ -66,14 +63,12 @@ export function AnalysisInProgressPage() {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
   const [phaseDetail, setPhaseDetail] = useState<string | null>(null); // e.g., "3/10" for search progress
-  const [pollCount, setPollCount] = useState(0);
+  const [pollCount, setPollCount] = useState(0);  // Now tracks SSE event count
   const [showDebug, setShowDebug] = useState(false);
-  const [startTime] = useState(() => Date.now()); // Track when polling started for timeout
   const [progressLog, setProgressLog] = useState<ProgressLogEntry[]>([]); // Real-time log from backend
 
   // Ref to prevent duplicate navigation
   const hasNavigated = useRef(false);
-  const isPolling = useRef(false);
 
   // Navigate to game
   const navigateToGame = useCallback((scenarioId: string, config: BFIHAnalysisResult['scenario_config']) => {
@@ -110,134 +105,101 @@ export function AnalysisInProgressPage() {
     }
   }, [loadScenario, navigate]);
 
-  // Direct polling function
-  const checkStatus = useCallback(async () => {
-    if (!id || isPolling.current) return;
-    isPolling.current = true;
 
-    try {
-      // Check for polling timeout (15 minutes)
-      if (Date.now() - startTime > MAX_POLL_TIME_MS) {
-        console.log('Polling timeout reached after 15 minutes');
-        setStatus('failed');
-        setError('Analysis timed out after 15 minutes. The backend may be unresponsive.');
-        return;
-      }
-
-      setPollCount(c => c + 1);
-      const statusResponse = await getAnalysisStatus(id);
-      setRawStatus(JSON.stringify(statusResponse, null, 2));
-      console.log('Status response:', statusResponse);
-
-      // Update progress log from backend
-      if (statusResponse.progress_log) {
-        setProgressLog(statusResponse.progress_log);
-      }
-
-      // Check for stale status (backend hasn't updated in 5+ minutes while processing)
-      if (statusResponse.is_stale && statusResponse.status?.startsWith('processing')) {
-        console.log('Stale status detected - backend appears stuck');
-        setStatus('failed');
-        setError('Analysis appears stuck. Backend has not updated status in 5+ minutes.');
-        return;
-      }
-
-      const normalized = normalizeStatus(statusResponse.status);
-
-      // Extract real phase from status (e.g., "processing:phase:evidence" -> "evidence")
-      const { phase: currentPhase, detail } = extractPhaseFromStatus(statusResponse.status);
-      if (currentPhase) {
-        const phaseIdx = getPhaseIndex(currentPhase);
-        setCurrentPhaseIndex(phaseIdx);
-        setPhaseDetail(detail); // e.g., "3/10" for search progress
-      }
-
-      if (normalized === 'completed') {
-        console.log('Status is completed, fetching full result...');
-        setStatus('completed');
-
-        // Fetch full result
-        try {
-          const fullResult = await getAnalysis(id);
-          console.log('Full result received:', fullResult?.scenario_id);
-          setResult(fullResult);
-
-          // Cache the result in the analysis store for other pages to access
-          cacheResult(fullResult);
-
-          // Store scenario to backend for Library access
-          try {
-            const config = fullResult.scenario_config;
-            await storeScenario({
-              scenario_id: fullResult.scenario_id,
-              title: config?.proposition || config?.narrative || 'Untitled Analysis',
-              domain: config?.paradigms?.[0]?.name || 'General',
-              difficulty_level: 'intermediate',
-              scenario_config: config,
-              model: fullResult.metadata?.model,
-            });
-            console.log('Scenario stored to library:', fullResult.scenario_id);
-          } catch (storeErr) {
-            // Non-fatal: log but don't block navigation
-            console.warn('Failed to store scenario to library:', storeErr);
-          }
-
-          // Navigate immediately after setting result
-          if (fullResult?.scenario_id) {
-            navigateToGame(fullResult.scenario_id, fullResult.scenario_config);
-          }
-        } catch (fetchErr) {
-          console.error('Failed to fetch full result:', fetchErr);
-          setError(`Failed to fetch result: ${fetchErr instanceof Error ? fetchErr.message : 'Unknown error'}`);
-        }
-      } else if (normalized === 'auth_error') {
-        // Immediately clear credentials and redirect to setup
-        console.log('Auth error detected - clearing credentials and redirecting to setup');
-        localStorage.removeItem('bfih_openai_api_key');
-        localStorage.removeItem('bfih_vector_store_id');
-        localStorage.removeItem('bfih_setup_complete');
-        // Force reload to show setup modal
-        window.location.href = '/';
-        return;
-      } else if (normalized === 'failed') {
-        setStatus('failed');
-        setError(statusResponse.error || statusResponse.status || 'Analysis failed');
-      } else {
-        setStatus('processing');
-      }
-    } catch (err) {
-      console.error('Status check error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to check status');
-    } finally {
-      isPolling.current = false;
-    }
-  }, [id, navigateToGame, cacheResult, startTime]);
-
-  // Polling effect - only runs once on mount, uses ref to track status
-  const statusRef = useRef(status);
-  statusRef.current = status;
-
+  // SSE connection for real-time updates
   useEffect(() => {
     if (!id) return;
 
-    console.log('Starting polling for:', id);
+    console.log('Starting SSE connection for:', id);
 
-    // Initial check
-    checkStatus();
+    // Use SSE for real-time updates (more reliable than polling)
+    const apiBase = import.meta.env.VITE_API_URL || '';
+    const eventSource = new EventSource(`${apiBase}/api/analysis-status/${id}/stream`);
 
-    // Set up polling interval
-    const interval = setInterval(() => {
-      // Check ref for current status (not closure)
-      if (statusRef.current !== 'completed' && statusRef.current !== 'failed') {
-        checkStatus();
+    eventSource.addEventListener('status', (event) => {
+      try {
+        const statusResponse = JSON.parse(event.data);
+        console.log('SSE status update:', statusResponse);
+        setRawStatus(JSON.stringify(statusResponse, null, 2));
+        setPollCount(c => c + 1);
+
+        // Update progress log
+        if (statusResponse.progress_log) {
+          setProgressLog(statusResponse.progress_log);
+        }
+
+        // Check for stale status
+        if (statusResponse.is_stale && statusResponse.status?.startsWith('processing')) {
+          console.log('Stale status detected');
+          setStatus('failed');
+          setError('Analysis appears stuck. Backend has not updated status in 5+ minutes.');
+          eventSource.close();
+          return;
+        }
+
+        const normalized = normalizeStatus(statusResponse.status);
+
+        // Extract phase from status
+        const { phase: currentPhase, detail } = extractPhaseFromStatus(statusResponse.status);
+        if (currentPhase) {
+          setCurrentPhaseIndex(getPhaseIndex(currentPhase));
+          setPhaseDetail(detail);
+        }
+
+        if (normalized === 'completed') {
+          console.log('Status is completed, fetching full result...');
+          setStatus('completed');
+          // Fetch full result
+          getAnalysis(id).then(fullResult => {
+            console.log('Full result received:', fullResult?.scenario_id);
+            setResult(fullResult);
+            cacheResult(fullResult);
+            if (fullResult?.scenario_id) {
+              navigateToGame(fullResult.scenario_id, fullResult.scenario_config);
+            }
+          }).catch(err => {
+            console.error('Failed to fetch full result:', err);
+            setError(`Failed to fetch result: ${err.message}`);
+          });
+          eventSource.close();
+        } else if (normalized === 'auth_error') {
+          localStorage.removeItem('bfih_openai_api_key');
+          localStorage.removeItem('bfih_vector_store_id');
+          localStorage.removeItem('bfih_setup_complete');
+          window.location.href = '/';
+          eventSource.close();
+        } else if (normalized === 'failed') {
+          setStatus('failed');
+          setError(statusResponse.error || statusResponse.status || 'Analysis failed');
+          eventSource.close();
+        } else {
+          setStatus('processing');
+        }
+      } catch (err) {
+        console.error('Error parsing SSE data:', err);
       }
-    }, 3000);
+    });
+
+    eventSource.addEventListener('complete', (event) => {
+      console.log('SSE complete event:', event.data);
+      eventSource.close();
+    });
+
+    eventSource.addEventListener('error', (event) => {
+      console.log('SSE error event:', event);
+      eventSource.close();
+    });
+
+    eventSource.onerror = (err) => {
+      console.error('SSE connection error:', err);
+      // Don't close on error - EventSource auto-reconnects
+    };
 
     return () => {
-      console.log('Clearing polling interval');
-      clearInterval(interval);
+      console.log('Closing SSE connection');
+      eventSource.close();
     };
-  }, [id, checkStatus]);
+  }, [id, navigateToGame, cacheResult]);
 
   // Timer for elapsed time
   useEffect(() => {
