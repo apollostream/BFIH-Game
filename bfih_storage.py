@@ -681,7 +681,9 @@ class GCSStorageBackend(StorageBackend):
         """Append a progress message to the analysis log. Keeps last 20 messages."""
         try:
             path = f"{self.status_prefix}/{analysis_id}_progress.json"
+            logger.info(f"GCS append_progress_log: reading {path}")
             messages = self._read_json(path) or []
+            logger.info(f"GCS append_progress_log: read {len(messages)} existing messages")
 
             messages.append({
                 "timestamp": datetime.utcnow().isoformat(),
@@ -690,7 +692,10 @@ class GCSStorageBackend(StorageBackend):
             # Keep only last 20 messages
             messages = messages[-20:]
 
-            return self._write_json(path, messages)
+            logger.info(f"GCS append_progress_log: writing {len(messages)} messages to {path}")
+            result = self._write_json(path, messages)
+            logger.info(f"GCS append_progress_log: write result = {result}")
+            return result
         except Exception as e:
             logger.error(f"Error appending progress log to GCS: {str(e)}")
             return False
