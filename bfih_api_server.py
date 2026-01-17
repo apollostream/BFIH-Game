@@ -1053,15 +1053,19 @@ async def get_analysis_status(analysis_id: str):
 @app.get("/api/analysis-status/{analysis_id}/stream")
 async def stream_analysis_status(analysis_id: str):
     """Stream status updates using Server-Sent Events (SSE) for real-time UI sync."""
+    logger.info(f"SSE stream started for {analysis_id}")
 
     async def event_generator():
         last_log_count = 0
         last_status = None
+        iteration = 0
 
         while True:
             try:
+                iteration += 1
                 status = storage.get_analysis_status(analysis_id)
                 if not status:
+                    logger.warning(f"SSE: Analysis {analysis_id} not found")
                     yield {"event": "error", "data": json.dumps({"error": "Analysis not found"})}
                     break
 
@@ -1069,30 +1073,46 @@ async def stream_analysis_status(analysis_id: str):
                 current_log_count = len(progress_log)
                 current_status = status.get("status")
 
-                # Only send update if something changed
-                if current_log_count != last_log_count or current_status != last_status:
-                    status["progress_log"] = progress_log
-                    status["progress_log_count"] = current_log_count
-                    status["server_time"] = datetime.utcnow().isoformat()
+                # Always send updates to ensure flushing (Cloud Run can buffer)
+                status["progress_log"] = progress_log
+                status["progress_log_count"] = current_log_count
+                status["server_time"] = datetime.utcnow().isoformat()
+                status["sse_iteration"] = iteration
 
-                    yield {"event": "status", "data": json.dumps(status)}
+                # Log every 10th iteration for debugging
+                if iteration % 10 == 1:
+                    logger.info(f"SSE [{analysis_id}] iter={iteration} status={current_status} logs={current_log_count}")
 
-                    last_log_count = current_log_count
-                    last_status = current_status
+                yield {"event": "status", "data": json.dumps(status)}
+
+                last_log_count = current_log_count
+                last_status = current_status
 
                 # Check for terminal state
                 if current_status in ["completed"] or (current_status or "").startswith("failed"):
+                    logger.info(f"SSE: Analysis {analysis_id} reached terminal state: {current_status}")
                     yield {"event": "complete", "data": json.dumps({"status": current_status})}
                     break
 
-                await asyncio.sleep(1)  # Check every 1 second
+                await asyncio.sleep(2)  # Check every 2 seconds
 
             except Exception as e:
                 logger.error(f"SSE error for {analysis_id}: {e}")
                 yield {"event": "error", "data": json.dumps({"error": str(e)})}
                 break
 
-    return EventSourceResponse(event_generator())
+        logger.info(f"SSE stream ended for {analysis_id}")
+
+    # Return with headers to prevent Cloud Run/proxy buffering
+    return EventSourceResponse(
+        event_generator(),
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, proxy-revalidate",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering
+            "Connection": "keep-alive",
+        },
+        ping=15,  # Send ping every 15 seconds to keep connection alive
+    )
 
 
 class SynopsisRequest(BaseModel):
