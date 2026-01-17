@@ -765,15 +765,19 @@ def _backfill_visualization(result_dict: Dict) -> Dict:
             logger.warning("Graphviz not available for backfill")
             return result_dict
 
-        png_result = subprocess.run(
-            ['dot', '-Tpng', '-Gdpi=150'],  # Higher DPI for better quality
-            input=dot_content.encode('utf-8'),
-            capture_output=True,
-            timeout=30
-        )
+        try:
+            png_result = subprocess.run(
+                ['dot', '-Tpng', '-Gdpi=150'],  # Higher DPI for better quality
+                input=dot_content.encode('utf-8'),
+                capture_output=True,
+                timeout=90
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning("Graphviz rendering timed out during backfill - continuing without visualization")
+            return result_dict
 
         if png_result.returncode != 0:
-            logger.error(f"Graphviz error during backfill: {png_result.stderr.decode('utf-8')}")
+            logger.warning(f"Graphviz error during backfill - continuing without visualization: {png_result.stderr.decode('utf-8')}")
             return result_dict
 
         png_content = png_result.stdout

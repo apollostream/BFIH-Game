@@ -5267,7 +5267,7 @@ and likelihood ratios indicating strength of support or refutation.*
                 input=dot_content,
                 capture_output=True,
                 text=True,
-                timeout=30
+                timeout=90
             )
 
             if result.returncode != 0:
@@ -5281,10 +5281,10 @@ and likelihood ratios indicating strength of support or refutation.*
             return output_path
 
         except subprocess.TimeoutExpired:
-            logger.error("Graphviz rendering timed out")
+            logger.warning("Graphviz SVG rendering timed out after 90s - continuing without visualization")
             return None
         except Exception as e:
-            logger.error(f"Error rendering DOT to SVG: {e}")
+            logger.warning(f"Graphviz SVG rendering failed - continuing without visualization: {e}")
             return None
 
     def render_dot_to_png(self, dot_content: str, output_path: str) -> Optional[str]:
@@ -5311,7 +5311,7 @@ and likelihood ratios indicating strength of support or refutation.*
                 ['dot', '-Tpng', '-Gdpi=150'],  # Higher DPI for better quality
                 input=dot_content.encode('utf-8'),
                 capture_output=True,
-                timeout=30
+                timeout=90
             )
 
             if result.returncode != 0:
@@ -5325,10 +5325,10 @@ and likelihood ratios indicating strength of support or refutation.*
             return output_path
 
         except subprocess.TimeoutExpired:
-            logger.error("Graphviz rendering timed out")
+            logger.warning("Graphviz PNG rendering timed out after 90s - continuing without visualization")
             return None
         except Exception as e:
-            logger.error(f"Error rendering DOT to PNG: {e}")
+            logger.warning(f"Graphviz PNG rendering failed - continuing without visualization: {e}")
             return None
 
     def generate_evidence_flow_visualization(
