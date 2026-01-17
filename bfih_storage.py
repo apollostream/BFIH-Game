@@ -12,6 +12,7 @@ Supports:
 import json
 import os
 import logging
+import threading
 from typing import Dict, List, Optional
 from pathlib import Path
 from datetime import datetime
@@ -382,6 +383,10 @@ class GCSStorageBackend(StorageBackend):
         self.scenario_prefix = f"{prefix}/scenarios"
         self.status_prefix = f"{prefix}/status"
 
+        # Thread-safe lock for append operations (prevents race conditions)
+        self._append_locks: Dict[str, threading.Lock] = {}
+        self._locks_lock = threading.Lock()  # Lock for creating per-analysis locks
+
         logger.info(f"GCSStorageBackend initialized: gs://{bucket_name}/{prefix}")
 
     def _get_blob(self, path: str):
@@ -685,28 +690,42 @@ class GCSStorageBackend(StorageBackend):
         blob = self._get_blob(path)
         return blob.exists()
 
+    def _get_append_lock(self, analysis_id: str) -> threading.Lock:
+        """Get or create a lock for the given analysis_id (thread-safe)."""
+        with self._locks_lock:
+            if analysis_id not in self._append_locks:
+                self._append_locks[analysis_id] = threading.Lock()
+            return self._append_locks[analysis_id]
+
     def append_progress_log(self, analysis_id: str, message: str) -> bool:
-        """Append a progress message to the analysis log. Keeps last 20 messages."""
-        try:
-            path = f"{self.status_prefix}/{analysis_id}_progress.json"
-            logger.info(f"GCS append_progress_log: reading {path}")
-            messages = self._read_json(path) or []
-            logger.info(f"GCS append_progress_log: read {len(messages)} existing messages")
+        """Append a progress message to the analysis log. Keeps last 20 messages.
 
-            messages.append({
-                "timestamp": datetime.utcnow().isoformat(),
-                "message": message
-            })
-            # Keep only last 20 messages
-            messages = messages[-20:]
+        Thread-safe: Uses a per-analysis lock to prevent race conditions
+        when multiple callbacks try to append concurrently.
+        """
+        lock = self._get_append_lock(analysis_id)
 
-            logger.info(f"GCS append_progress_log: writing {len(messages)} messages to {path}")
-            result = self._write_json(path, messages)
-            logger.info(f"GCS append_progress_log: write result = {result}")
-            return result
-        except Exception as e:
-            logger.error(f"Error appending progress log to GCS: {str(e)}")
-            return False
+        with lock:
+            try:
+                path = f"{self.status_prefix}/{analysis_id}_progress.json"
+                logger.info(f"GCS append_progress_log: reading {path}")
+                messages = self._read_json(path) or []
+                logger.info(f"GCS append_progress_log: read {len(messages)} existing messages")
+
+                messages.append({
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "message": message
+                })
+                # Keep only last 20 messages
+                messages = messages[-20:]
+
+                logger.info(f"GCS append_progress_log: writing {len(messages)} messages to {path}")
+                result = self._write_json(path, messages)
+                logger.info(f"GCS append_progress_log: write result = {result}")
+                return result
+            except Exception as e:
+                logger.error(f"Error appending progress log to GCS: {str(e)}")
+                return False
 
     def get_progress_log(self, analysis_id: str) -> List[Dict]:
         """Get the progress log messages for an analysis."""
