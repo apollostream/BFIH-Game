@@ -1,6 +1,6 @@
 // Analysis API endpoints
 
-import { get, post } from './client';
+import { get, post, isSetupComplete } from './client';
 import type {
   AnalysisSubmitResponse,
   AnalysisStatusResponse,
@@ -29,6 +29,16 @@ export async function getReasoningModels(): Promise<ReasoningModelsResponse> {
 
 // Submit a new analysis (autonomous mode - just proposition)
 export async function submitAnalysis(params: SubmitAnalysisParams): Promise<AnalysisSubmitResponse> {
+  // Check if user has completed setup (has API key)
+  if (!isSetupComplete()) {
+    // Clear any stale credentials and force setup
+    localStorage.removeItem('bfih_openai_api_key');
+    localStorage.removeItem('bfih_vector_store_id');
+    localStorage.removeItem('bfih_setup_complete');
+    window.location.href = '/';
+    throw new Error('API key not configured. Please complete setup.');
+  }
+
   const body: Record<string, unknown> = {
     scenario_id: `auto_${Date.now().toString(16).slice(-8)}`,
     proposition: params.proposition,
@@ -126,7 +136,17 @@ export async function pollAnalysisUntilComplete(
           return;
         }
 
-        if (status.status === 'failed') {
+        // Check for auth error - redirect to setup immediately
+        if (status.status?.toLowerCase().startsWith('auth_error')) {
+          localStorage.removeItem('bfih_openai_api_key');
+          localStorage.removeItem('bfih_vector_store_id');
+          localStorage.removeItem('bfih_setup_complete');
+          window.location.href = '/';
+          reject(new Error('Invalid API key. Please reconfigure.'));
+          return;
+        }
+
+        if (status.status === 'failed' || status.status?.toLowerCase().startsWith('failed')) {
           reject(new Error(status.error || 'Analysis failed'));
           return;
         }
