@@ -22,12 +22,15 @@ const ANALYSIS_PHASES = [
   { id: 'report', label: 'Writing Report', icon: '📝' },
 ];
 
-// Extract phase from status string like "processing:phase:evidence"
-function extractPhaseFromStatus(status: string | undefined | null): string | null {
-  if (!status) return null;
-  // Format: "processing:phase:XXX" -> extract XXX
-  const match = status.match(/processing:phase:(\w+)/);
-  return match ? match[1] : null;
+// Extract phase from status string like "processing:phase:evidence" or "processing:phase:evidence:3/10"
+function extractPhaseFromStatus(status: string | undefined | null): { phase: string | null; detail: string | null } {
+  if (!status) return { phase: null, detail: null };
+  // Format: "processing:phase:XXX" or "processing:phase:XXX:detail" -> extract XXX and optional detail
+  const match = status.match(/processing:phase:(\w+)(?::(.+))?/);
+  if (match) {
+    return { phase: match[1], detail: match[2] || null };
+  }
+  return { phase: null, detail: null };
 }
 
 // Get phase index from phase ID
@@ -59,6 +62,7 @@ export function AnalysisInProgressPage() {
   const [error, setError] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState(0);
   const [currentPhaseIndex, setCurrentPhaseIndex] = useState(0);
+  const [phaseDetail, setPhaseDetail] = useState<string | null>(null); // e.g., "3/10" for search progress
   const [pollCount, setPollCount] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
 
@@ -115,10 +119,11 @@ export function AnalysisInProgressPage() {
       const normalized = normalizeStatus(statusResponse.status);
 
       // Extract real phase from status (e.g., "processing:phase:evidence" -> "evidence")
-      const currentPhase = extractPhaseFromStatus(statusResponse.status);
+      const { phase: currentPhase, detail } = extractPhaseFromStatus(statusResponse.status);
       if (currentPhase) {
         const phaseIdx = getPhaseIndex(currentPhase);
         setCurrentPhaseIndex(phaseIdx);
+        setPhaseDetail(detail); // e.g., "3/10" for search progress
       }
 
       if (normalized === 'completed') {
@@ -354,7 +359,8 @@ export function AnalysisInProgressPage() {
                 >
                   {isFailed ? 'Something went wrong. Please try again.' :
                    isComplete ? 'Your analysis is ready!' :
-                   ANALYSIS_PHASES[currentPhaseIndex]?.label || 'Processing...'}
+                   (ANALYSIS_PHASES[currentPhaseIndex]?.label || 'Processing...') +
+                   (phaseDetail ? ` (${phaseDetail})` : '')}
                 </motion.p>
               </AnimatePresence>
             </div>

@@ -21,9 +21,13 @@ from pathlib import Path
 import uuid
 from dataclasses import dataclass, asdict
 
-from openai import OpenAI, AuthenticationError, APIError
+from openai import OpenAI, AuthenticationError, APIError, BadRequestError
 from dotenv import load_dotenv
 import httpx
+
+# Timeout configuration: GPT-5.x models with reasoning need longer timeouts
+DEFAULT_TIMEOUT = httpx.Timeout(300.0, connect=30.0)  # 5 min total, 30s connect
+GPT5_TIMEOUT = httpx.Timeout(600.0, connect=30.0)     # 10 min total for GPT-5.x with reasoning
 
 # Import structured output schemas
 from bfih_schemas import (
@@ -179,11 +183,13 @@ Maintain maximum intellectual rigor throughout this phase.
 # Create default OpenAI client if credentials are available
 # For multi-tenant mode, credentials can be provided per-request instead
 if OPENAI_API_KEY:
+    # Use longer timeout if default reasoning model is GPT-5.x
+    default_timeout = GPT5_TIMEOUT if "gpt-5" in REASONING_MODEL else DEFAULT_TIMEOUT
     client = OpenAI(
         api_key=OPENAI_API_KEY,
-        timeout=httpx.Timeout(300.0, connect=30.0)  # 5 min total, 30s connect
+        timeout=default_timeout
     )
-    logger.info("Default OpenAI client initialized")
+    logger.info(f"Default OpenAI client initialized (timeout: {default_timeout.read}s)")
 else:
     client = None
     logger.info("No default API key configured - credentials must be provided per-request")
@@ -258,10 +264,13 @@ class BFIHOrchestrator:
 
         # Support per-request API keys for multi-tenant deployment
         if api_key:
+            # Use longer timeout for GPT-5.x models with reasoning
+            timeout = GPT5_TIMEOUT if "gpt-5" in REASONING_MODEL else DEFAULT_TIMEOUT
             self.client = OpenAI(
                 api_key=api_key,
-                timeout=httpx.Timeout(300.0, connect=30.0)
+                timeout=timeout
             )
+            logger.info(f"Created client with timeout: {timeout.read}s")
         elif client is not None:
             self.client = client  # Use global client from config/env vars
         else:
@@ -1026,6 +1035,11 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     if include_list:
                         request_params["include"] = include_list
 
+                # GPT-5.x models require explicit reasoning.effort parameter
+                # (default is "none" for GPT-5.1+, unlike o-series which reason by default)
+                if "gpt-5" in model:
+                    request_params["reasoning"] = {"effort": "medium"}
+
                 # Make the API call (non-streaming for structured output)
                 print(f"[Calling API with structured output schema: {schema_name}...]")
 
@@ -1116,6 +1130,25 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 logger.error(f"Authentication error in {phase_name}: {e}")
                 raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
 
+            except BadRequestError as e:
+                # Handle token limit and context length errors with user-friendly messages
+                error_msg = str(e).lower()
+                if "context_length_exceeded" in error_msg or "maximum context length" in error_msg:
+                    logger.error(f"Context length exceeded in {phase_name}: {e}")
+                    raise RuntimeError(
+                        f"Input too long for {model}'s context window. "
+                        f"Try a simpler proposition or reduce the analysis scope."
+                    ) from e
+                elif "max_tokens" in error_msg or "maximum.*tokens" in error_msg:
+                    logger.error(f"Token limit exceeded in {phase_name}: {e}")
+                    raise RuntimeError(
+                        f"Response exceeded token limit for {model}. "
+                        f"The analysis may be too complex for this model."
+                    ) from e
+                # Other bad request errors - fail immediately
+                logger.error(f"Bad request in {phase_name}: {e}")
+                raise RuntimeError(f"Invalid request to {model}: {e}") from e
+
             except APIError as e:
                 # Check if it's an auth-related API error
                 error_msg = str(e).lower()
@@ -1142,6 +1175,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     time.sleep(wait_time)
                 else:
                     logger.error(f"{phase_name} failed after {max_retries + 1} attempts: {e}")
+                    # Provide user-friendly timeout message
+                    if isinstance(e, (httpx.ReadTimeout, httpx.ConnectTimeout)):
+                        raise RuntimeError(
+                            f"Request to {model} timed out during {phase_name}. "
+                            f"GPT-5.x models with reasoning may need more time. "
+                            f"Please try again or use a faster model like o4-mini."
+                        ) from e
                     raise
 
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
@@ -1198,6 +1238,11 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     "input": prompt,
                 }
 
+                # GPT-5.x models require explicit reasoning.effort parameter
+                # (default is "none" for GPT-5.1+, unlike o-series which reason by default)
+                if "gpt-5" in self.reasoning_model:
+                    request_params["reasoning"] = {"effort": "medium"}
+
                 # Make the API call
                 print(f"[Calling reasoning model for deep analysis...]")
 
@@ -1250,6 +1295,25 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 logger.error(f"Authentication error in {phase_name}: {e}")
                 raise RuntimeError(f"Invalid OpenAI API key: {e}") from e
 
+            except BadRequestError as e:
+                # Handle token limit and context length errors with user-friendly messages
+                error_msg = str(e).lower()
+                if "context_length_exceeded" in error_msg or "maximum context length" in error_msg:
+                    logger.error(f"Context length exceeded in {phase_name}: {e}")
+                    raise RuntimeError(
+                        f"Input too long for {self.reasoning_model}'s context window. "
+                        f"Try a simpler proposition or reduce the analysis scope."
+                    ) from e
+                elif "max_tokens" in error_msg or "maximum.*tokens" in error_msg:
+                    logger.error(f"Token limit exceeded in {phase_name}: {e}")
+                    raise RuntimeError(
+                        f"Response exceeded token limit for {self.reasoning_model}. "
+                        f"The analysis may be too complex for this model."
+                    ) from e
+                # Other bad request errors - fail immediately
+                logger.error(f"Bad request in {phase_name}: {e}")
+                raise RuntimeError(f"Invalid request to {self.reasoning_model}: {e}") from e
+
             except APIError as e:
                 # Check if it's an auth-related API error
                 error_msg = str(e).lower()
@@ -1280,6 +1344,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     if schema_name:
                         logger.info(f"Falling back to structured output after connection failures")
                         return self._run_structured_phase(prompt, schema_name, f"{phase_name} (structured fallback)")
+                    # Provide user-friendly timeout message
+                    if isinstance(e, (httpx.ReadTimeout, httpx.ConnectTimeout)):
+                        raise RuntimeError(
+                            f"Request to {self.reasoning_model} timed out during {phase_name}. "
+                            f"GPT-5.x models with reasoning may need more time. "
+                            f"Please try again or use a faster model like o4-mini."
+                        ) from e
                     raise
 
             except Exception as e:
@@ -1577,6 +1648,8 @@ Each item needs:
         all_citations = []
 
         for i, category in enumerate(search_categories, 1):
+            # Report search progress to frontend
+            self._report_status(f"phase:evidence:{i}/{len(search_categories)}")
             logger.info(f"Search {i}/{len(search_categories)}: {category[:60]}...")
             print(f"[Search {i}/{len(search_categories)}: {category[:50]}...]")
 
@@ -4607,6 +4680,7 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
                 model="gpt-5.2",  # Use GPT-5.2 for highest quality long-form writing
                 input=prompt,
                 max_output_tokens=16000,  # Increased for longer, richer output
+                reasoning={"effort": "medium"},  # GPT-5.x requires explicit reasoning effort
             )
 
             synopsis = response.output_text
@@ -4634,6 +4708,29 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
             logger.info(f"Saved magazine synopsis to: {filename}")
 
             return synopsis
+
+        except BadRequestError as e:
+            error_msg = str(e).lower()
+            if "context_length_exceeded" in error_msg or "maximum context length" in error_msg:
+                logger.error(f"Context length exceeded in synopsis generation: {e}")
+                raise RuntimeError(
+                    "Report too long for GPT-5.2's context window. "
+                    "Synopsis generation skipped."
+                ) from e
+            elif "max_tokens" in error_msg:
+                logger.error(f"Token limit exceeded in synopsis generation: {e}")
+                raise RuntimeError(
+                    "Synopsis exceeded token limit. Generation skipped."
+                ) from e
+            logger.error(f"Bad request in synopsis generation: {e}")
+            raise RuntimeError(f"Synopsis generation failed: {e}") from e
+
+        except (httpx.ReadTimeout, httpx.ConnectTimeout) as e:
+            logger.error(f"Timeout in synopsis generation: {e}")
+            raise RuntimeError(
+                "GPT-5.2 timed out generating synopsis. "
+                "This is optional - the main analysis is complete."
+            ) from e
 
         except Exception as e:
             logger.error(f"Error generating magazine synopsis: {e}")
