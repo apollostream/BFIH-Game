@@ -1202,7 +1202,16 @@ def _run_analysis(
             # Standard mode: use provided scenario_config
             result = orchestrator.conduct_analysis(analysis_request)
 
-        # Upload visualization to GCS if available
+        # Store result FIRST to ensure expensive analysis is saved even if visualization fails
+        storage.store_analysis_result(analysis_id, result)
+        logger.info(f"Stored analysis result: {analysis_id}")
+
+        # Also store by scenario_id for library lookup (if different)
+        if result.scenario_id and result.scenario_id != analysis_id:
+            storage.store_analysis_result(result.scenario_id, result)
+            logger.info(f"Also stored analysis under scenario_id: {result.scenario_id}")
+
+        # Now attempt visualization upload - if successful, update the stored result
         viz_meta = result.metadata.get("visualization", {})
         png_path = viz_meta.get("png")
         logger.info(f"Visualization check: png_path={png_path}, exists={os.path.exists(png_path) if png_path else 'N/A'}")
@@ -1261,16 +1270,14 @@ and likelihood ratios indicating strength of support or refutation.*
 
                     result.metadata["visualization"]["gcs_url"] = public_url
                     logger.info(f"Uploaded visualization to GCS: {public_url}")
+
+                    # Re-store result with visualization included
+                    storage.store_analysis_result(analysis_id, result)
+                    if result.scenario_id and result.scenario_id != analysis_id:
+                        storage.store_analysis_result(result.scenario_id, result)
+                    logger.info("Updated stored result with visualization")
             except Exception as viz_err:
                 logger.warning(f"Could not upload visualization to GCS: {viz_err}")
-
-        # Store result by analysis_id
-        storage.store_analysis_result(analysis_id, result)
-
-        # Also store by scenario_id for library lookup (if different)
-        if result.scenario_id and result.scenario_id != analysis_id:
-            storage.store_analysis_result(result.scenario_id, result)
-            logger.info(f"Also stored analysis under scenario_id: {result.scenario_id}")
 
         # Update status
         storage.update_analysis_status(analysis_id, "completed")
