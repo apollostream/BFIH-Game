@@ -389,13 +389,17 @@ class GCSStorageBackend(StorageBackend):
         return self.bucket.blob(path)
 
     def _read_json(self, path: str) -> Optional[Dict]:
-        """Read JSON from GCS"""
+        """Read JSON from GCS (fresh read, no caching)"""
         try:
             blob = self._get_blob(path)
-            if not blob.exists():
-                return None
-            content = blob.download_as_text()
-            return json.loads(content)
+            # Force fresh read by not using exists() first - just try to download
+            try:
+                content = blob.download_as_text()
+                return json.loads(content)
+            except Exception as download_error:
+                if "404" in str(download_error) or "Not Found" in str(download_error):
+                    return None
+                raise
         except Exception as e:
             logger.error(f"Error reading from GCS {path}: {str(e)}")
             return None
@@ -424,12 +428,16 @@ class GCSStorageBackend(StorageBackend):
             return False
 
     def _read_text(self, path: str) -> Optional[str]:
-        """Read text from GCS"""
+        """Read text from GCS (fresh read, no caching)"""
         try:
             blob = self._get_blob(path)
-            if not blob.exists():
-                return None
-            return blob.download_as_text()
+            # Force fresh read by not using exists() first - just try to download
+            try:
+                return blob.download_as_text()
+            except Exception as download_error:
+                if "404" in str(download_error) or "Not Found" in str(download_error):
+                    return None
+                raise
         except Exception as e:
             logger.error(f"Error reading text from GCS {path}: {str(e)}")
             return None
