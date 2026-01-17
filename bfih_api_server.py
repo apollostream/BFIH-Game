@@ -1307,10 +1307,17 @@ def _run_analysis(
 
         # Progress callback to stream logs to frontend (direct, bypasses Python logging)
         def progress_callback(message: str):
-            storage.append_progress_log(analysis_id, message)
+            logger.info(f"progress_callback called: {message[:50]}...")
+            success = storage.append_progress_log(analysis_id, message)
+            if not success:
+                logger.error(f"progress_callback: append_progress_log FAILED")
 
         # Create orchestrator with user's credentials (or fall back to env vars)
         orchestrator = get_orchestrator_for_request(api_key, vector_store_id, status_callback, progress_callback)
+
+        # Test that callback is attached and working
+        progress_callback("[TEST] Orchestrator created, callback attached")
+        logger.info(f"Orchestrator progress_callback is set: {orchestrator.progress_callback is not None}")
 
         # Check if this is autonomous mode (empty or minimal scenario_config)
         scenario_config = analysis_request.scenario_config or {}
