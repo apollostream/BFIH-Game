@@ -179,7 +179,17 @@ export function AnalysisInProgressPage() {
       } catch (err) {
         console.error('Error parsing SSE data:', err);
       }
+    };
+
+    // Listen for named 'status' events
+    eventSource.addEventListener('status', (event) => {
+      handleSSEData(event.data);
     });
+
+    // Also handle unnamed messages (fallback for proxies that strip event names)
+    eventSource.onmessage = (event) => {
+      handleSSEData(event.data);
+    };
 
     eventSource.addEventListener('complete', (event) => {
       console.log('SSE complete event:', event.data);
@@ -188,7 +198,7 @@ export function AnalysisInProgressPage() {
 
     eventSource.addEventListener('error', (event) => {
       console.log('SSE error event:', event);
-      eventSource.close();
+      // Don't close - let EventSource auto-reconnect
     });
 
     eventSource.onerror = (err) => {
