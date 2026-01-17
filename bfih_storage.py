@@ -187,12 +187,23 @@ class FileStorageBackend(StorageBackend):
             timestamp = content[1] if len(content) > 1 else None
 
             # Detect staleness: if processing and not updated in 5+ minutes
+            # Also check progress log - if there are recent log entries, backend is working
             is_stale = False
             if timestamp and status.startswith('processing'):
                 try:
                     updated = datetime.fromisoformat(timestamp)
-                    elapsed_seconds = (datetime.utcnow() - updated).total_seconds()
-                    is_stale = elapsed_seconds > 300  # 5 minutes
+                    status_age_seconds = (datetime.utcnow() - updated).total_seconds()
+
+                    if status_age_seconds > 300:  # Status is old, check progress log
+                        # Check if progress log has recent entries
+                        progress_log = self.get_progress_log(analysis_id)
+                        if progress_log:
+                            last_log = progress_log[-1]
+                            last_log_time = datetime.fromisoformat(last_log.get('timestamp', ''))
+                            log_age_seconds = (datetime.utcnow() - last_log_time).total_seconds()
+                            is_stale = log_age_seconds > 300  # Only stale if log is also old
+                        else:
+                            is_stale = True  # No progress log, use status staleness
                 except ValueError:
                     pass  # Invalid timestamp, can't determine staleness
 
@@ -512,12 +523,23 @@ class GCSStorageBackend(StorageBackend):
         timestamp = lines[1] if len(lines) > 1 else None
 
         # Detect staleness: if processing and not updated in 5+ minutes
+        # Also check progress log - if there are recent log entries, backend is working
         is_stale = False
         if timestamp and status.startswith('processing'):
             try:
                 updated = datetime.fromisoformat(timestamp)
-                elapsed_seconds = (datetime.utcnow() - updated).total_seconds()
-                is_stale = elapsed_seconds > 300  # 5 minutes
+                status_age_seconds = (datetime.utcnow() - updated).total_seconds()
+
+                if status_age_seconds > 300:  # Status is old, check progress log
+                    # Check if progress log has recent entries
+                    progress_log = self.get_progress_log(analysis_id)
+                    if progress_log:
+                        last_log = progress_log[-1]
+                        last_log_time = datetime.fromisoformat(last_log.get('timestamp', ''))
+                        log_age_seconds = (datetime.utcnow() - last_log_time).total_seconds()
+                        is_stale = log_age_seconds > 300  # Only stale if log is also old
+                    else:
+                        is_stale = True  # No progress log, use status staleness
             except ValueError:
                 pass  # Invalid timestamp, can't determine staleness
 
