@@ -30,12 +30,18 @@ export interface AnalysisSubmitResponse {
   scenario_id: string;
 }
 
+export interface ProgressLogEntry {
+  timestamp: string;
+  message: string;
+}
+
 export interface AnalysisStatusResponse {
   analysis_id: string;
   status: 'processing' | 'completed' | 'failed';
   timestamp: string;
   error?: string;
   is_stale?: boolean;  // True if backend hasn't updated status in 5+ minutes
+  progress_log?: ProgressLogEntry[];  // Real-time progress messages from backend
 }
 
 export interface AnalysisMetadata {

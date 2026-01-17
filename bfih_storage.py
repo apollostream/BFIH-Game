@@ -315,6 +315,41 @@ class FileStorageBackend(StorageBackend):
         filepath = self.status_dir / f"{analysis_id}_cancelled.txt"
         return filepath.exists()
 
+    def append_progress_log(self, analysis_id: str, message: str) -> bool:
+        """Append a progress message to the analysis log. Keeps last 20 messages."""
+        try:
+            filepath = self.status_dir / f"{analysis_id}_progress.json"
+            messages = []
+            if filepath.exists():
+                with open(filepath, 'r') as f:
+                    messages = json.load(f)
+
+            messages.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "message": message
+            })
+            # Keep only last 20 messages
+            messages = messages[-20:]
+
+            with open(filepath, 'w') as f:
+                json.dump(messages, f)
+            return True
+        except Exception as e:
+            logger.error(f"Error appending progress log: {str(e)}")
+            return False
+
+    def get_progress_log(self, analysis_id: str) -> List[Dict]:
+        """Get the progress log messages for an analysis."""
+        try:
+            filepath = self.status_dir / f"{analysis_id}_progress.json"
+            if not filepath.exists():
+                return []
+            with open(filepath, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error reading progress log: {str(e)}")
+            return []
+
 
 # ============================================================================
 # GOOGLE CLOUD STORAGE BACKEND (Production)
@@ -607,6 +642,40 @@ class GCSStorageBackend(StorageBackend):
             logger.error(traceback.format_exc())
             return None
 
+    def cancel_analysis(self, analysis_id: str) -> bool:
+        """Mark an analysis as cancelled."""
+        path = f"{self.status_prefix}/{analysis_id}_cancelled.txt"
+        return self._write_text(path, datetime.utcnow().isoformat())
+
+    def is_analysis_cancelled(self, analysis_id: str) -> bool:
+        """Check if an analysis has been cancelled."""
+        path = f"{self.status_prefix}/{analysis_id}_cancelled.txt"
+        blob = self._get_blob(path)
+        return blob.exists()
+
+    def append_progress_log(self, analysis_id: str, message: str) -> bool:
+        """Append a progress message to the analysis log. Keeps last 20 messages."""
+        try:
+            path = f"{self.status_prefix}/{analysis_id}_progress.json"
+            messages = self._read_json(path) or []
+
+            messages.append({
+                "timestamp": datetime.utcnow().isoformat(),
+                "message": message
+            })
+            # Keep only last 20 messages
+            messages = messages[-20:]
+
+            return self._write_json(path, messages)
+        except Exception as e:
+            logger.error(f"Error appending progress log to GCS: {str(e)}")
+            return False
+
+    def get_progress_log(self, analysis_id: str) -> List[Dict]:
+        """Get the progress log messages for an analysis."""
+        path = f"{self.status_prefix}/{analysis_id}_progress.json"
+        return self._read_json(path) or []
+
 
 # ============================================================================
 # MANAGER CLASS (Facade)
@@ -690,6 +759,14 @@ class StorageManager:
     def is_analysis_cancelled(self, analysis_id: str) -> bool:
         """Check if an analysis has been cancelled."""
         return self.backend.is_analysis_cancelled(analysis_id)
+
+    def append_progress_log(self, analysis_id: str, message: str) -> bool:
+        """Append a progress message to the analysis log."""
+        return self.backend.append_progress_log(analysis_id, message)
+
+    def get_progress_log(self, analysis_id: str) -> List[Dict]:
+        """Get the progress log messages for an analysis."""
+        return self.backend.get_progress_log(analysis_id)
 
 
 # ============================================================================

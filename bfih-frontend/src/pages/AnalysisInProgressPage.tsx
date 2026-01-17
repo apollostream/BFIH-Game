@@ -8,7 +8,7 @@ import { useGameStore } from '../stores';
 import { useAnalysisStore } from '../stores/analysisStore';
 import { getAnalysisStatus, getAnalysis, storeScenario } from '../api';
 import { pageVariants } from '../utils';
-import type { BFIHAnalysisResult } from '../types';
+import type { BFIHAnalysisResult, ProgressLogEntry } from '../types';
 
 // Maximum polling time before giving up (15 minutes)
 const MAX_POLL_TIME_MS = 15 * 60 * 1000;
@@ -69,6 +69,7 @@ export function AnalysisInProgressPage() {
   const [pollCount, setPollCount] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
   const [startTime] = useState(() => Date.now()); // Track when polling started for timeout
+  const [progressLog, setProgressLog] = useState<ProgressLogEntry[]>([]); // Real-time log from backend
 
   // Ref to prevent duplicate navigation
   const hasNavigated = useRef(false);
@@ -127,6 +128,11 @@ export function AnalysisInProgressPage() {
       const statusResponse = await getAnalysisStatus(id);
       setRawStatus(JSON.stringify(statusResponse, null, 2));
       console.log('Status response:', statusResponse);
+
+      // Update progress log from backend
+      if (statusResponse.progress_log) {
+        setProgressLog(statusResponse.progress_log);
+      }
 
       // Check for stale status (backend hasn't updated in 5+ minutes while processing)
       if (statusResponse.is_stale && statusResponse.status?.startsWith('processing')) {
@@ -427,6 +433,28 @@ export function AnalysisInProgressPage() {
                     animate={{ width: `${((currentPhaseIndex + 1) / ANALYSIS_PHASES.length) * 100}%` }}
                     transition={{ duration: 0.5 }}
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Live Progress Log */}
+            {isProcessing && progressLog.length > 0 && (
+              <div className="mb-6">
+                <div className="text-xs text-text-muted uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <span className="inline-block w-2 h-2 rounded-full bg-accent animate-pulse" />
+                  Live Activity
+                </div>
+                <div className="bg-surface-2 rounded-lg border border-border p-3 max-h-32 overflow-y-auto font-mono text-xs">
+                  {progressLog.slice(-5).map((entry, idx) => (
+                    <motion.div
+                      key={`${entry.timestamp}-${idx}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`py-1 ${idx === progressLog.slice(-5).length - 1 ? 'text-accent' : 'text-text-secondary'}`}
+                    >
+                      {entry.message}
+                    </motion.div>
+                  ))}
                 </div>
               </div>
             )}

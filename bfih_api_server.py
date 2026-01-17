@@ -1010,7 +1010,7 @@ async def list_scenarios(limit: int = 50, offset: int = 0):
 
 @app.get("/api/analysis-status/{analysis_id}")
 async def get_analysis_status(analysis_id: str):
-    """Get status of analysis (processing, completed, failed)"""
+    """Get status of analysis (processing, completed, failed) including progress log."""
     try:
         status = storage.get_analysis_status(analysis_id)
 
@@ -1019,6 +1019,10 @@ async def get_analysis_status(analysis_id: str):
                 status_code=404,
                 detail=f"Analysis not found: {analysis_id}"
             )
+
+        # Include progress log for real-time updates
+        progress_log = storage.get_progress_log(analysis_id)
+        status["progress_log"] = progress_log
 
         # Return with no-cache headers to ensure fresh status on every poll
         return JSONResponse(
@@ -1169,6 +1173,29 @@ async def generate_synopsis(
 # BACKGROUND TASK
 # ============================================================================
 
+class ProgressLogHandler(logging.Handler):
+    """Custom log handler that captures messages and stores them for frontend polling."""
+
+    def __init__(self, storage_manager, analysis_id: str):
+        super().__init__()
+        self.storage_manager = storage_manager
+        self.analysis_id = analysis_id
+        self.setLevel(logging.INFO)
+        # Filter to only capture orchestrator and api server logs
+        self.setFormatter(logging.Formatter('%(message)s'))
+
+    def emit(self, record):
+        try:
+            # Only capture INFO level and above from relevant modules
+            if record.levelno >= logging.INFO:
+                message = self.format(record)
+                # Skip very verbose or internal messages
+                if not any(skip in message for skip in ['Updated analysis status', 'Status callback']):
+                    self.storage_manager.append_progress_log(self.analysis_id, message)
+        except Exception:
+            pass  # Don't let logging errors break the analysis
+
+
 def _run_analysis(
     analysis_id: str,
     analysis_request: BFIHAnalysisRequest,
@@ -1181,8 +1208,14 @@ def _run_analysis(
     BackgroundTasks runs it in a thread pool, preventing it from blocking
     the main event loop during long-running analysis.
     """
+    # Set up custom log handler to capture progress for frontend
+    progress_handler = ProgressLogHandler(storage, analysis_id)
+    orchestrator_logger = logging.getLogger('bfih_orchestrator_fixed')
+    orchestrator_logger.addHandler(progress_handler)
+
     try:
         logger.info(f"Starting background analysis: {analysis_id}")
+        storage.append_progress_log(analysis_id, f"Starting analysis: {analysis_request.proposition[:100]}...")
 
         # Note: Status already set to "processing" by submit_analysis() - no need to update here
 
@@ -1309,6 +1342,11 @@ and likelihood ratios indicating strength of support or refutation.*
         success = storage.update_analysis_status(analysis_id, error_status, max_retries=5)
         if not success:
             logger.critical(f"CRITICAL: Could not persist error status for {analysis_id}: {error_status}")
+
+    finally:
+        # Clean up the progress log handler
+        orchestrator_logger = logging.getLogger('bfih_orchestrator_fixed')
+        orchestrator_logger.removeHandler(progress_handler)
 
 
 # ============================================================================
