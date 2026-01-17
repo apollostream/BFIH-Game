@@ -1,6 +1,6 @@
 // Analysis API endpoints
 
-import { get, post, isSetupComplete } from './client';
+import { get, post, isSetupComplete, checkHealth } from './client';
 import type {
   AnalysisSubmitResponse,
   AnalysisStatusResponse,
@@ -29,8 +29,11 @@ export async function getReasoningModels(): Promise<ReasoningModelsResponse> {
 
 // Submit a new analysis (autonomous mode - just proposition)
 export async function submitAnalysis(params: SubmitAnalysisParams): Promise<AnalysisSubmitResponse> {
-  // Check if user has completed setup (has API key)
-  if (!isSetupComplete()) {
+  // Check if server requires API key from user
+  const health = await checkHealth();
+
+  // Only require user setup if server doesn't have its own API key
+  if (health.requiresApiKey && !isSetupComplete()) {
     // Clear any stale credentials and force setup
     localStorage.removeItem('bfih_openai_api_key');
     localStorage.removeItem('bfih_vector_store_id');
