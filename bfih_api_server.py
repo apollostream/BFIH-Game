@@ -39,7 +39,8 @@ from bfih_storage import StorageManager, GCSStorageBackend, GCS_AVAILABLE
 def get_orchestrator_for_request(
     api_key: Optional[str] = None,
     vector_store_id: Optional[str] = None,
-    status_callback: Optional[callable] = None
+    status_callback: Optional[callable] = None,
+    progress_callback: Optional[callable] = None
 ) -> BFIHOrchestrator:
     """
     Create an orchestrator with user-provided or default credentials.
@@ -51,6 +52,7 @@ def get_orchestrator_for_request(
         api_key: OpenAI API key (from header or env var)
         vector_store_id: Vector store ID for file search
         status_callback: Optional callback function(phase: str) to report progress
+        progress_callback: Optional callback function(message: str) to stream logs
     """
     # Use provided credentials or fall back to env vars
     effective_api_key = api_key if api_key else os.getenv("OPENAI_API_KEY")
@@ -65,7 +67,8 @@ def get_orchestrator_for_request(
     return BFIHOrchestrator(
         api_key=effective_api_key,
         vector_store_id=effective_vector_store,
-        status_callback=status_callback
+        status_callback=status_callback,
+        progress_callback=progress_callback
     )
 
 
@@ -1289,14 +1292,6 @@ def _run_analysis(
     BackgroundTasks runs it in a thread pool, preventing it from blocking
     the main event loop during long-running analysis.
     """
-    # Set up custom log handler to capture progress for frontend
-    progress_handler = ProgressLogHandler(storage, analysis_id)
-    orchestrator_logger = logging.getLogger('bfih_orchestrator_fixed')
-    orchestrator_logger.addHandler(progress_handler)
-    logger.info(f"Attached ProgressLogHandler to orchestrator logger for {analysis_id} (handlers: {len(orchestrator_logger.handlers)})")
-    # Test that handler captures messages from orchestrator logger
-    orchestrator_logger.info(f"[TEST] ProgressLogHandler attached for {analysis_id}")
-
     try:
         logger.info(f"Starting background analysis: {analysis_id}")
         storage.append_progress_log(analysis_id, f"Starting analysis: {analysis_request.proposition[:100]}...")
@@ -1310,8 +1305,12 @@ def _run_analysis(
             if not success:
                 logger.error(f"Status callback FAILED to update: {analysis_id} -> processing:{phase}")
 
+        # Progress callback to stream logs to frontend (direct, bypasses Python logging)
+        def progress_callback(message: str):
+            storage.append_progress_log(analysis_id, message)
+
         # Create orchestrator with user's credentials (or fall back to env vars)
-        orchestrator = get_orchestrator_for_request(api_key, vector_store_id, status_callback)
+        orchestrator = get_orchestrator_for_request(api_key, vector_store_id, status_callback, progress_callback)
 
         # Check if this is autonomous mode (empty or minimal scenario_config)
         scenario_config = analysis_request.scenario_config or {}

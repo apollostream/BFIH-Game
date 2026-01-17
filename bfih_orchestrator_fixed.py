@@ -242,7 +242,7 @@ class BFIHOrchestrator:
     """
 
     def __init__(self, vector_store_id: Optional[str] = None, api_key: Optional[str] = None, skip_api_init: bool = False,
-                 status_callback: Optional[callable] = None):
+                 status_callback: Optional[callable] = None, progress_callback: Optional[callable] = None):
         """
         Initialize the orchestrator.
 
@@ -251,8 +251,10 @@ class BFIHOrchestrator:
             api_key: Optional OpenAI API key (for multi-tenant deployment)
             skip_api_init: If True, skip API client initialization (for visualization-only mode)
             status_callback: Optional callback function(phase: str) to report progress
+            progress_callback: Optional callback function(message: str) to stream progress logs
         """
         self.status_callback = status_callback
+        self.progress_callback = progress_callback
 
         # Support visualization-only mode (no API calls needed)
         if skip_api_init:
@@ -293,6 +295,15 @@ class BFIHOrchestrator:
             except Exception as e:
                 logger.warning(f"Status callback failed: {e}")
 
+    def _log_progress(self, message: str):
+        """Log a message and also send to progress callback if set."""
+        logger.info(message)
+        if self.progress_callback:
+            try:
+                self.progress_callback(message)
+            except Exception as e:
+                logger.warning(f"Progress callback error: {e}")
+
     def conduct_analysis(self, request: BFIHAnalysisRequest) -> BFIHAnalysisResult:
         """
         Main entry point: Conduct full BFIH analysis using phased approach.
@@ -315,25 +326,31 @@ class BFIHOrchestrator:
         # Override reasoning model if specified in request
         if request.reasoning_model and request.reasoning_model in AVAILABLE_REASONING_MODELS:
             self.reasoning_model = request.reasoning_model
-            logger.info(f"Using request-specified reasoning model: {self.reasoning_model}")
+            self._log_progress(f"Using request-specified reasoning model: {self.reasoning_model}")
 
-        logger.info(f"Starting BFIH analysis for scenario: {request.scenario_id}")
-        logger.info(f"Proposition: {request.proposition}")
+        self._log_progress(f"Starting BFIH analysis for scenario: {request.scenario_id}")
+        self._log_progress(f"Proposition: {request.proposition}")
 
         try:
             # Phase 1: Retrieve methodology from vector store
             self._report_status("phase:methodology")
+            self._log_progress("Phase 1: Retrieving methodology...")
             methodology = self._run_phase_1_methodology(request)
+            self._log_progress("Phase 1 complete: Methodology retrieved")
 
             # Phase 2: Gather evidence via web search (returns structured evidence)
             self._report_status("phase:evidence")
+            self._log_progress("Phase 2: Gathering evidence via web search...")
             evidence_text, evidence_items = self._run_phase_2_evidence(request, methodology)
+            self._log_progress(f"Phase 2 complete: Found {len(evidence_items)} evidence items")
 
             # Phase 3: Assign likelihoods to evidence (returns structured clusters)
             self._report_status("phase:likelihoods")
+            self._log_progress("Phase 3: Assigning likelihoods...")
             likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
                 request, evidence_text, evidence_items
             )
+            self._log_progress(f"Phase 3 complete: {len(evidence_clusters)} evidence clusters")
 
             # Compute Bayesian metrics (P(E|¬H), LR, WoE) in Python - NOT by LLM
             # Compute metrics for ALL paradigms so frontend can display paradigm-specific values
@@ -397,9 +414,11 @@ class BFIHOrchestrator:
             # NOTE: Phase 4 code_interpreter was removed - it produced inconsistent posteriors
             # that didn't account for paradigm-specific priors and likelihoods
             self._report_status("phase:computation")
+            self._log_progress("Phase 4: Computing posteriors...")
             posteriors_by_paradigm = self._compute_paradigm_posteriors(
                 request.scenario_config, evidence_clusters
             )
+            self._log_progress("Phase 4 complete: Posteriors computed")
 
             # Build paradigm comparison table for Phase 5c
             paradigm_comparison_table = self._format_paradigm_comparison_table(
@@ -408,12 +427,14 @@ class BFIHOrchestrator:
 
             # Phase 5: Generate final report (pass pre-computed Bayesian tables AND paradigm posteriors)
             self._report_status("phase:report")
+            self._log_progress("Phase 5: Generating report...")
             bfih_report = self._run_phase_5_report(
                 request, methodology, evidence_text, likelihoods_text,
                 evidence_items, enriched_clusters,
                 precomputed_cluster_tables, precomputed_joint_table,
                 posteriors_by_paradigm, paradigm_comparison_table
             )
+            self._log_progress("Phase 5 complete: Report generated")
 
             # Use already-computed posteriors
             posteriors = posteriors_by_paradigm
@@ -461,8 +482,8 @@ class BFIHOrchestrator:
             except Exception as viz_error:
                 logger.warning(f"Could not generate visualization: {viz_error}")
 
-            logger.info(f"BFIH analysis completed successfully: {analysis_id}")
-            logger.info(f"Duration: {duration_seconds:.1f}s")
+            self._log_progress(f"BFIH analysis completed successfully: {analysis_id}")
+            self._log_progress(f"Duration: {duration_seconds:.1f}s")
             logger.info(f"Evidence: {len(evidence_items)} items in {len(evidence_clusters)} clusters")
             return result
 
@@ -2982,27 +3003,33 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
         # Override reasoning model if specified
         if reasoning_model and reasoning_model in AVAILABLE_REASONING_MODELS:
             self.reasoning_model = reasoning_model
-            logger.info(f"Using specified reasoning model: {self.reasoning_model}")
+            self._log_progress(f"Using specified reasoning model: {self.reasoning_model}")
 
-        logger.info(f"{'='*60}")
-        logger.info(f"AUTONOMOUS BFIH ANALYSIS")
-        logger.info(f"Proposition: {proposition}")
-        logger.info(f"Domain: {domain}, Difficulty: {difficulty}")
-        logger.info(f"{'='*60}")
+        self._log_progress(f"{'='*60}")
+        self._log_progress(f"AUTONOMOUS BFIH ANALYSIS")
+        self._log_progress(f"Proposition: {proposition}")
+        self._log_progress(f"Domain: {domain}, Difficulty: {difficulty}")
+        self._log_progress(f"{'='*60}")
 
         # Phase 0a: Generate paradigms
         self._report_status("phase:paradigms")
+        self._log_progress("Starting Phase 0a: Generating paradigms...")
         paradigms = self._generate_paradigms(proposition, domain)
+        self._log_progress(f"Generated {len(paradigms)} paradigms")
 
         # Phase 0b: Generate hypotheses with forcing functions + MECE synthesis
         self._report_status("phase:hypotheses")
+        self._log_progress("Starting Phase 0b: Generating hypotheses...")
         hypotheses, forcing_functions_log = self._generate_hypotheses_with_forcing_functions(
             proposition, paradigms, difficulty
         )
+        self._log_progress(f"Generated {len(hypotheses)} hypotheses")
 
         # Phase 0c: Assign priors per paradigm (BEFORE evidence, based only on background context)
         self._report_status("phase:priors")
+        self._log_progress("Starting Phase 0c: Assigning priors...")
         priors_by_paradigm = self._assign_priors(hypotheses, paradigms, proposition)
+        self._log_progress("Priors assigned")
 
         # Build scenario_config dynamically
         scenario_config = self._build_scenario_config(
