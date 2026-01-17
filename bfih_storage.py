@@ -387,6 +387,10 @@ class GCSStorageBackend(StorageBackend):
         self._append_locks: Dict[str, threading.Lock] = {}
         self._locks_lock = threading.Lock()  # Lock for creating per-analysis locks
 
+        # In-memory cache for progress logs (avoids read-before-write race conditions)
+        # Key: analysis_id, Value: list of log messages
+        self._progress_cache: Dict[str, List[Dict]] = {}
+
         logger.info(f"GCSStorageBackend initialized: gs://{bucket_name}/{prefix}")
 
     def _get_blob(self, path: str):
@@ -707,27 +711,29 @@ class GCSStorageBackend(StorageBackend):
     def append_progress_log(self, analysis_id: str, message: str) -> bool:
         """Append a progress message to the analysis log. Keeps last 20 messages.
 
-        Thread-safe: Uses a per-analysis lock to prevent race conditions
-        when multiple callbacks try to append concurrently.
+        Uses in-memory cache to avoid GCS read caching issues. The cache is the
+        source of truth for the current analysis, and we write to GCS for persistence.
         """
         lock = self._get_append_lock(analysis_id)
 
         with lock:
             try:
                 path = f"{self.status_prefix}/{analysis_id}_progress.json"
-                logger.info(f"GCS append_progress_log: reading {path}")
-                messages = self._read_json(path) or []
-                logger.info(f"GCS append_progress_log: read {len(messages)} existing messages")
 
-                messages.append({
+                # Use in-memory cache instead of reading from GCS
+                if analysis_id not in self._progress_cache:
+                    self._progress_cache[analysis_id] = []
+
+                self._progress_cache[analysis_id].append({
                     "timestamp": datetime.utcnow().isoformat(),
                     "message": message
                 })
                 # Keep only last 20 messages
-                messages = messages[-20:]
+                self._progress_cache[analysis_id] = self._progress_cache[analysis_id][-20:]
 
-                logger.info(f"GCS append_progress_log: writing {len(messages)} messages to {path}")
-                result = self._write_json(path, messages)
+                # Write the full list to GCS (no read needed!)
+                logger.info(f"GCS append_progress_log: writing {len(self._progress_cache[analysis_id])} messages to {path}")
+                result = self._write_json(path, self._progress_cache[analysis_id])
                 logger.info(f"GCS append_progress_log: write result = {result}")
                 return result
             except Exception as e:
@@ -735,7 +741,15 @@ class GCSStorageBackend(StorageBackend):
                 return False
 
     def get_progress_log(self, analysis_id: str) -> List[Dict]:
-        """Get the progress log messages for an analysis."""
+        """Get the progress log messages for an analysis.
+
+        Prefers in-memory cache for fresher data, falls back to GCS.
+        """
+        # Prefer in-memory cache (freshest data, same instance)
+        if analysis_id in self._progress_cache:
+            return self._progress_cache[analysis_id]
+
+        # Fall back to GCS for different instance or after restart
         path = f"{self.status_prefix}/{analysis_id}_progress.json"
         return self._read_json(path) or []
 
