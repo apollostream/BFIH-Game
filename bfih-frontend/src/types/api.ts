@@ -35,6 +35,7 @@ export interface AnalysisStatusResponse {
   status: 'processing' | 'completed' | 'failed';
   timestamp: string;
   error?: string;
+  is_stale?: boolean;  // True if backend hasn't updated status in 5+ minutes
 }
 
 export interface AnalysisMetadata {

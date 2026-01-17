@@ -10,6 +10,9 @@ import { getAnalysisStatus, getAnalysis, storeScenario } from '../api';
 import { pageVariants } from '../utils';
 import type { BFIHAnalysisResult } from '../types';
 
+// Maximum polling time before giving up (15 minutes)
+const MAX_POLL_TIME_MS = 15 * 60 * 1000;
+
 // All phases in order (autonomous mode includes 0a-0c, then 1-5)
 const ANALYSIS_PHASES = [
   { id: 'paradigms', label: 'Generating Paradigms', icon: '🎭' },
@@ -65,6 +68,7 @@ export function AnalysisInProgressPage() {
   const [phaseDetail, setPhaseDetail] = useState<string | null>(null); // e.g., "3/10" for search progress
   const [pollCount, setPollCount] = useState(0);
   const [showDebug, setShowDebug] = useState(false);
+  const [startTime] = useState(() => Date.now()); // Track when polling started for timeout
 
   // Ref to prevent duplicate navigation
   const hasNavigated = useRef(false);
@@ -111,10 +115,26 @@ export function AnalysisInProgressPage() {
     isPolling.current = true;
 
     try {
+      // Check for polling timeout (15 minutes)
+      if (Date.now() - startTime > MAX_POLL_TIME_MS) {
+        console.log('Polling timeout reached after 15 minutes');
+        setStatus('failed');
+        setError('Analysis timed out after 15 minutes. The backend may be unresponsive.');
+        return;
+      }
+
       setPollCount(c => c + 1);
       const statusResponse = await getAnalysisStatus(id);
       setRawStatus(JSON.stringify(statusResponse, null, 2));
       console.log('Status response:', statusResponse);
+
+      // Check for stale status (backend hasn't updated in 5+ minutes while processing)
+      if (statusResponse.is_stale && statusResponse.status?.startsWith('processing')) {
+        console.log('Stale status detected - backend appears stuck');
+        setStatus('failed');
+        setError('Analysis appears stuck. Backend has not updated status in 5+ minutes.');
+        return;
+      }
 
       const normalized = normalizeStatus(statusResponse.status);
 
@@ -185,7 +205,7 @@ export function AnalysisInProgressPage() {
     } finally {
       isPolling.current = false;
     }
-  }, [id, navigateToGame, cacheResult]);
+  }, [id, navigateToGame, cacheResult, startTime]);
 
   // Polling effect - only runs once on mount, uses ref to track status
   const statusRef = useRef(status);

@@ -671,7 +671,7 @@ async def submit_analysis(
             analysis_id=analysis_id,
             request=analysis_request
         )
-        storage.update_analysis_status(analysis_id, "submitted")  # Initialize status immediately
+        storage.update_analysis_status(analysis_id, "processing")  # Initialize to "processing" immediately (not "submitted") to avoid race condition
 
         # Run analysis in background with user's credentials
         background_tasks.add_task(
@@ -1184,8 +1184,7 @@ def _run_analysis(
     try:
         logger.info(f"Starting background analysis: {analysis_id}")
 
-        # Update status
-        storage.update_analysis_status(analysis_id, "processing")
+        # Note: Status already set to "processing" by submit_analysis() - no need to update here
 
         # Status callback to report phase progress
         def status_callback(phase: str):
@@ -1300,9 +1299,16 @@ and likelihood ratios indicating strength of support or refutation.*
         error_lower = error_msg.lower()
         if "api key" in error_lower or "authentication" in error_lower or "invalid" in error_lower:
             # Mark as auth error so frontend can detect and prompt for re-setup
-            storage.update_analysis_status(analysis_id, f"auth_error: {error_msg}")
+            error_status = f"auth_error: {error_msg}"
         else:
-            storage.update_analysis_status(analysis_id, f"failed: {error_msg}")
+            error_status = f"failed: {error_msg}"
+
+        # Use higher retry count for error status (critical to record)
+        # The storage.update_analysis_status already has retry logic (default 3)
+        # but we want extra retries for failures since they're critical
+        success = storage.update_analysis_status(analysis_id, error_status, max_retries=5)
+        if not success:
+            logger.critical(f"CRITICAL: Could not persist error status for {analysis_id}: {error_status}")
 
 
 # ============================================================================

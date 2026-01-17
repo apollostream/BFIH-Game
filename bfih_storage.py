@@ -167,19 +167,41 @@ class FileStorageBackend(StorageBackend):
             return False
     
     def get_analysis_status(self, analysis_id: str) -> Optional[Dict]:
-        """Get analysis status"""
+        """Get analysis status with staleness detection.
+
+        Returns a dict with:
+        - analysis_id: The analysis ID
+        - status: Current status string
+        - timestamp: ISO timestamp of last update
+        - is_stale: True if status hasn't been updated in 5+ minutes while still processing
+        """
         try:
             filepath = self.status_dir / f"{analysis_id}_status.txt"
             if not filepath.exists():
                 return None
-            
+
             with open(filepath, 'r') as f:
                 content = f.read().strip().split('\n')
-                return {
-                    "analysis_id": analysis_id,
-                    "status": content[0],
-                    "timestamp": content[1] if len(content) > 1 else None
-                }
+
+            status = content[0]
+            timestamp = content[1] if len(content) > 1 else None
+
+            # Detect staleness: if processing and not updated in 5+ minutes
+            is_stale = False
+            if timestamp and status.startswith('processing'):
+                try:
+                    updated = datetime.fromisoformat(timestamp)
+                    elapsed_seconds = (datetime.utcnow() - updated).total_seconds()
+                    is_stale = elapsed_seconds > 300  # 5 minutes
+                except ValueError:
+                    pass  # Invalid timestamp, can't determine staleness
+
+            return {
+                "analysis_id": analysis_id,
+                "status": status,
+                "timestamp": timestamp,
+                "is_stale": is_stale
+            }
         except Exception as e:
             logger.error(f"Error getting analysis status: {str(e)}")
             return None
@@ -275,6 +297,23 @@ class FileStorageBackend(StorageBackend):
         except Exception as e:
             logger.error(f"Error storing visualization: {str(e)}")
             return None
+
+    def cancel_analysis(self, analysis_id: str) -> bool:
+        """Mark an analysis as cancelled by creating a cancellation flag file."""
+        try:
+            filepath = self.status_dir / f"{analysis_id}_cancelled.txt"
+            with open(filepath, 'w') as f:
+                f.write(datetime.utcnow().isoformat())
+            logger.info(f"Analysis cancelled: {analysis_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error cancelling analysis: {str(e)}")
+            return False
+
+    def is_analysis_cancelled(self, analysis_id: str) -> bool:
+        """Check if an analysis has been cancelled."""
+        filepath = self.status_dir / f"{analysis_id}_cancelled.txt"
+        return filepath.exists()
 
 
 # ============================================================================
@@ -418,17 +457,38 @@ class GCSStorageBackend(StorageBackend):
         return success
 
     def get_analysis_status(self, analysis_id: str) -> Optional[Dict]:
-        """Get analysis status from GCS"""
+        """Get analysis status from GCS with staleness detection.
+
+        Returns a dict with:
+        - analysis_id: The analysis ID
+        - status: Current status string
+        - timestamp: ISO timestamp of last update
+        - is_stale: True if status hasn't been updated in 5+ minutes while still processing
+        """
         path = f"{self.status_prefix}/{analysis_id}_status.txt"
         content = self._read_text(path)
         if not content:
             return None
 
         lines = content.strip().split('\n')
+        status = lines[0]
+        timestamp = lines[1] if len(lines) > 1 else None
+
+        # Detect staleness: if processing and not updated in 5+ minutes
+        is_stale = False
+        if timestamp and status.startswith('processing'):
+            try:
+                updated = datetime.fromisoformat(timestamp)
+                elapsed_seconds = (datetime.utcnow() - updated).total_seconds()
+                is_stale = elapsed_seconds > 300  # 5 minutes
+            except ValueError:
+                pass  # Invalid timestamp, can't determine staleness
+
         return {
             "analysis_id": analysis_id,
-            "status": lines[0],
-            "timestamp": lines[1] if len(lines) > 1 else None
+            "status": status,
+            "timestamp": timestamp,
+            "is_stale": is_stale
         }
 
     def list_scenarios(self, limit: int = 50, offset: int = 0) -> List[Dict]:
@@ -587,9 +647,29 @@ class StorageManager:
         request_dict = request.to_dict() if hasattr(request, 'to_dict') else request
         return self.backend.store_analysis_request(analysis_id, request_dict)
     
-    def update_analysis_status(self, analysis_id: str, status: str) -> bool:
-        """Update analysis status"""
-        return self.backend.update_analysis_status(analysis_id, status)
+    def update_analysis_status(self, analysis_id: str, status: str, max_retries: int = 3) -> bool:
+        """Update analysis status with retry logic for reliability.
+
+        Args:
+            analysis_id: The analysis ID
+            status: The status string to set
+            max_retries: Number of retry attempts (default 3)
+
+        Returns:
+            True if status was updated successfully, False otherwise
+        """
+        import time
+
+        for attempt in range(max_retries):
+            if self.backend.update_analysis_status(analysis_id, status):
+                return True
+            if attempt < max_retries - 1:
+                wait_time = 0.5 * (attempt + 1)  # Exponential backoff: 0.5s, 1.0s, 1.5s
+                logger.warning(f"Status update failed for {analysis_id}, retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})")
+                time.sleep(wait_time)
+
+        logger.error(f"Failed to update status after {max_retries} attempts: {analysis_id} -> {status}")
+        return False
     
     def get_analysis_status(self, analysis_id: str) -> Optional[Dict]:
         """Get analysis status"""
@@ -602,6 +682,14 @@ class StorageManager:
     def store_visualization(self, scenario_id: str, png_content: bytes) -> Optional[str]:
         """Store PNG visualization and return URL/path"""
         return self.backend.store_visualization(scenario_id, png_content)
+
+    def cancel_analysis(self, analysis_id: str) -> bool:
+        """Mark an analysis as cancelled. Returns True if successful."""
+        return self.backend.cancel_analysis(analysis_id)
+
+    def is_analysis_cancelled(self, analysis_id: str) -> bool:
+        """Check if an analysis has been cancelled."""
+        return self.backend.is_analysis_cancelled(analysis_id)
 
 
 # ============================================================================
