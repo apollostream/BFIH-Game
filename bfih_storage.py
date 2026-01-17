@@ -393,11 +393,17 @@ class GCSStorageBackend(StorageBackend):
         """Get a blob reference"""
         return self.bucket.blob(path)
 
+    def _get_fresh_blob(self, path: str):
+        """Get a completely fresh blob reference (bypasses any caching)"""
+        # Create fresh bucket reference from client to avoid any caching
+        fresh_bucket = self.client.bucket(self.bucket.name)
+        return fresh_bucket.blob(path)
+
     def _read_json(self, path: str) -> Optional[Dict]:
         """Read JSON from GCS (fresh read, no caching)"""
         try:
-            blob = self._get_blob(path)
-            # Force fresh read by not using exists() first - just try to download
+            # Use fresh blob reference to avoid any cached data
+            blob = self._get_fresh_blob(path)
             try:
                 content = blob.download_as_text()
                 return json.loads(content)
@@ -435,8 +441,8 @@ class GCSStorageBackend(StorageBackend):
     def _read_text(self, path: str) -> Optional[str]:
         """Read text from GCS (fresh read, no caching)"""
         try:
-            blob = self._get_blob(path)
-            # Force fresh read by not using exists() first - just try to download
+            # Use fresh blob reference to avoid any cached data
+            blob = self._get_fresh_blob(path)
             try:
                 return blob.download_as_text()
             except Exception as download_error:
