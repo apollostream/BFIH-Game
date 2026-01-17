@@ -60,9 +60,9 @@ export async function submitAnalysis(params: SubmitAnalysisParams): Promise<Anal
   return response.data!;
 }
 
-// Get analysis status (for polling)
+// Get analysis status (for polling) - uses cache busting to ensure fresh data
 export async function getAnalysisStatus(analysisId: string): Promise<AnalysisStatusResponse> {
-  const response = await get<AnalysisStatusResponse>(`/api/analysis-status/${analysisId}`);
+  const response = await get<AnalysisStatusResponse>(`/api/analysis-status/${analysisId}`, true);
 
   if (response.error) {
     throw new Error(response.error);

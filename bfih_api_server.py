@@ -1020,7 +1020,15 @@ async def get_analysis_status(analysis_id: str):
                 detail=f"Analysis not found: {analysis_id}"
             )
 
-        return status
+        # Return with no-cache headers to ensure fresh status on every poll
+        return JSONResponse(
+            content=status,
+            headers={
+                "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+                "Pragma": "no-cache",
+                "Expires": "0"
+            }
+        )
 
     except HTTPException:
         raise

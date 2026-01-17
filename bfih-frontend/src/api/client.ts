@@ -115,9 +115,15 @@ export async function apiClient<T>(
   }
 }
 
-// GET request helper
-export async function get<T>(endpoint: string): Promise<ApiResponse<T>> {
-  return apiClient<T>(endpoint, { method: 'GET' });
+// GET request helper with cache busting for status polling
+export async function get<T>(endpoint: string, bustCache: boolean = false): Promise<ApiResponse<T>> {
+  // Add cache-busting timestamp for polling endpoints to avoid stale cached responses
+  const url = bustCache ? `${endpoint}${endpoint.includes('?') ? '&' : '?'}_t=${Date.now()}` : endpoint;
+  return apiClient<T>(url, {
+    method: 'GET',
+    // Add no-cache headers
+    headers: bustCache ? { 'Cache-Control': 'no-cache' } : undefined,
+  });
 }
 
 // POST request helper
