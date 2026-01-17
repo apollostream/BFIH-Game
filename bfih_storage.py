@@ -391,6 +391,10 @@ class GCSStorageBackend(StorageBackend):
         # Key: analysis_id, Value: list of log messages
         self._progress_cache: Dict[str, List[Dict]] = {}
 
+        # In-memory cache for status (avoids GCS read caching issues)
+        # Key: analysis_id, Value: {"status": str, "timestamp": str}
+        self._status_cache: Dict[str, Dict[str, str]] = {}
+
         logger.info(f"GCSStorageBackend initialized: gs://{bucket_name}/{prefix}")
 
     def _get_blob(self, path: str):
@@ -518,9 +522,18 @@ class GCSStorageBackend(StorageBackend):
         return self._write_json(path, request)
 
     def update_analysis_status(self, analysis_id: str, status: str) -> bool:
-        """Update analysis status in GCS"""
+        """Update analysis status in GCS and in-memory cache"""
+        timestamp = datetime.utcnow().isoformat()
+
+        # Update in-memory cache first (for real-time reads)
+        self._status_cache[analysis_id] = {
+            "status": status,
+            "timestamp": timestamp
+        }
+
+        # Also persist to GCS
         path = f"{self.status_prefix}/{analysis_id}_status.txt"
-        content = f"{status}\n{datetime.utcnow().isoformat()}"
+        content = f"{status}\n{timestamp}"
         success = self._write_text(path, content)
         if success:
             logger.info(f"Updated analysis status in GCS: {analysis_id} -> {status}")
@@ -529,7 +542,9 @@ class GCSStorageBackend(StorageBackend):
         return success
 
     def get_analysis_status(self, analysis_id: str) -> Optional[Dict]:
-        """Get analysis status from GCS with staleness detection.
+        """Get analysis status with staleness detection.
+
+        Prefers in-memory cache for real-time updates, falls back to GCS.
 
         Returns a dict with:
         - analysis_id: The analysis ID
@@ -537,14 +552,21 @@ class GCSStorageBackend(StorageBackend):
         - timestamp: ISO timestamp of last update
         - is_stale: True if status hasn't been updated in 5+ minutes while still processing
         """
-        path = f"{self.status_prefix}/{analysis_id}_status.txt"
-        content = self._read_text(path)
-        if not content:
-            return None
+        # Prefer in-memory cache (freshest data, same instance)
+        if analysis_id in self._status_cache:
+            cached = self._status_cache[analysis_id]
+            status = cached["status"]
+            timestamp = cached["timestamp"]
+        else:
+            # Fall back to GCS for different instance or after restart
+            path = f"{self.status_prefix}/{analysis_id}_status.txt"
+            content = self._read_text(path)
+            if not content:
+                return None
 
-        lines = content.strip().split('\n')
-        status = lines[0]
-        timestamp = lines[1] if len(lines) > 1 else None
+            lines = content.strip().split('\n')
+            status = lines[0]
+            timestamp = lines[1] if len(lines) > 1 else None
 
         # Detect staleness: if processing and not updated in 5+ minutes
         # Also check progress log - if there are recent log entries, backend is working
