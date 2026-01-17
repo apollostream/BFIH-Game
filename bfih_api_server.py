@@ -21,6 +21,8 @@ from typing import Dict, Optional
 from datetime import datetime
 import uuid
 import os
+import asyncio
+from sse_starlette.sse import EventSourceResponse
 
 from bfih_orchestrator_fixed import (
     BFIHOrchestrator,
@@ -1047,9 +1049,6 @@ async def get_analysis_status(analysis_id: str):
         logger.error(f"Error getting analysis status: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
-
-from sse_starlette.sse import EventSourceResponse
-import asyncio
 
 @app.get("/api/analysis-status/{analysis_id}/stream")
 async def stream_analysis_status(analysis_id: str):
