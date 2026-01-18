@@ -2333,23 +2333,29 @@ IMPORTANT MARKDOWN FORMATTING:
                                evidence_clusters: List[Dict],
                                hypotheses: List[Dict],
                                precomputed_cluster_tables: List[Dict] = None) -> str:
-        """Phase 5b: Generate Evidence Matrix with full citations and PRE-COMPUTED Bayesian metrics."""
-        # Slim down evidence items for smaller payload - remove fields not needed for report writing
-        slim_items = []
-        for item in (evidence_items or []):
-            slim_item = {
-                'evidence_id': item.get('evidence_id', ''),
-                'description': item.get('description', '')[:200],  # Truncate long descriptions
-                'source_name': item.get('source_name', ''),
-                'source_url': item.get('source_url', ''),
-                'citation_apa': item.get('citation_apa', '')[:250],  # Truncate long citations
-                'date_accessed': item.get('date_accessed', ''),
-                'evidence_type': item.get('evidence_type', ''),
-            }
-            slim_items.append(slim_item)
-        evidence_json = json.dumps(slim_items)  # No indent = more compact
+        """Phase 5b: Generate Evidence Matrix with full citations and PRE-COMPUTED Bayesian metrics.
 
-        hyp_ids = [h.get('id', f'H{i}') for i, h in enumerate(hypotheses)]
+        Split into sub-phases to avoid output token limits:
+        - 5b1: Evidence Clusters (Section 3)
+        - 5b2: Evidence Items Detail in batches (Section 4)
+        """
+        # Phase 5b1: Generate Section 3 (Evidence Clusters)
+        section_3 = self._run_phase_5b1_clusters(
+            request, evidence_clusters, hypotheses, precomputed_cluster_tables
+        )
+
+        # Phase 5b2: Generate Section 4 (Evidence Items) in batches
+        section_4 = self._run_phase_5b2_evidence_items(
+            request, evidence_items, evidence_clusters
+        )
+
+        return f"{section_3}\n\n---\n\n{section_4}"
+
+    def _run_phase_5b1_clusters(self, request: BFIHAnalysisRequest,
+                                 evidence_clusters: List[Dict],
+                                 hypotheses: List[Dict],
+                                 precomputed_cluster_tables: List[Dict] = None) -> str:
+        """Phase 5b1: Generate Evidence Clusters section with pre-computed Bayesian tables."""
         precomputed_cluster_tables = precomputed_cluster_tables or []
 
         # Build pre-computed cluster sections
@@ -2369,14 +2375,9 @@ IMPORTANT MARKDOWN FORMATTING:
 
         precomputed_clusters_text = "\n---\n".join(cluster_sections) if cluster_sections else "(No cluster metrics available)"
 
-        bfih_context = get_bfih_system_context("Report Generation - Evidence Matrix", "5b")
+        bfih_context = get_bfih_system_context("Report Generation - Evidence Clusters", "5b1")
         prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
-
-HYPOTHESES: {hyp_ids}
-
-STRUCTURED EVIDENCE ITEMS (you MUST include ALL of these):
-{evidence_json}
 
 ## PRE-COMPUTED CLUSTER-LEVEL BAYESIAN METRICS
 The following tables were computed mathematically using:
@@ -2399,46 +2400,99 @@ Copy the PRE-COMPUTED cluster tables above EXACTLY as shown. For each cluster:
 2. Copy the Bayesian Metrics table EXACTLY (these are mathematically computed, DO NOT change values)
 3. Add 2-3 sentences interpreting what the LR and WoE values mean for each hypothesis
 
----
-
-## 4. Evidence Items Detail
-
-For EACH evidence item in the JSON above, create an entry with this format:
-
----
-
-### E[id]: [description]
-
-**Source:** [source_name]
-**URL:** [source_url - include the FULL clickable URL]
-**Citation:** [citation_apa]
-**Date Accessed:** [date_accessed]
-**Evidence Type:** [evidence_type]
-**Cluster:** [which cluster this evidence belongs to]
-
-[Write 2-3 sentences analyzing what this evidence shows and why it matters]
-
-**P(E|H) Assessment:** (ONLY show P(E|H) here - LR/WoE are shown at cluster level)
-
-| Hypothesis | P(E|H) | Reasoning |
-|------------|--------|-----------|
-| H1 | 0.XX | [Brief justification for this likelihood] |
-| ... | | |
-
----
-
-IMPORTANT:
-- COPY the pre-computed Bayesian tables EXACTLY - do not recalculate or modify values
-- Include ALL {len(evidence_items or [])} evidence items from the JSON
-- Include the FULL URL for each source (not truncated)
-- Individual evidence items only show P(E|H) - the LR, WoE, Direction are at CLUSTER level
-
 MARKDOWN FORMATTING:
 - Always include a BLANK LINE before any table
 - DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
 - Output raw markdown directly
 """
-        return self._run_phase(prompt, [], "Phase 5b: Evidence Matrix")
+        return self._run_phase(prompt, [], "Phase 5b1: Evidence Clusters")
+
+    def _run_phase_5b2_evidence_items(self, request: BFIHAnalysisRequest,
+                                       evidence_items: List[Dict],
+                                       evidence_clusters: List[Dict]) -> str:
+        """Phase 5b2: Generate Evidence Items Detail section in batches.
+
+        Simplified format without per-item P(E|H) tables (those are at cluster level).
+        Processes items in batches of 15 to avoid output token limits.
+        """
+        evidence_items = evidence_items or []
+        evidence_clusters = evidence_clusters or []
+
+        # Build cluster membership lookup
+        cluster_lookup = {}
+        for cluster in evidence_clusters:
+            cluster_name = cluster.get('cluster_name', cluster.get('name', 'Unknown'))
+            for eid in cluster.get('evidence_ids', []):
+                cluster_lookup[eid] = cluster_name
+
+        # Process in batches of 15
+        BATCH_SIZE = 15
+        all_sections = []
+
+        for batch_start in range(0, len(evidence_items), BATCH_SIZE):
+            batch_end = min(batch_start + BATCH_SIZE, len(evidence_items))
+            batch_items = evidence_items[batch_start:batch_end]
+            batch_num = (batch_start // BATCH_SIZE) + 1
+            total_batches = (len(evidence_items) + BATCH_SIZE - 1) // BATCH_SIZE
+
+            # Prepare batch data with cluster info
+            batch_data = []
+            for item in batch_items:
+                eid = item.get('evidence_id', '')
+                batch_data.append({
+                    'evidence_id': eid,
+                    'description': item.get('description', ''),
+                    'source_name': item.get('source_name', ''),
+                    'source_url': item.get('source_url', ''),
+                    'citation_apa': item.get('citation_apa', ''),
+                    'date_accessed': item.get('date_accessed', ''),
+                    'evidence_type': item.get('evidence_type', ''),
+                    'cluster': cluster_lookup.get(eid, 'Unassigned')
+                })
+
+            batch_json = json.dumps(batch_data, indent=2)
+
+            # Only include section header in first batch
+            section_header = "## 4. Evidence Items Detail\n\n" if batch_start == 0 else ""
+
+            bfih_context = get_bfih_system_context("Report Generation - Evidence Items", "5b2")
+            prompt = f"""{bfih_context}
+PROPOSITION: "{request.proposition}"
+
+EVIDENCE ITEMS BATCH {batch_num}/{total_batches} (items {batch_start + 1}-{batch_end} of {len(evidence_items)}):
+{batch_json}
+
+---
+
+Generate evidence item entries for this batch. {section_header}For EACH item, use this CONCISE format:
+
+### E[id]: [description - keep brief, ~1 sentence]
+
+- **Source:** [source_name]
+- **URL:** [source_url - FULL URL]
+- **Citation:** [citation_apa]
+- **Accessed:** [date_accessed]
+- **Type:** [evidence_type]
+- **Cluster:** [cluster name from data]
+
+[1-2 sentences on what this evidence shows and its relevance to the proposition]
+
+---
+
+IMPORTANT:
+- Keep each entry CONCISE - no P(E|H) tables (those are at cluster level)
+- Include the FULL URL for each source
+- Use bullet format for metadata to save space
+- Write brief analysis (1-2 sentences max)
+
+MARKDOWN FORMATTING:
+- DO NOT wrap your output in code blocks
+- Output raw markdown directly
+"""
+            batch_result = self._run_phase(prompt, [], f"Phase 5b2: Evidence Items batch {batch_num}/{total_batches}")
+            all_sections.append(batch_result)
+
+        return "\n".join(all_sections)
 
     def _run_phase_5c_results(self, request: BFIHAnalysisRequest,
                               paradigms: List[Dict],
