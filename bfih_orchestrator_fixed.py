@@ -1892,10 +1892,13 @@ Each item needs:
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
         paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
-        # Summarize evidence items
+        # Summarize evidence items (include source info for quality assessment)
         evidence_summary = json.dumps([{
             "evidence_id": e.get("evidence_id"),
             "description": e.get("description", "")[:200],
+            "source_name": e.get("source_name", "Unknown"),
+            "source_url": e.get("source_url", ""),
+            "evidence_type": e.get("evidence_type", "unknown"),
             "supports": e.get("supports_hypotheses", []),
             "refutes": e.get("refutes_hypotheses", [])
         } for e in evidence_items], indent=2)
@@ -1916,10 +1919,33 @@ The SAME evidence can have DIFFERENT likelihoods under different paradigms becau
 - Different paradigms weight different types of evidence differently
 - A paradigm skeptical of economic explanations assigns lower P(E|H_economic, K_skeptic)
 
+## SOURCE-QUALITY-AWARE LIKELIHOOD ASSESSMENT (MANDATORY)
+
+When assigning P(E|H), you MUST ask: "If H were true vs false, how likely is it that THIS source would publish THIS specific finding?"
+
+**High-quality sources (peer-reviewed journals, rigorous methodology, large N):**
+- Findings are strongly coupled to ground truth due to methodology
+- If H_true: study likely detects and publishes the effect → high P(E|H_true)
+- If H_false: study likely finds nothing or opposite → low P(E|H_false)
+- Result: High likelihood ratio, strong posterior update
+
+**Low-quality sources (blogs, opinion pieces, anecdotes, unsourced claims):**
+- Author's claims are weakly coupled to ground truth
+- The blog post/opinion would exist regardless of which hypothesis is actually true
+- P(E|H_i) ≈ P(E) for ALL hypotheses (evidence is approximately independent of H)
+- Result: LR ≈ 1, WoE ≈ 0, NO posterior update
+
+**Operationally:** For low-quality evidence, assign P(E|H_i) ≈ 0.5 for ALL hypotheses.
+This ensures garbage evidence contributes nothing to posteriors, as is epistemologically correct.
+
+A meta-analysis finding X is strong evidence because rigorous methodology ensures truth-tracking.
+A blog post claiming X is NOT evidence because blogs publish claims regardless of truth.
+
 YOUR TASK:
 1. Group evidence into 3-5 CLUSTERS based on thematic similarity
 2. For EACH cluster, assign likelihoods P(E|H, K) for EACH hypothesis under EACH paradigm
-3. Justify how paradigm viewpoint affects the likelihood assessment
+3. Apply source-quality-aware reasoning: high-quality sources get differential likelihoods; low-quality sources get P(E|H) ≈ 0.5 for all H
+4. Justify how paradigm viewpoint AND source quality affect the likelihood assessment
 
 Return a JSON object with "clusters" array. Each cluster needs:
 - cluster_id, cluster_name, description, evidence_ids (all required)
