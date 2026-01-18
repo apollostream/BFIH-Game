@@ -5750,8 +5750,48 @@ if __name__ == "__main__":
         choices=["gawande", "atlantic"],
         help="Synopsis style: 'gawande' (science narrative, default) or 'atlantic' (original corrective style)"
     )
+    parser.add_argument(
+        "--synopsis-from-report",
+        type=str,
+        metavar="REPORT_FILE",
+        help="Generate a synopsis from an existing BFIH report file (markdown)"
+    )
 
     args = parser.parse_args()
+
+    # Handle synopsis-from-report mode (standalone synopsis generation)
+    if args.synopsis_from_report:
+        import os
+        report_path = args.synopsis_from_report
+        if not os.path.exists(report_path):
+            print(f"Error: Report file not found: {report_path}")
+            sys.exit(1)
+
+        with open(report_path, "r") as f:
+            report_content = f.read()
+
+        # Derive scenario_id from filename
+        base_name = os.path.splitext(os.path.basename(report_path))[0]
+        scenario_id = base_name.replace("bfih-report-", "").replace("bfih_report_", "")
+
+        print(f"Generating {args.synopsis_style}-style synopsis from: {report_path}")
+        orchestrator = BFIHOrchestrator()
+        synopsis = orchestrator.generate_magazine_synopsis(
+            report=report_content,
+            scenario_id=scenario_id,
+            style=args.synopsis_style
+        )
+
+        # Determine output filename
+        if args.output:
+            synopsis_file = f"{args.output}.md"
+        else:
+            synopsis_file = f"{base_name}_synopsis.md"
+
+        with open(synopsis_file, "w") as f:
+            f.write(synopsis)
+        print(f"Saved: {synopsis_file}")
+        sys.exit(0)
 
     if args.topic:
         # Run with provided topic
