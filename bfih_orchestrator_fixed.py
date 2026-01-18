@@ -15,6 +15,7 @@ import math
 import os
 import logging
 import re
+import sys
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime, timezone
 from pathlib import Path
@@ -5761,7 +5762,6 @@ if __name__ == "__main__":
 
     # Handle synopsis-from-report mode (standalone synopsis generation)
     if args.synopsis_from_report:
-        import os
         report_path = args.synopsis_from_report
         if not os.path.exists(report_path):
             print(f"Error: Report file not found: {report_path}")
