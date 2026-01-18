@@ -4342,130 +4342,144 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         """
         return f"""Transform the following BFIH analysis report into a magazine-style feature that reports findings accessibly while maintaining intellectual honesty.
 
-## STYLE: GAWANDE SCIENTIFIC NARRATIVE
+## STYLE: MEASURED SCIENTIFIC NARRATIVE
 
-Your role: **Science journalist** reporting what rigorous analysis found, with Gawande-style engagement with complexity.
-
-### CORE COMMITMENTS:
-
-1. **Wonder, not advocacy** — Genuine curiosity. The question is often as interesting as the answer.
-2. **Preserve complexity** — If something is 60/40, say so. Don't force binaries.
-3. **Inconvenient truths** — Include evidence that complicates clean narratives.
-4. **Resist false resolution** — If genuinely uncertain, say so. Honest ambiguity is respectable.
+Your role: A thoughtful observer synthesizing rigorous analysis for intelligent general readers.
 
 ### VOICE & TONE:
-- **Neutral observer**: "Analysis revealed..." "The evidence indicates..."
-- **Curious guide**: "What's striking here is..." "This fits a pattern worth noting..."
-- **Clear and direct** — engaged without drama, respectful of reader intelligence
 
-### CALIBRATED CONFIDENCE LANGUAGE:
-- **High confidence**: "Evidence clearly shows..." / "Consistent across multiple sources..."
-- **Moderate confidence**: "Findings suggest..." / "Evidence points toward..."
-- **Lower confidence**: "One possible interpretation..." / "May indicate..."
-- **Uncertainty**: "Remains unclear..." / "Evidence is mixed..."
+Write with the measured confidence of someone who has done the work and is now explaining what they found. Neither breathless nor hedging—just clear, engaged, and honest.
 
----
+**The tone to achieve:**
+- Measured but not dry: "The evidence points to a tiered model..." not "Studies have shown that..."
+- Curious without drama: "What's notable is..." not "Surprisingly..."
+- Direct assertions when warranted: "This pattern holds most strongly in..." not "It could be argued that..."
+- Honest about limits: "What remains genuinely uncertain is..." not "More research is needed..."
 
-## CRITICAL: AVOID REDUNDANCY
+**Calibrated confidence (integrate naturally, don't label):**
+- Strong evidence: State it directly. "Commercial flight death rates fell from 40 per million to under 0.2..."
+- Moderate evidence: "The evidence suggests..." / "Studies of X found..."
+- Genuine uncertainty: "Whether this represents a learnable skill or stable trait isn't resolved."
 
-This is the most important instruction. Previous synopses suffered from severe redundancy.
-
-**Rules:**
-1. **State the core finding ONCE** — in the opening or early in the piece. Then MOVE FORWARD.
-2. **Do NOT re-summarize** the main conclusion in each section.
-3. **Trust the reader** to remember what you've told them.
-4. **Each section must add NEW information** — if you're restating earlier points, cut it.
-5. **Reference, don't repeat** — "As noted above..." or "Given this..." rather than re-explaining.
-6. **No meta-commentary loops** — Don't keep explaining what "partially validated" means or why "it depends."
-
-**Redundancy patterns to eliminate:**
-- Restating the core finding in the opening, then again in "findings," then again in "implications," then again in closing
-- Multiple paragraphs explaining that "affordable" has different definitions
-- Repeating that "reasonable people can disagree" in multiple sections
-- Re-explaining the same evidence cluster's conclusion in different words
+Avoid excessive hedging. If you've said "suggests" once, you don't need to qualify the same point again.
 
 ---
 
-## STRUCTURE (5 sections, not 8)
+## THE CARDINAL RULE: FORWARD MOTION
+
+Every paragraph must advance the reader's understanding. No section should repeat what an earlier section said.
+
+**The test:** After writing each section, ask: "What does the reader know now that they didn't know before this section?" If the answer is "nothing new," cut it.
+
+**Specific rules:**
+1. State the core finding ONCE in the opening. Then it's established—move forward.
+2. Each Evidence subsection teaches something distinct. No subsection restates another's conclusion.
+3. "What This Means" provides NEW implications, not a summary of what was just said.
+4. The Closing expands scope or offers philosophical reflection—never summarizes.
+
+**Patterns that violate forward motion (eliminate all):**
+- Restating the thesis in each section
+- "As discussed above..." followed by re-discussing it
+- Multiple paragraphs defining the same term or explaining the same nuance
+- A "What Remains Uncertain" section that lists things already noted as uncertain inline
+- A closing that begins "In conclusion..." and restates the opening
+
+---
+
+## STRUCTURE (4 sections)
 
 **1. Opening** (~400-500 words)
-   - Hook the reader with a vivid frame or striking finding
-   - State the core finding ONCE, clearly and memorably
-   - Provide essential context for why this matters
-   - This is the ONLY place you fully state the main conclusion
+   - Begin with a concrete scene, example, or striking claim that grounds the reader
+   - State the core finding clearly and memorably—this is the ONLY full statement
+   - Provide just enough context to understand why it matters
+   - End with a pivot toward the evidence: "A recent investigation tested this claim..."
 
-**2. The Evidence** (~1200-1800 words) — THE CORE
-   - What the analysis found, organized thematically with ### subheadings
-   - Specific details, citations [1], [2], concrete examples
-   - Include complicating evidence and genuine uncertainties INLINE (not as separate section)
-   - If different weightings lead to different conclusions, mention it ONCE within the relevant subsection
-   - Each subsection should teach something NEW
+**2. The Evidence** (~1200-1800 words)
+   - Organize thematically with ### subheadings (3-5 subsections)
+   - Each subsection makes ONE distinct point with supporting details
+   - Include specific data, citations [1], studies, concrete examples
+   - Integrate uncertainties and complicating evidence INLINE where relevant—not as a separate section
+   - If frameworks or value systems lead to different conclusions, one paragraph within the relevant subsection suffices
 
 **3. What This Means** (~500-700 words)
-   - Implications and practical considerations COMBINED
-   - What patterns emerge; what this suggests for decisions or thinking
-   - Conditional framing: "If these findings hold..." / "Given this evidence, one might consider..."
-   - Do NOT re-summarize the findings — assume the reader just read them
+   - NEW implications the reader couldn't derive themselves
+   - Practical patterns, conditional guidance, or connections to adjacent domains
+   - "For individuals navigating X, the evidence points toward..." / "Organizations face a parallel question..."
+   - Assume the reader remembers the evidence—don't re-summarize it
 
 **4. Closing** (~200-300 words)
-   - One memorable insight or reflection
-   - What this reveals about the topic or how we think about such questions
-   - End thoughtfully — no triumphant declarations, no re-summarizing
-   - The reader should feel they've learned something, not been lectured
+   - Expand scope: connect to a broader pattern, adjacent field, or philosophical insight
+   - "Perhaps the deepest finding isn't about X at all, but about..."
+   - Or: distill a genuine uncertainty that science alone can't resolve
+   - End on a thought that lingers—not a declaration that closes the book
 
-### SPECIAL: RECOMMENDATION/CHOICE QUERIES
+---
 
-If analyzing "the best" option (restaurants, hotels, products, etc.), include a comparison table:
+## FORMATTING: STRATEGIC, NOT DECORATIVE
+
+**Bold text:** Use sparingly to aid scanning. Bold a key phrase when introducing a major concept the reader will need to track: "**The result:** Gelman's thesis is correct, but with a critical caveat."
+
+Do NOT bold:
+- Every key term
+- Section headers (they're already visually distinct)
+- Phrases just for emphasis
+
+**Bullets and tables:** Use ONLY when listing genuinely parallel items where prose would obscure structure.
+
+Good uses:
+- Conditions where a finding holds vs. fails (short parallel list)
+- Comparison of 3+ options in a "best X" query (table)
+- A hierarchy or tier system (numbered or bulleted)
+
+Bad uses:
+- Restating evidence points that flow naturally as prose
+- Lists of one or two items
+- Anything that could be a clear sentence
+
+**When in doubt, prefer prose.** A well-structured paragraph is almost always better than a bullet list that fragments the narrative.
+
+**Horizontal rules (---):** Use to separate major sections. One before "The Evidence," one before "What This Means," one before "Closing."
+
+---
+
+## SPECIAL: RECOMMENDATION/CHOICE QUERIES
+
+If analyzing "the best" option (restaurants, hotels, products, etc.), include a comparison table in "What This Means":
 
 | Option | Known For | Rating | Price | Best For |
 |--------|-----------|--------|-------|----------|
 | Name   | Key differentiator | Score | Range | User type |
 
-Place this in "What This Means" section.
+Frame honestly: "Here are the real options with their differentiators. 'Best' depends on priorities."
 
 ---
 
 ## WHAT TO AVOID
 
-**Redundancy traps:**
-- "As discussed earlier... [then re-discussing it]"
-- Separate sections for "What Remains Uncertain" (integrate inline instead)
-- Separate sections for "How Different Weightings Shift" (one paragraph max, in Evidence)
-- "Practical Considerations" that just restate implications
-- Closing that summarizes instead of reflecting
+**Framework jargon (never use):**
+- "K0", "K1", "H1", "posterior probability", "likelihood ratio", "BFIH", "Bayesian"
+- "Under paradigm...", "The analysis assigned probability...", "Evidence cluster C2..."
 
-**Rhetorical patterns to eliminate:**
-- "Not X, but Y" / "You might think... but actually..."
-- "The myth of..." / "What everyone gets wrong..."
-- Forced binary framings when reality is probabilistic
+**Rhetorical clichés:**
+- "You might think... but actually..."
+- "The myth of..."
+- "What everyone gets wrong about..."
+- "It's complicated" / "It depends" (show the complexity, don't announce it)
 
-**Never use:**
-- Framework jargon: "K0", "K1", "H1", "posterior probability", "BFIH", "Bayesian"
-- Meta-references: "the analysis found" (repeatedly), "under paradigm..."
-
-**Do use:**
-- "Evidence suggests..." / "From an empirical perspective..." / "The assessment indicates..."
+**Structural failures:**
+- Separate "What Remains Uncertain" section (integrate inline)
+- Separate "How Different Perspectives Differ" section (one paragraph max, in Evidence)
+- Closing that summarizes instead of expanding
 
 ---
 
-## FORMATTING:
-- Use # for title, ## for major sections, ### for subsections
-- Use **bold** for key terms, *italics* for publications
-- Use > blockquotes sparingly for striking findings
-- Numbered citations [1], [2] matching bibliography
-- DO NOT include a References/Bibliography section (appended automatically)
+## SELF-CHECK (apply before finalizing):
 
----
-
-## SELF-EDIT CHECKLIST (apply before finalizing):
-
-Before completing your response, verify:
-- [ ] Have I stated the main finding more than twice? If so, CUT redundant instances.
-- [ ] Does each section heading introduce genuinely NEW content?
-- [ ] Is there any paragraph that re-explains something from an earlier section? CUT IT.
-- [ ] Could "What This Means" stand alone without re-summarizing findings? If not, revise.
-- [ ] Does my closing add a new thought, or just restate the opening? Must be NEW.
-- [ ] Total length: 2,500-3,500 words. If longer, cut redundancy.
+1. Count how many times you state the core finding. If more than once, cut the extras.
+2. For each section, write one sentence describing what NEW information it provides. If you can't, revise.
+3. Read your closing. Does it summarize or expand? If summarize, rewrite.
+4. Scan for bold text. Is each instance earning its weight? Remove decorative bolding.
+5. Check any bullet lists. Would prose be clearer? If yes, convert to prose.
 
 ---
 
@@ -4475,9 +4489,9 @@ BFIH ANALYSIS REPORT TO TRANSFORM:
 
 ---
 
-Generate the article now. Prioritize DENSITY over LENGTH. Every paragraph must earn its place. A tight 3,000-word piece that moves forward without repetition is far better than a 5,000-word piece that restates itself.
+Generate the article now. Aim for 2,500-3,500 words. Every paragraph earns its place by advancing the reader's understanding. A tight piece that moves forward is better than a longer piece that circles back.
 
-TARGET LENGTH: 2,500-3,500 words. Quality over quantity."""
+The goal: A reader finishes and feels they've genuinely learned something—not been lectured, not been hedged at, but shown a complex reality with clarity and honesty."""
 
     def _get_atlantic_style_prompt(self, report: str) -> str:
         """
