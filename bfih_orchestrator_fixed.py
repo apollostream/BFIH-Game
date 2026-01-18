@@ -2345,9 +2345,12 @@ IMPORTANT MARKDOWN FORMATTING:
         )
 
         # Phase 5b2: Generate Section 4 (Evidence Items) in batches
-        section_4 = self._run_phase_5b2_evidence_items(
+        section_4_content = self._run_phase_5b2_evidence_items(
             request, evidence_items, evidence_clusters
         )
+
+        # Inject section 4 header programmatically (not relying on LLM)
+        section_4 = f"## 4. Evidence Items Detail\n\n{section_4_content}"
 
         return f"{section_3}\n\n---\n\n{section_4}"
 
@@ -2452,9 +2455,6 @@ MARKDOWN FORMATTING:
 
             batch_json = json.dumps(batch_data, indent=2)
 
-            # Only include section header in first batch
-            section_header = "## 4. Evidence Items Detail\n\n" if batch_start == 0 else ""
-
             bfih_context = get_bfih_system_context("Report Generation - Evidence Items", "5b2")
             prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
@@ -2464,7 +2464,7 @@ EVIDENCE ITEMS BATCH {batch_num}/{total_batches} (items {batch_start + 1}-{batch
 
 ---
 
-Generate evidence item entries for this batch. {section_header}For EACH item, use this CONCISE format:
+Generate evidence item entries for this batch. For EACH item, use this CONCISE format:
 
 ### E[id]: [description - keep brief, ~1 sentence]
 
