@@ -5063,18 +5063,23 @@ and likelihood ratios indicating strength of support or refutation.*
         # First, collect all potential edges with their LR values
         import math
         all_edges = []
+        edges_by_cluster = {}  # Track edges per cluster for max/min selection
+
         for cluster in evidence_clusters:
             c_id = cluster.get("cluster_id", "C?")
             metrics_by_paradigm = cluster.get("bayesian_metrics_by_paradigm", {})
             metrics = metrics_by_paradigm.get(primary_paradigm, cluster.get("bayesian_metrics", {}))
 
+            edges_by_cluster[c_id] = []
             for h_id, m in metrics.items():
                 lr = m.get("LR", 1.0)
                 if isinstance(lr, str):
                     lr = float(lr) if lr != "inf" else 100
                 if lr > 0:  # Avoid log of zero/negative
                     abs_log_lr = abs(math.log10(lr))
-                    all_edges.append((c_id, h_id, lr, abs_log_lr))
+                    edge = (c_id, h_id, lr, abs_log_lr)
+                    all_edges.append(edge)
+                    edges_by_cluster[c_id].append(edge)
 
         # Find top 3 by abs(log10(LR))
         top_3_edges = set()
@@ -5082,12 +5087,24 @@ and likelihood ratios indicating strength of support or refutation.*
         for edge in sorted_by_strength:
             top_3_edges.add((edge[0], edge[1]))
 
-        # Create edges: include if LR <= 1/3 or LR >= 3, OR in top 3
+        # Find max and min LR edges for each cluster
+        max_min_edges = set()
+        for c_id, cluster_edges in edges_by_cluster.items():
+            if cluster_edges:
+                # Max LR edge (strongest support)
+                max_edge = max(cluster_edges, key=lambda x: x[2])
+                max_min_edges.add((max_edge[0], max_edge[1]))
+                # Min LR edge (strongest refutation or weakest support)
+                min_edge = min(cluster_edges, key=lambda x: x[2])
+                max_min_edges.add((min_edge[0], min_edge[1]))
+
+        # Create edges: include if LR <= 1/3 or LR >= 3, OR in top 3, OR max/min for cluster
         for c_id, h_id, lr, abs_log_lr in all_edges:
             is_significant = lr <= (1/3) or lr >= 3
             is_top_3 = (c_id, h_id) in top_3_edges
+            is_max_min = (c_id, h_id) in max_min_edges
 
-            if is_significant or is_top_3:
+            if is_significant or is_top_3 or is_max_min:
                 _, color, penwidth, style = get_edge_style(lr)
                 lines.append(f'    {sanitize_id(c_id)}_node -> {sanitize_id(h_id)} [label="LR: {lr:.2f}", color="{color}", penwidth={penwidth}, style={style}];')
 

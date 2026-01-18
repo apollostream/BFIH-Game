@@ -310,6 +310,20 @@ class FileStorageBackend(StorageBackend):
             logger.error(f"Error storing visualization: {str(e)}")
             return None
 
+    def store_visualization_dot(self, scenario_id: str, dot_content: str) -> Optional[str]:
+        """Store DOT visualization source to local file and return path."""
+        try:
+            viz_dir = self.base_dir / "visualizations"
+            viz_dir.mkdir(parents=True, exist_ok=True)
+            filepath = viz_dir / f"{scenario_id}-evidence-flow.dot"
+            with open(filepath, 'w') as f:
+                f.write(dot_content)
+            logger.info(f"Stored DOT file: {filepath}")
+            return str(filepath)
+        except Exception as e:
+            logger.error(f"Error storing DOT file: {str(e)}")
+            return None
+
     def cancel_analysis(self, analysis_id: str) -> bool:
         """Mark an analysis as cancelled by creating a cancellation flag file."""
         try:
@@ -712,6 +726,37 @@ class GCSStorageBackend(StorageBackend):
             logger.error(traceback.format_exc())
             return None
 
+    def store_visualization_dot(self, scenario_id: str, dot_content: str) -> Optional[str]:
+        """
+        Store DOT visualization source to GCS and return public URL.
+
+        Args:
+            scenario_id: The scenario/analysis ID
+            dot_content: The DOT file content (text)
+
+        Returns:
+            Public URL to the DOT file, or None on failure
+        """
+        try:
+            path = f"{self.prefix}/visualizations/{scenario_id}-evidence-flow.dot"
+            logger.info(f"Uploading DOT file to GCS path: {path}")
+
+            blob = self._get_blob(path)
+            blob.upload_from_string(dot_content, content_type='text/plain')
+
+            # Try to make the blob publicly accessible
+            try:
+                blob.make_public()
+            except Exception as pub_err:
+                logger.warning(f"Could not make DOT blob public: {pub_err}")
+
+            public_url = f"https://storage.googleapis.com/{self.bucket.name}/{path}"
+            logger.info(f"Stored DOT file to GCS: {public_url}")
+            return public_url
+        except Exception as e:
+            logger.error(f"Error storing DOT file to GCS: {str(e)}")
+            return None
+
     def cancel_analysis(self, analysis_id: str) -> bool:
         """Mark an analysis as cancelled."""
         path = f"{self.status_prefix}/{analysis_id}_cancelled.txt"
@@ -850,6 +895,10 @@ class StorageManager:
     def store_visualization(self, scenario_id: str, png_content: bytes) -> Optional[str]:
         """Store PNG visualization and return URL/path"""
         return self.backend.store_visualization(scenario_id, png_content)
+
+    def store_visualization_dot(self, scenario_id: str, dot_content: str) -> Optional[str]:
+        """Store DOT visualization source and return URL/path"""
+        return self.backend.store_visualization_dot(scenario_id, dot_content)
 
     def cancel_analysis(self, analysis_id: str) -> bool:
         """Mark an analysis as cancelled. Returns True if successful."""

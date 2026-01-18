@@ -1404,6 +1404,14 @@ and likelihood ratios indicating strength of support or refutation.*
                     result.metadata["visualization"]["gcs_url"] = public_url
                     logger.info(f"Uploaded visualization to GCS: {public_url}")
 
+                    # Also upload DOT source file
+                    dot_content = viz_meta.get("dot_content")
+                    if dot_content:
+                        dot_url = storage.store_visualization_dot(result.scenario_id, dot_content)
+                        if dot_url:
+                            result.metadata["visualization"]["dot_gcs_url"] = dot_url
+                            logger.info(f"Uploaded DOT file to GCS: {dot_url}")
+
                     # Re-store result with visualization included
                     storage.store_analysis_result(analysis_id, result)
                     if result.scenario_id and result.scenario_id != analysis_id:
