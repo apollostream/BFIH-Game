@@ -1,0 +1,1592 @@
+2026-01-19 06:57:32,681 - bfih_orchestrator_fixed - INFO - Logging to console and file: bfih_analysis.log
+2026-01-19 06:57:32,728 - bfih_orchestrator_fixed - INFO - Default OpenAI client initialized (timeout: 300.0s)
+2026-01-19 06:57:32,730 - bfih_orchestrator_fixed - INFO - Using reasoning model: o3-mini for hypothesis generation
+2026-01-19 06:57:32,730 - bfih_orchestrator_fixed - INFO - Using request-specified reasoning model: o3
+2026-01-19 06:57:32,730 - bfih_orchestrator_fixed - INFO - Starting BFIH analysis for scenario: forced_05d64f2d
+2026-01-19 06:57:32,730 - bfih_orchestrator_fixed - INFO - Proposition: Do vaccines cause autism in children?
+2026-01-19 06:57:32,730 - bfih_orchestrator_fixed - INFO - Phase 1: Retrieving methodology...
+2026-01-19 06:57:32,730 - bfih_orchestrator_fixed - INFO - Starting Phase 1: Retrieve Methodology
+2026-01-19 06:57:33,765 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+======================================================================
+BFIH CALIBRATION TEST: Forced Hypothesis Set
+======================================================================
+
+Proposition: Do vaccines cause autism in children?
+
+Forced Hypotheses:
+  H0: OTHER - Unforeseen explanation
+  H1: TRUE - Vaccines directly cause autism
+  H2: FALSE - No causal link exists
+  H3: PARTIAL - Rare subgroup vulnerability
+  H4: PARTIAL - Indirect pathway via immune activation
+  H5: PARTIAL - Timing/schedule effects only
+
+Output: calibration_tests/vaccines_autism_forced
+======================================================================
+
+Scenario ID: forced_05d64f2d
+Starting analysis with forced hypotheses...
+(Skipping Phase 0 - using predefined paradigms/hypotheses/priors)
+
+============================================================
+Phase 1: Retrieve Methodology
+============================================================
+
+[Searching vector store...]
+
+[Searching vector store...]
+Below is a concise summary of the BFIH forcing-functions methodology and the actionable steps for each function. Together, these steps ensure breadth, historical grounding, paradigm-level interrogation, and adversarial synthesis in any analysis (e.g. “Do vaccines cause autism in children?”).
+
+1. Forcing-Functions Overview  
+   The revised treatise operationalizes intellectual honesty through four mandatory “forcing functions,” each designed to make common blind spots visible rather than assumed away :
+   • Ontological Scan – Forces breadth across explanatory domains.  
+   • Ancestral Check – Forces respect for time-tested, historical solutions.  
+   • Paradigm Inversion – Forces interrogation at the level of background knowledge.  
+   • Split-Brain Workflow – Forces competing interpretations into view, especially in AI settings.  
+
+2. Ontological Scan (Section 7.3)  
+   Purpose: Ensure no major category of explanation is omitted.  
+   Action Steps :  
+   a. For each of the seven domains below, ask “Could a viable hypothesis about my phenomenon live here?”  
+      1. Biological/Evolutionary  
+      2. Economic/Incentive-Based  
+      3. Cultural/Sociological/Network-Based  
+      4. Theological/Transcendental/Spiritual  
+      5. Historical/Traditional/Ancestral  
+      6. Institutional/Systemic/Policy-Based  
+      7. Psychological/Emotional/Identity-Based  
+   b. If yes, posit at least one hypothesis in that domain; if no, record a strong justification (e.g. “the target population is non-religious, and all religious mechanisms are empirically ruled out”).  
+   c. Update your hypothesis set (H) before moving on.  
+
+3. Ancestral Check (Section 7.4)  
+   Purpose: Force recognition of how humans have historically solved the problem.  
+   Action Steps :  
+   1. Identify the primary historical solution (the mechanism predominant 100–1,000 years ago).  
+   2. Confirm your H includes it (either as its own hypothesis or embedded in another).  
+   3. If it’s missing, either add it for evaluation or exclude it with “smoking-gun” evidence showing it is now obsolete (e.g. technological or demographic changes).  
+   4. Document the justification in full.  
+
+4. Paradigm Inversion (Section 9, Phase 2)  
+   Purpose: Surface paradigm-level blind spots by adopting the genuine opposite of your dominant framework.  
+   Action Steps :  
+   a. Clearly state your K₀ (e.g. “Secular, Individualist, Technocratic”).  
+   b. Invert it to its true opposite (e.g. “Religious, Communitarian, Traditional”).  
+   c. From the inverted paradigm, generate the single strongest explanatory hypothesis Hᵢₙᵥₑᵣₛₑ.  
+   d. Integrate Hᵢₙᵥₑᵣₛₑ into your full hypothesis set and proceed to evidence collection.  
+
+5. Split-Brain Workflow (Section 10.4)  
+   Purpose: In AI-mediated analyses, force adversarial collaboration via a three-agent protocol.  
+   Action Steps :  
+   1. Agent A (Analyst):  
+      – Operates under K₀; uses the Ontological Scan and Ancestral Check to build H and gathers evidence.  
+      – Outputs a full analysis and conclusion without hedging.  
+   2. Agent B (Heretic):  
+      – Adopts the inverted paradigm; forbidden from conceding to Agent A.  
+      – Produces a complete alternative analysis, highlighting what Agent A missed or under-weighted.  
+   3. Agent C (Judge):  
+      – Synthesizes A and B, mapping points of convergence (robust findings), empirical versus normative disagreements, and paradigm-dependent conclusions.  
+      – Recommends decision paths conditional on paradigm choice.  
+   4. Iterate or loop back if Agent C detects gaps or incommensurable disagreements.  
+
+These four functions feed into the hermeneutic spiral of hypothesis generation, evidence gathering, reflexive review, and iterative updating, ensuring that no single perspective or background assumption goes unchallenged.2026-01-19 06:57:54,708 - bfih_orchestrator_fixed - INFO - Phase 1: Retrieve Methodology complete, status: completed
+2026-01-19 06:57:54,708 - bfih_orchestrator_fixed - INFO - Phase 1 complete: Methodology retrieved
+2026-01-19 06:57:54,708 - bfih_orchestrator_fixed - INFO - Phase 2: Gathering evidence via web search...
+2026-01-19 06:57:56,567 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 06:57:56,633 - bfih_orchestrator_fixed - WARNING - Unknown topic type '', defaulting to 'general'
+2026-01-19 06:57:56,633 - bfih_orchestrator_fixed - INFO - Starting multi-search evidence gathering: 13 focused searches
+2026-01-19 06:57:56,633 - bfih_orchestrator_fixed - INFO - Search 1/13: comprehensive overview Do vaccines cause autism in children?...
+2026-01-19 06:57:56,633 - bfih_orchestrator_fixed - INFO - Starting Search: comprehensive overview Do vaccines cause (structured output, model: o4-mini)
+2026-01-19 06:58:47,107 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO - Web search #1 query: Madsen autism vaccine Denmark 2002 cohort...
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #1
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO - Web search #2 query: Taylor Swerdfeger Eslick 2014 meta-analysis vaccines autism...
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #2
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO - Web search #3 query: Institute of Medicine Immunization Safety Review Vaccines and Autism 2004...
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #3
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO - Web search #4 query: DeStefano Pediatrics 2013 antigens autism vaccine...
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO -   -> 12 sources from search #4
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO - Web search #5 query: Wakefield 1998 Lancet autism MMR retraction...
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #5
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO - Web search #6 query: Smeeth autism MMR case-control BMJ 2004...
+2026-01-19 06:58:47,117 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #6
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Web search #7 query: Journal of Pediatrics 2013 antigen exposure autism DeStefano...
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #7
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Web search #8 query: Cochrane review MMR autism 2012...
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #8
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Total: 8 web searches, 77 URLs extracted
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Extracted 77 URLs from web_search sources
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Search: comprehensive overview Do vaccines cause complete with valid JSON
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO -   -> 9 items, 77 citations
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Search 2/13: expert analysis Do vaccines cause autism in children?...
+2026-01-19 06:58:47,118 - bfih_orchestrator_fixed - INFO - Starting Search: expert analysis Do vaccines cause autism (structured output, model: o4-mini)
+2026-01-19 06:59:47,194 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 06:59:47,205 - bfih_orchestrator_fixed - INFO - Web search #1 query: Taylor meta-analysis vaccines autism 2014...
+2026-01-19 06:59:47,205 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #1
+2026-01-19 06:59:47,206 - bfih_orchestrator_fixed - INFO - Web search #2 query: Madsen MMR autism Denmark cohort 2002...
+2026-01-19 06:59:47,206 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #2
+2026-01-19 06:59:47,207 - bfih_orchestrator_fixed - INFO - Web search #3 query: Madsen thimerosal autism Denmark 2003 Pediatrics...
+2026-01-19 06:59:47,207 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #3
+2026-01-19 06:59:47,207 - bfih_orchestrator_fixed - INFO - Web search #4 query: vaccine immune activation autism mouse model study...
+2026-01-19 06:59:47,208 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #4
+2026-01-19 06:59:47,208 - bfih_orchestrator_fixed - INFO - Web search #5 query: aluminum adjuvant autism meta-analysis vaccine aluminium autism risk...
+2026-01-19 06:59:47,209 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #5
+2026-01-19 06:59:47,209 - bfih_orchestrator_fixed - INFO - Web search #6 query: vaccine autism genetic susceptibility rare subgroup vaccine autism case-control...
+2026-01-19 06:59:47,209 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #6
+2026-01-19 06:59:47,210 - bfih_orchestrator_fixed - INFO - Web search #7 query: vaccine schedule autism risk early vaccination timing study...
+2026-01-19 06:59:47,210 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #7
+2026-01-19 06:59:47,210 - bfih_orchestrator_fixed - INFO - Total: 7 web searches, 63 URLs extracted
+2026-01-19 06:59:47,211 - bfih_orchestrator_fixed - INFO - Extracted 63 URLs from web_search sources
+2026-01-19 06:59:47,211 - bfih_orchestrator_fixed - INFO - Search: expert analysis Do vaccines cause autism complete with valid JSON
+2026-01-19 06:59:47,212 - bfih_orchestrator_fixed - INFO -   -> 9 items, 63 citations
+2026-01-19 06:59:47,212 - bfih_orchestrator_fixed - INFO - Search 3/13: research and evidence Do vaccines cause autism in children?...
+2026-01-19 06:59:47,212 - bfih_orchestrator_fixed - INFO - Starting Search: research and evidence Do vaccines cause  (structured output, model: o4-mini)
+2026-01-19 07:00:45,666 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:00:45,687 - bfih_orchestrator_fixed - INFO - Web search #1 query: vaccine schedule autism risk Pediatrics 2017 study...
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #1
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO - Web search #2 query: Frank DeStefano antigens too many vaccines too soon Journal of Pediatrics 2013...
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #2
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #3
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO - Web search #4 query: Madsen population based autism MMR JAMA 2002 288(24)2800...
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #4
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO - Web search #5 query: site:who.int autism vaccines GACVS review autism vaccine safety 2025...
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #5
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO - Web search #6 query: DeStefano antigens autism Journal of Pediatrics 2013 Frank DeStefano...
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO -   -> 12 sources from search #6
+2026-01-19 07:00:45,688 - bfih_orchestrator_fixed - INFO - Web search #7 query: Hviid measles mumps rubella autism nationwide cohort study 2019 citation...
+2026-01-19 07:00:45,689 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #7
+2026-01-19 07:00:45,689 - bfih_orchestrator_fixed - WARNING - Search 'research and evidence Do vaccines cause autism in children?' failed: 'NoneType' object is not iterable
+2026-01-19 07:00:45,689 - bfih_orchestrator_fixed - INFO -   -> 0 items, 0 citations
+2026-01-19 07:00:45,689 - bfih_orchestrator_fixed - INFO - Search 4/13: different perspectives on Do vaccines cause autism in childr...
+2026-01-19 07:00:45,689 - bfih_orchestrator_fixed - INFO - Starting Search: different perspectives on Do vaccines ca (structured output, model: o4-mini)
+2026-01-19 07:01:53,661 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:01:53,671 - bfih_orchestrator_fixed - INFO - Web search #1 query: Taylor Swerdfeger Eslick 2014 vaccines autism meta-analysis...
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #1
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO - Web search #2 query: Madsen 2002 MMR autism Denmark population-based study...
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #2
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO - Web search #3 query: Madsen Lauritsen thimerosal occurrence of autism negative ecological Danish...
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #3
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO - Web search #4 query: mitochondrial disorder autism vaccine regression case study...
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #4
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO - Web search #5 query: Institute of Medicine Adverse Effects of Vaccines Autism 2011...
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #5
+2026-01-19 07:01:53,672 - bfih_orchestrator_fixed - INFO - Web search #6 query: Lancet retraction Wakefield autism 2010 BMJ retraction notice...
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO -   -> 6 sources from search #6
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO - Web search #7 query: Increasing exposure to antibody-stimulating proteins and polysaccharides in vaccines not associated ...
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #7
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO - Web search #8 query: Tomljenovic Shaw aluminum adjuvant autism systematic review...
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #8
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO - Web search #9 query: Poling mitochondrial autism vaccine regression Poling study...
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #9
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - WARNING - Search 'different perspectives on Do vaccines cause autism in children?' failed: 'NoneType' object is not iterable
+2026-01-19 07:01:53,673 - bfih_orchestrator_fixed - INFO -   -> 0 items, 0 citations
+2026-01-19 07:01:53,674 - bfih_orchestrator_fixed - INFO - Search 5/13: critical evaluation Do vaccines cause autism in children?...
+2026-01-19 07:01:53,674 - bfih_orchestrator_fixed - INFO - Starting Search: critical evaluation Do vaccines cause au (structured output, model: o4-mini)
+2026-01-19 07:02:57,128 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO - Web search #1 query: Institute of Medicine Vaccines Autism 2011 causality...
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #1
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO - Web search #2 query: Hviid 2019 measles vaccine autism cohort Denmark Hviid JAMA 2019...
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #2
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO - Web search #3 query: Dyer Clare BMJ Lancet retracts Wakefield paper 2010...
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #3
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO - Web search #4 query: Institute of Medicine Immunization Safety Review Vaccines and Autism 2004...
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #4
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO - Web search #5 query: Price 2010 Pediatrics thimerosal autism removal rates 2010 Pediatrics Price...
+2026-01-19 07:02:57,151 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #5
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #6
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Web search #7 query: Madsen 2002 MMR autism NEJM 347 1477...
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #7
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Web search #8 query: meta-analysis vaccine autism meta-analysis 2014 Child Care Health Dev Taylor...
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO -   -> 6 sources from search #8
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Total: 8 web searches, 65 URLs extracted
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Extracted 65 URLs from web_search sources
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Search: critical evaluation Do vaccines cause au complete with valid JSON
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO -   -> 8 items, 65 citations
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Search 6/13: supporting evidence Do vaccines cause autism in children?...
+2026-01-19 07:02:57,152 - bfih_orchestrator_fixed - INFO - Starting Search: supporting evidence Do vaccines cause au (structured output, model: o4-mini)
+2026-01-19 07:04:38,009 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:04:38,012 - bfih_orchestrator_fixed - INFO - Web search #1 query: Taylor 2014 meta-analysis MMR autism Vaccine journal...
+2026-01-19 07:04:38,012 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #1
+2026-01-19 07:04:38,012 - bfih_orchestrator_fixed - INFO - Web search #2 query: maternal vaccination immune activation autism risk...
+2026-01-19 07:04:38,012 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #2
+2026-01-19 07:04:38,012 - bfih_orchestrator_fixed - INFO - Web search #3 query: DeStefano 2013 Pediatrics vaccine schedule autism...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #3
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #4 query: Cochrane review MMR autism 2011...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #4
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #5 query: Annals Internal Medicine Hviid 2019 autism vaccine...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #5
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #6 query: site:cdc.gov autism vaccine safety...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #6
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #7 query: Madsen NEJM 2002 MMR autism Denmark...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #7
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #8 query: Institute of Medicine 2011 vaccines autism report...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 12 sources from search #8
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #9 query: National Academies Press Immunization Safety Review Vaccines and Autism PDF...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #9
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #10 query: DeStefano 2013 Pediatrics autism antigens...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #10
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO - Web search #11 query: site:pediatrics.aappublications.org antigen autism 2013 DeStefano...
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - WARNING - Search 'supporting evidence Do vaccines cause autism in children?' failed: 'NoneType' object is not iterable
+2026-01-19 07:04:38,013 - bfih_orchestrator_fixed - INFO -   -> 0 items, 0 citations
+2026-01-19 07:04:38,014 - bfih_orchestrator_fixed - INFO - Search 7/13: counter-arguments Do vaccines cause autism in children?...
+2026-01-19 07:04:38,014 - bfih_orchestrator_fixed - INFO - Starting Search: counter-arguments Do vaccines cause auti (structured output, model: o4-mini)
+2026-01-19 07:05:27,474 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:05:27,476 - bfih_orchestrator_fixed - INFO - Web search #1 query: Madsen MMR autism Denmark 2002 NEJM cohort study vaccines autism...
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #1
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO - Web search #2 query: Hviid 2019 Danish cohort autism MMR Annals of Internal Medicine 559...
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #2
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO - Web search #3 query: Taylor meta-analysis autism vaccine JAMA Pediatrics or Vaccine 2014 systematic review...
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #3
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO - Web search #4 query: Institute of Medicine 2011 autism vaccine causality IOM report 2011 National Academies...
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #4
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO - Web search #5 query: DeStefano thimerosal autism Pediatrics 2004 study...
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #5
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #6
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #7
+2026-01-19 07:05:27,477 - bfih_orchestrator_fixed - INFO - Total: 7 web searches, 49 URLs extracted
+2026-01-19 07:05:27,478 - bfih_orchestrator_fixed - INFO - Extracted 49 URLs from web_search sources
+2026-01-19 07:05:27,478 - bfih_orchestrator_fixed - INFO - Search: counter-arguments Do vaccines cause auti complete with valid JSON
+2026-01-19 07:05:27,478 - bfih_orchestrator_fixed - INFO -   -> 7 items, 49 citations
+2026-01-19 07:05:27,478 - bfih_orchestrator_fixed - INFO - Search 8/13: evidence and analysis: OTHER - Unforeseen explanation...
+2026-01-19 07:05:27,478 - bfih_orchestrator_fixed - INFO - Starting Search: evidence and analysis: OTHER - Unforesee (structured output, model: o4-mini)
+2026-01-19 07:06:40,334 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:06:40,350 - bfih_orchestrator_fixed - INFO - Web search #1 query: Zerbo vaccination timing healthcare utilization autism bias study...
+2026-01-19 07:06:40,350 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #1
+2026-01-19 07:06:40,350 - bfih_orchestrator_fixed - INFO - Web search #2 query: Fombonne diagnostic substitution autism prevalence 2005...
+2026-01-19 07:06:40,350 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #2
+2026-01-19 07:06:40,350 - bfih_orchestrator_fixed - INFO - Web search #3 query: Hviid thimerosal Denmark autism incidence thimerosal removed 2003...
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO -   -> 12 sources from search #3
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO - Web search #4 query: Hallmayer twin study autism heritability 2011...
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #4
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO - Web search #5 query: Patterson maternal immune activation autism PNAS 2003 immune activation model...
+
+[Phase 1: Retrieve Methodology complete]
+
+[Classifying topic type for optimal search strategy...]
+[Topic classified as: general]
+
+[Starting 13 focused evidence searches]
+[Search 1/13: comprehensive overview Do vaccines cause autism in...]
+
+============================================================
+Search: comprehensive overview Do vaccines cause [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Madsen autism vaccine Denmark 2002 cohort...]
+[Web search #2: Taylor Swerdfeger Eslick 2014 meta-analysis vaccines autism...]
+[Web search #3: Institute of Medicine Immunization Safety Review Vaccines and Autism 2004...]
+[Web search #4: DeStefano Pediatrics 2013 antigens autism vaccine...]
+[Web search #5: Wakefield 1998 Lancet autism MMR retraction...]
+[Web search #6: Smeeth autism MMR case-control BMJ 2004...]
+[Web search #7: Journal of Pediatrics 2013 antigen exposure autism DeStefano...]
+[Web search #8: Cochrane review MMR autism 2012...]
+[Extracted 77 URLs from web_search sources]
+[Search: comprehensive overview Do vaccines cause complete - valid JSON parsed]
+[Search 2/13: expert analysis Do vaccines cause autism in childr...]
+
+============================================================
+Search: expert analysis Do vaccines cause autism [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Taylor meta-analysis vaccines autism 2014...]
+[Web search #2: Madsen MMR autism Denmark cohort 2002...]
+[Web search #3: Madsen thimerosal autism Denmark 2003 Pediatrics...]
+[Web search #4: vaccine immune activation autism mouse model study...]
+[Web search #5: aluminum adjuvant autism meta-analysis vaccine aluminium autism risk...]
+[Web search #6: vaccine autism genetic susceptibility rare subgroup vaccine autism case-control...]
+[Web search #7: vaccine schedule autism risk early vaccination timing study...]
+[Extracted 63 URLs from web_search sources]
+[Search: expert analysis Do vaccines cause autism complete - valid JSON parsed]
+[Search 3/13: research and evidence Do vaccines cause autism in ...]
+
+============================================================
+Search: research and evidence Do vaccines cause  [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: vaccine schedule autism risk Pediatrics 2017 study...]
+[Web search #2: Frank DeStefano antigens too many vaccines too soon Journal of Pediatrics 2013...]
+[Web search #4: Madsen population based autism MMR JAMA 2002 288(24)2800...]
+[Web search #5: site:who.int autism vaccines GACVS review autism vaccine safety 2025...]
+[Web search #6: DeStefano antigens autism Journal of Pediatrics 2013 Frank DeStefano...]
+[Web search #7: Hviid measles mumps rubella autism nationwide cohort study 2019 citation...]
+[Search 4/13: different perspectives on Do vaccines cause autism...]
+
+============================================================
+Search: different perspectives on Do vaccines ca [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Taylor Swerdfeger Eslick 2014 vaccines autism meta-analysis...]
+[Web search #2: Madsen 2002 MMR autism Denmark population-based study...]
+[Web search #3: Madsen Lauritsen thimerosal occurrence of autism negative ecological Danish...]
+[Web search #4: mitochondrial disorder autism vaccine regression case study...]
+[Web search #5: Institute of Medicine Adverse Effects of Vaccines Autism 2011...]
+[Web search #6: Lancet retraction Wakefield autism 2010 BMJ retraction notice...]
+[Web search #7: Increasing exposure to antibody-stimulating proteins and polysaccharides in vacc...]
+[Web search #8: Tomljenovic Shaw aluminum adjuvant autism systematic review...]
+[Web search #9: Poling mitochondrial autism vaccine regression Poling study...]
+[Search 5/13: critical evaluation Do vaccines cause autism in ch...]
+
+============================================================
+Search: critical evaluation Do vaccines cause au [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Institute of Medicine Vaccines Autism 2011 causality...]
+[Web search #2: Hviid 2019 measles vaccine autism cohort Denmark Hviid JAMA 2019...]
+[Web search #3: Dyer Clare BMJ Lancet retracts Wakefield paper 2010...]
+[Web search #4: Institute of Medicine Immunization Safety Review Vaccines and Autism 2004...]
+[Web search #5: Price 2010 Pediatrics thimerosal autism removal rates 2010 Pediatrics Price...]
+[Web search #7: Madsen 2002 MMR autism NEJM 347 1477...]
+[Web search #8: meta-analysis vaccine autism meta-analysis 2014 Child Care Health Dev Taylor...]
+[Extracted 65 URLs from web_search sources]
+[Search: critical evaluation Do vaccines cause au complete - valid JSON parsed]
+[Search 6/13: supporting evidence Do vaccines cause autism in ch...]
+
+============================================================
+Search: supporting evidence Do vaccines cause au [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Taylor 2014 meta-analysis MMR autism Vaccine journal...]
+[Web search #2: maternal vaccination immune activation autism risk...]
+[Web search #3: DeStefano 2013 Pediatrics vaccine schedule autism...]
+[Web search #4: Cochrane review MMR autism 2011...]
+[Web search #5: Annals Internal Medicine Hviid 2019 autism vaccine...]
+[Web search #6: site:cdc.gov autism vaccine safety...]
+[Web search #7: Madsen NEJM 2002 MMR autism Denmark...]
+[Web search #8: Institute of Medicine 2011 vaccines autism report...]
+[Web search #9: National Academies Press Immunization Safety Review Vaccines and Autism PDF...]
+[Web search #10: DeStefano 2013 Pediatrics autism antigens...]
+[Web search #11: site:pediatrics.aappublications.org antigen autism 2013 DeStefano...]
+[Search 7/13: counter-arguments Do vaccines cause autism in chil...]
+
+============================================================
+Search: counter-arguments Do vaccines cause auti [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Madsen MMR autism Denmark 2002 NEJM cohort study vaccines autism...]
+[Web search #2: Hviid 2019 Danish cohort autism MMR Annals of Internal Medicine 559...]
+[Web search #3: Taylor meta-analysis autism vaccine JAMA Pediatrics or Vaccine 2014 systematic r...]
+[Web search #4: Institute of Medicine 2011 autism vaccine causality IOM report 2011 National Aca...]
+[Web search #5: DeStefano thimerosal autism Pediatrics 2004 study...]
+[Extracted 49 URLs from web_search sources]
+[Search: counter-arguments Do vaccines cause auti complete - valid JSON parsed]
+[Search 8/13: evidence and analysis: OTHER - Unforeseen explanat...]
+
+============================================================
+Search: evidence and analysis: OTHER - Unforesee [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Zerbo vaccination timing healthcare utilization autism bias study...]
+[Web search #2: Fombonne diagnostic substitution autism prevalence 2005...]
+[Web search #3: Hviid thimerosal Denmark autism incidence thimerosal removed 2003...]
+[Web search #4: Hallmayer twin study autism heritability 2011...]
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #5
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO - Web search #6 query: vaccination schedule autism no link Pediatrics 2013 schedule study...
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #6
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO - Web search #7 query: antigen number antigen exposure autism J Pediatr DeStefano 2013...
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #7
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #8
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #9
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #10
+2026-01-19 07:06:40,351 - bfih_orchestrator_fixed - INFO - Web search #11 query: A population-based study of measles mumps rubella vaccination and autism Madsen 2002 NEJM...
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #11
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Web search #12 query: Taylor Swerdfeger Eslick 2014 vaccines autism meta-analysis...
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #12
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Web search #13 query: Maternal immune activation interleukin-6 J Neurosci 2007 poly I C...
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #13
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Total: 13 web searches, 94 URLs extracted
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Extracted 94 URLs from web_search sources
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Search: evidence and analysis: OTHER - Unforesee complete with valid JSON
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO -   -> 8 items, 94 citations
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Search 9/13: evidence and analysis: TRUE - Vaccines directly cause autism...
+2026-01-19 07:06:40,352 - bfih_orchestrator_fixed - INFO - Starting Search: evidence and analysis: TRUE - Vaccines d (structured output, model: o4-mini)
+2026-01-19 07:07:16,874 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:07:16,875 - bfih_orchestrator_fixed - WARNING - Search 'evidence and analysis: TRUE - Vaccines directly cause autism' failed: 'NoneType' object is not iterable
+2026-01-19 07:07:16,875 - bfih_orchestrator_fixed - INFO -   -> 0 items, 0 citations
+2026-01-19 07:07:16,875 - bfih_orchestrator_fixed - INFO - Search 10/13: evidence and analysis: FALSE - No causal link exists...
+2026-01-19 07:07:16,875 - bfih_orchestrator_fixed - INFO - Starting Search: evidence and analysis: FALSE - No causal (structured output, model: o4-mini)
+2026-01-19 07:08:30,771 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:08:30,775 - bfih_orchestrator_fixed - INFO - Web search #1 query: Madsen autism MMR 2002 Denmark BMJ...
+2026-01-19 07:08:30,775 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #1
+2026-01-19 07:08:30,775 - bfih_orchestrator_fixed - INFO - Web search #2 query: Taylor Swerdfeger Eslick 2014 meta-analysis vaccines autism...
+2026-01-19 07:08:30,775 - bfih_orchestrator_fixed - INFO -   -> 7 sources from search #2
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO - Web search #3 query: Hviid JAMA Pediatrics MMR autism 2019 Cohort...
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO -   -> 5 sources from search #3
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #4
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO - Web search #5 query: 30831578 PubMed Measles mumps rubella autism nationwide cohort...
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO -   -> 5 sources from search #5
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO - Web search #6 query: IOM 2004 Immunization Safety Review vaccines autism...
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #6
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO - Web search #7 query: DeStefano Pediatrics 2013 multiple vaccines autism...
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #7
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO - Web search #8 query: Journal of Pediatrics 2013 antigen autism Frank DeStefano title...
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #8
+2026-01-19 07:08:30,776 - bfih_orchestrator_fixed - INFO - Web search #9 query: Cochrane review vaccines autism...
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #9
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO - Web search #10 query: site:cdc.gov autism vaccines CDC statement "autism"...
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO -   -> 6 sources from search #10
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #11
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #12
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO - Web search #13 query: 12421833 PubMed Madsen autism MMR...
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #13
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #14
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO - Web search #15 query: Vestergaard Madsen Vestergaard Vestergaard Vestergaard MMR vaccination autism Drug Safety 2004...
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #15
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO - Total: 15 web searches, 91 URLs extracted
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO - Extracted 91 URLs from web_search sources
+2026-01-19 07:08:30,777 - bfih_orchestrator_fixed - INFO - Search: evidence and analysis: FALSE - No causal complete with valid JSON
+2026-01-19 07:08:30,778 - bfih_orchestrator_fixed - INFO -   -> 8 items, 91 citations
+2026-01-19 07:08:30,778 - bfih_orchestrator_fixed - INFO - Search 11/13: evidence and analysis: PARTIAL - Rare subgroup vulnerability...
+2026-01-19 07:08:30,778 - bfih_orchestrator_fixed - INFO - Starting Search: evidence and analysis: PARTIAL - Rare su (structured output, model: o4-mini)
+2026-01-19 07:09:44,705 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO - Web search #1 query: mitochondrial disorder vaccine autism subgroup vulnerability study...
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #1
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #2
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO - Web search #3 query: MMR autism high risk sibling vaccinated subgroup study...
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #3
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO - Web search #4 query: POLG variants vaccine induced regression autism...
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #4
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO - Web search #5 query: Hannah Poling VICP 2008 concession autism vaccine...
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #5
+2026-01-19 07:09:44,708 - bfih_orchestrator_fixed - INFO - Web search #6 query: case report POLG vaccine encephalopathy autism...
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #6
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Web search #7 query: Mary Holland Louis Conte Pace Environmental Law Review vaccine autism...
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO -   -> 6 sources from search #7
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #8
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #9
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Web search #10 query: Autism Occurrence by MMR Vaccine Status Among US Children With Older Siblings With and Without Autis...
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO -   -> 6 sources from search #10
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Total: 10 web searches, 59 URLs extracted
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Extracted 59 URLs from web_search sources
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Search: evidence and analysis: PARTIAL - Rare su complete with valid JSON
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO -   -> 9 items, 59 citations
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Search 12/13: evidence and analysis: PARTIAL - Indirect pathway via immune...
+2026-01-19 07:09:44,709 - bfih_orchestrator_fixed - INFO - Starting Search: evidence and analysis: PARTIAL - Indirec (structured output, model: o4-mini)
+2026-01-19 07:10:44,917 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:10:44,920 - bfih_orchestrator_fixed - INFO - Web search #1 query: vaccines cytokine immune activation autism study...
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #1
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO - Web search #2 query: aluminum adjuvant vaccine microglia autism rodent aluminum hydroxide neuroinflammation...
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #2
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO - Web search #3 query: fever after vaccine autism risk epidemiology immune activation child autism risk study...
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #3
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO - Web search #4 query: Anders Hviid Annals Internal Medicine aluminum vaccine autism Denmark...
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #4
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #5
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #6
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #7
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #8
+2026-01-19 07:10:44,921 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #9
+2026-01-19 07:10:44,922 - bfih_orchestrator_fixed - INFO - Total: 9 web searches, 41 URLs extracted
+2026-01-19 07:10:44,922 - bfih_orchestrator_fixed - INFO - Extracted 41 URLs from web_search sources
+2026-01-19 07:10:44,922 - bfih_orchestrator_fixed - INFO - Search: evidence and analysis: PARTIAL - Indirec complete with valid JSON
+2026-01-19 07:10:44,922 - bfih_orchestrator_fixed - INFO -   -> 8 items, 41 citations
+2026-01-19 07:10:44,922 - bfih_orchestrator_fixed - INFO - Search 13/13: evidence and analysis: PARTIAL - Timing/schedule effects onl...
+2026-01-19 07:10:44,922 - bfih_orchestrator_fixed - INFO - Starting Search: evidence and analysis: PARTIAL - Timing/ (structured output, model: o4-mini)
+2026-01-19 07:11:53,828 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:11:53,840 - bfih_orchestrator_fixed - INFO - Web search #1 query: vaccine schedule autism timing cohort study...
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO -   -> 11 sources from search #1
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO - Web search #2 query: DeLong 2011 vaccines autism schedule state-level data DeLong...
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #2
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #3
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO - Web search #4 query: vaccine schedule delay autism risk timing cohort study Hib DTaP schedule autism risk timing...
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #4
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO - Web search #5 query: delay MMR autism risk timing study cohort MMR delay autism risk...
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO -   -> 10 sources from search #5
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO - Web search #6 query: JAMA 2015 autism occurrence by MMR vaccine status risk periods JAMA 313(15):1534...
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO -   -> 8 sources from search #6
+2026-01-19 07:11:53,841 - bfih_orchestrator_fixed - INFO - Web search #7 query: JAMA 2015 313(15) 1534 autism MMR Hviid...
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO -   -> 9 sources from search #7
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - WARNING -   -> No sources attribute in search #8
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO - Total: 8 web searches, 55 URLs extracted
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO - Extracted 55 URLs from web_search sources
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO - Search: evidence and analysis: PARTIAL - Timing/ complete with valid JSON
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO -   -> 6 items, 55 citations
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO - Multi-search complete: 72 evidence items, 594 citations
+2026-01-19 07:11:53,842 - bfih_orchestrator_fixed - INFO - Populated 72 items with valid URLs from 594 citations
+2026-01-19 07:11:54,213 - bfih_orchestrator_fixed - INFO - Removed 1 content-similar duplicates
+2026-01-19 07:11:54,213 - bfih_orchestrator_fixed - INFO - Removed 21 total duplicate evidence items
+2026-01-19 07:11:54,213 - bfih_orchestrator_fixed - INFO - Gathered 51 unique evidence items
+2026-01-19 07:11:54,213 - bfih_orchestrator_fixed - INFO - Phase 2 complete: Found 51 evidence items
+2026-01-19 07:11:54,214 - bfih_orchestrator_fixed - INFO - Phase 3: Assigning likelihoods...
+2026-01-19 07:11:54,214 - bfih_orchestrator_fixed - INFO - Phase 3a: Estimating evidence base rates P(E)...
+2026-01-19 07:11:54,214 - bfih_orchestrator_fixed - INFO - Starting Phase 3a: Base Rate Estimation (reasoning model: o3)
+2026-01-19 07:12:41,450 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:12:41,453 - bfih_orchestrator_fixed - INFO - Phase 3a: Base Rate Estimation complete with valid JSON from reasoning model
+2026-01-19 07:12:41,453 - bfih_orchestrator_fixed - INFO - Base rate for E1: P(E)=0.55
+2026-01-19 07:12:41,453 - bfih_orchestrator_fixed - INFO - Base rate for E2: P(E)=0.60
+2026-01-19 07:12:41,453 - bfih_orchestrator_fixed - INFO - Base rate for E3: P(E)=0.70
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E4: P(E)=0.50
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E5: P(E)=0.50
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E6: P(E)=0.25
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E7: P(E)=0.75
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E8: P(E)=0.80
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E9: P(E)=0.75
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E10: P(E)=0.45
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E11: P(E)=0.45
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E12: P(E)=0.30
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E13: P(E)=0.20
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E14: P(E)=0.20
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E15: P(E)=0.60
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E16: P(E)=0.55
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E17: P(E)=0.55
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E18: P(E)=0.50
+2026-01-19 07:12:41,454 - bfih_orchestrator_fixed - INFO - Base rate for E19: P(E)=0.60
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E20: P(E)=0.20
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E21: P(E)=0.55
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E22: P(E)=0.70
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E23: P(E)=0.45
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E24: P(E)=0.40
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E25: P(E)=0.45
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E26: P(E)=0.50
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E27: P(E)=0.35
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E28: P(E)=0.20
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E29: P(E)=0.55
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E30: P(E)=0.55
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E31: P(E)=0.70
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E32: P(E)=0.60
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E33: P(E)=0.15
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E34: P(E)=0.15
+2026-01-19 07:12:41,455 - bfih_orchestrator_fixed - INFO - Base rate for E35: P(E)=0.15
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E36: P(E)=0.55
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E37: P(E)=0.55
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E38: P(E)=0.60
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E39: P(E)=0.40
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E40: P(E)=0.20
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E41: P(E)=0.25
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E42: P(E)=0.35
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E43: P(E)=0.35
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E44: P(E)=0.35
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E45: P(E)=0.30
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E46: P(E)=0.45
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E47: P(E)=0.40
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E48: P(E)=0.30
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E49: P(E)=0.25
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E50: P(E)=0.25
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Base rate for E51: P(E)=0.45
+2026-01-19 07:12:41,456 - bfih_orchestrator_fixed - INFO - Estimated base rates for 51 evidence items
+2026-01-19 07:12:41,458 - bfih_orchestrator_fixed - INFO - Phase 3b: Assigning likelihoods relative to base rates...
+2026-01-19 07:12:41,458 - bfih_orchestrator_fixed - INFO - Using reasoning model with structured output: o3
+2026-01-19 07:12:41,458 - bfih_orchestrator_fixed - INFO - Starting Phase 3b: Likelihood Assignment (reasoning) (structured output, model: o3)
+2026-01-19 07:13:18,931 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+2026-01-19 07:13:18,932 - bfih_orchestrator_fixed - INFO - Phase 3b: Likelihood Assignment (reasoning) complete with valid JSON
+2026-01-19 07:13:18,932 - bfih_orchestrator_fixed - INFO -   H0 is non-predictive for cluster C1: P(E|H)=0.53 ≈ P(E)=0.53 → LR≈1
+2026-01-19 07:13:18,932 - bfih_orchestrator_fixed - ERROR - Structured output failed for clusters: Invalid format specifier '.2f if cluster_base_rate else 0.5' for object of type 'float', falling back to text extraction
+2026-01-19 07:13:18,932 - bfih_orchestrator_fixed - INFO - Starting Phase 3: Likelihood Assignment (fallback)
+2026-01-19 07:13:19,133 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+[Web search #5: Patterson maternal immune activation autism PNAS 2003 immune activation model...]
+[Web search #6: vaccination schedule autism no link Pediatrics 2013 schedule study...]
+[Web search #7: antigen number antigen exposure autism J Pediatr DeStefano 2013...]
+[Web search #11: A population-based study of measles mumps rubella vaccination and autism Madsen ...]
+[Web search #12: Taylor Swerdfeger Eslick 2014 vaccines autism meta-analysis...]
+[Web search #13: Maternal immune activation interleukin-6 J Neurosci 2007 poly I C...]
+[Extracted 94 URLs from web_search sources]
+[Search: evidence and analysis: OTHER - Unforesee complete - valid JSON parsed]
+[Search 9/13: evidence and analysis: TRUE - Vaccines directly ca...]
+
+============================================================
+Search: evidence and analysis: TRUE - Vaccines d [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Search 10/13: evidence and analysis: FALSE - No causal link exis...]
+
+============================================================
+Search: evidence and analysis: FALSE - No causal [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: Madsen autism MMR 2002 Denmark BMJ...]
+[Web search #2: Taylor Swerdfeger Eslick 2014 meta-analysis vaccines autism...]
+[Web search #3: Hviid JAMA Pediatrics MMR autism 2019 Cohort...]
+[Web search #5: 30831578 PubMed Measles mumps rubella autism nationwide cohort...]
+[Web search #6: IOM 2004 Immunization Safety Review vaccines autism...]
+[Web search #7: DeStefano Pediatrics 2013 multiple vaccines autism...]
+[Web search #8: Journal of Pediatrics 2013 antigen autism Frank DeStefano title...]
+[Web search #9: Cochrane review vaccines autism...]
+[Web search #10: site:cdc.gov autism vaccines CDC statement "autism"...]
+[Web search #13: 12421833 PubMed Madsen autism MMR...]
+[Web search #15: Vestergaard Madsen Vestergaard Vestergaard Vestergaard MMR vaccination autism Dr...]
+[Extracted 91 URLs from web_search sources]
+[Search: evidence and analysis: FALSE - No causal complete - valid JSON parsed]
+[Search 11/13: evidence and analysis: PARTIAL - Rare subgroup vul...]
+
+============================================================
+Search: evidence and analysis: PARTIAL - Rare su [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: mitochondrial disorder vaccine autism subgroup vulnerability study...]
+[Web search #3: MMR autism high risk sibling vaccinated subgroup study...]
+[Web search #4: POLG variants vaccine induced regression autism...]
+[Web search #5: Hannah Poling VICP 2008 concession autism vaccine...]
+[Web search #6: case report POLG vaccine encephalopathy autism...]
+[Web search #7: Mary Holland Louis Conte Pace Environmental Law Review vaccine autism...]
+[Web search #10: Autism Occurrence by MMR Vaccine Status Among US Children With Older Siblings Wi...]
+[Extracted 59 URLs from web_search sources]
+[Search: evidence and analysis: PARTIAL - Rare su complete - valid JSON parsed]
+[Search 12/13: evidence and analysis: PARTIAL - Indirect pathway ...]
+
+============================================================
+Search: evidence and analysis: PARTIAL - Indirec [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: vaccines cytokine immune activation autism study...]
+[Web search #2: aluminum adjuvant vaccine microglia autism rodent aluminum hydroxide neuroinflam...]
+[Web search #3: fever after vaccine autism risk epidemiology immune activation child autism risk...]
+[Web search #4: Anders Hviid Annals Internal Medicine aluminum vaccine autism Denmark...]
+[Extracted 41 URLs from web_search sources]
+[Search: evidence and analysis: PARTIAL - Indirec complete - valid JSON parsed]
+[Search 13/13: evidence and analysis: PARTIAL - Timing/schedule e...]
+
+============================================================
+Search: evidence and analysis: PARTIAL - Timing/ [Structured Output: o4-mini]
+============================================================
+[Calling API with structured output schema: evidence...]
+
+[Received structured output, parsing JSON...]
+[Web search #1: vaccine schedule autism timing cohort study...]
+[Web search #2: DeLong 2011 vaccines autism schedule state-level data DeLong...]
+[Web search #4: vaccine schedule delay autism risk timing cohort study Hib DTaP schedule autism ...]
+[Web search #5: delay MMR autism risk timing study cohort MMR delay autism risk...]
+[Web search #6: JAMA 2015 autism occurrence by MMR vaccine status risk periods JAMA 313(15):1534...]
+[Web search #7: JAMA 2015 313(15) 1534 autism MMR Hviid...]
+[Extracted 55 URLs from web_search sources]
+[Search: evidence and analysis: PARTIAL - Timing/ complete - valid JSON parsed]
+[Multi-search complete: 72 evidence items from 13 searches]
+[Removed 1 content-similar evidence items]
+[Removed 21 total duplicate sources from evidence]
+
+============================================================
+Phase 3a: Base Rate Estimation [Reasoning Model: o3]
+============================================================
+[Calling reasoning model for deep analysis...]
+
+[Received reasoning output, extracting JSON...]
+[Phase 3a: Base Rate Estimation complete - JSON extracted from reasoning output]
+
+============================================================
+Phase 3b: Likelihood Assignment (reasoning) [Structured Output: o3]
+============================================================
+[Calling API with structured output schema: clusters...]
+
+[Received structured output, parsing JSON...]
+[Phase 3b: Likelihood Assignment (reasoning) complete - valid JSON parsed]
+
+============================================================
+Phase 3: Likelihood Assignment (fallback)
+============================================================
+{"clusters":[{"cluster_id":"C1","cluster_name":"Epidemiological and Institutional Evidence against Causal Link","description":"Large‐scale cohort, case‐control, meta‐analyses, institutional reviews consistently finding no association between vaccines and autism.","evidence_ids":["E1","E2","E3","E4","E5","E7","E8","E9","E10","E11","E14","E15","E16","E17","E18","E19","E20","E21","E22","E23","E25","E29","E30","E31","E32","E46","E47","E48","E51"],"cluster_base_rate":0.53,"paradigm_likelihoods":[{"paradigm_id":"K0","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.53,"justification":"H0 makes no specific prediction about epidemiological evidence, so P(E|H0)=base rate","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.10,"justification":"H1 predicts absence of large studies showing no link, so P(E|H1)<<base","relative_to_base_rate":"below"},{"hypothesis_id":"H2","probability":0.80,"justification":"H2 predicts strong evidence of no link, so P(E|H2)>base","relative_to_base_rate":"above"},{"hypothesis_id":"H3","probability":0.53,"justification":"H3 (subgroup effect) does not predict broad epidemiology, so P(E|H3)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.53,"justification":"H4 (immune‐mediated indirect) does not predict epidemiological absence/presence, so P(E|H4)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.53,"justification":"H5 (schedule overload) does not predict epidemiological absence/presence, so P(E|H5)=base","relative_to_base_rate":"equal"}]},{"paradigm_id":"K1","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.53,"justification":"H0 remains non‐predictive under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.20,"justification":"Pro‐causation paradigm weakens expectation of absence of null studies, so P(E|H1) only moderately below base","relative_to_base_rate":"below"},{"hypothesis_id":"H2","probability":0.60,"justification":"Pro‐causation paradigm downweights null‐finding studies, so P(E|H2) still >base but attenuated","relative_to_base_rate":"above"},{"hypothesis_id":"H3","probability":0.53,"justification":"H3 non‐predictive for broad epidemiology under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.53,"justification":"H4 non‐predictive for broad epidemiology under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.53,"justification":"H5 non‐predictive for broad epidemiology under pro‐causation bias","relative_to_base_rate":"equal"}]},{"paradigm_id":"K2","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.53,"justification":"H0 non‐predictive under anti‐causation paradigm","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.05,"justification":"Anti‐causation paradigm intensifies expectation that no‐link studies should dominate, so P(E|H1) very low","relative_to_base_rate":"below"},{"hypothesis_id":"H2","probability":0.90,"justification":"Anti‐causation paradigm strongly expects null‐finding studies, so P(E|H2)>>base","relative_to_base_rate":"above"},{"hypothesis_id":"H3","probability":0.53,"justification":"H3 non‐predictive for broad epidemiology under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.53,"justification":"H4 non‐predictive for broad epidemiology under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.53,"justification":"H5 non‐predictive for broad epidemiology under anti‐causation bias","relative_to_base_rate":"equal"}]}]},{"cluster_id":"C2","cluster_name":"Animal and Mechanistic Evidence for Immune/Aluminum Effects","description":"Preclinical mouse models and mechanistic reviews examining immune activation, aluminum adjuvant neurotoxicity, microglial responses.","evidence_ids":["E27","E42","E43","E44","E45"],"cluster_base_rate":0.34,"paradigm_likelihoods":[{"paradigm_id":"K0","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.34,"justification":"H0 does not predict mechanistic findings, so P(E|H0)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.34,"justification":"H1 (direct causation) does not specifically predict mechanistic animal data beyond human autism, so P(E|H1)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.34,"justification":"H2 (no link) does not predict mechanistic findings per se, so P(E|H2)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H3","probability":0.34,"justification":"H3 (rare subgroup) is not specifically about animal models, so P(E|H3)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.70,"justification":"H4 predicts immune‐mediated/mechanistic evidence in animals, so P(E|H4)>base","relative_to_base_rate":"above"},{"hypothesis_id":"H5","probability":0.34,"justification":"H5 (schedule) does not predict mechanistic animal data, so P(E|H5)=base","relative_to_base_rate":"equal"}]},{"paradigm_id":"K1","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.34,"justification":"H0 non‐predictive under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.34,"justification":"H1 still not specifically predictive of mechanistic animal data under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.34,"justification":"H2 non‐predictive for mechanistic evidence under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H3","probability":0.34,"justification":"H3 non‐predictive for mechanistic evidence under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.80,"justification":"Pro‐causation paradigm amplifies mechanistic support for indirect immune effects, so P(E|H4) higher","relative_to_base_rate":"above"},{"hypothesis_id":"H5","probability":0.34,"justification":"H5 non‐predictive for mechanistic evidence under pro‐causation bias","relative_to_base_rate":"equal"}]},{"paradigm_id":"K2","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.34,"justification":"H0 remains non‐predictive under anti‐causation paradigm","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.34,"justification":"H1 remains non‐predictive of mechanistic animal data","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.34,"justification":"H2 non‐predictive for mechanistic evidence","relative_to_base_rate":"equal"},{"hypothesis_id":"H3","probability":0.34,"justification":"H3 non‐predictive for mechanistic evidence","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.40,"justification":"Anti‐causation paradigm downplays mechanistic findings, so P(E|H4) only slightly above base","relative_to_base_rate":"above"},{"hypothesis_id":"H5","probability":0.34,"justification":"H5 non‐predictive for mechanistic evidence under anti‐causation bias","relative_to_base_rate":"equal"}]}]},{"cluster_id":"C3","cluster_name":"Rare Subgroup Case Evidence","description":"Individual compensation cases and expert findings (e.g., Hannah Poling) suggesting vaccines may affect a vulnerable subgroup.","evidence_ids":["E33","E34","E35","E41"],"cluster_base_rate":0.175,"paradigm_likelihoods":[{"paradigm_id":"K0","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.175,"justification":"H0 does not predict rare subgroup cases, so P(E|H0)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.175,"justification":"H1 direct causation does not specifically predict isolated compensation cases, so P(E|H1)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.175,"justification":"H2 (no link) does not predict rare compensation cases per se, so P(E|H2)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H3","probability":0.70,"justification":"H3 predicts such rare subgroup vulnerabilities and cases, so P(E|H3)>base","relative_to_base_rate":"above"},{"hypothesis_id":"H4","probability":0.175,"justification":"H4 indirect immune effects does not predict compensation cases specifically, so P(E|H4)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.175,"justification":"H5 schedule overload does not predict these rare cases, so P(E|H5)=base","relative_to_base_rate":"equal"}]},{"paradigm_id":"K1","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.175,"justification":"H0 non‐predictive under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.175,"justification":"H1 direct causation still not specific to compensation cases under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.175,"justification":"H2 non‐predictive under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H3","probability":0.80,"justification":"Pro‐causation paradigm amplifies rare subgroup case significance, so P(E|H3)>K0","relative_to_base_rate":"above"},{"hypothesis_id":"H4","probability":0.175,"justification":"H4 non‐predictive for compensation cases under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.175,"justification":"H5 non‐predictive for compensation cases under pro‐causation bias","relative_to_base_rate":"equal"}]},{"paradigm_id":"K2","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.175,"justification":"H0 remains non‐predictive under anti‐causation paradigm","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.175,"justification":"H1 remains non‐predictive for compensation cases","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.175,"justification":"H2 non‐predictive for compensation cases","relative_to_base_rate":"equal"},{"hypothesis_id":"H3","probability":0.20,"justification":"Anti‐causation paradigm downplays rare case relevance, so P(E|H3) only marginally above base","relative_to_base_rate":"above"},{"hypothesis_id":"H4","probability":0.175,"justification":"H4 non‐predictive for compensation cases under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.175,"justification":"H5 non‐predictive for compensation cases under anti‐causation bias","relative_to_base_rate":"equal"}]}]},{"cluster_id":"C4","cluster_name":"Qualitative Case Reports and Alternative Explanations","description":"Early case series (Wakefield et al.), qualitative reviews alleging direct causation, diagnostic shift and genetic heritability studies.","evidence_ids":["E6","E12","E24","E26"],"cluster_base_rate":0.3625,"paradigm_likelihoods":[{"paradigm_id":"K0","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.3625,"justification":"H0 unpredictable for these qualitative/alternative‐explanation studies, so P(E|H0)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.60,"justification":"H1 predicts qualitative case reports of harm, so P(E|H1)>base","relative_to_base_rate":"above"},{"hypothesis_id":"H2","probability":0.20,"justification":"H2 predicts absence of flawed case reports, so P(E|H2)<base","relative_to_base_rate":"below"},{"hypothesis_id":"H3","probability":0.3625,"justification":"H3 non‐predictive for diagnostic/genetic alternative evidence, so P(E|H3)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.3625,"justification":"H4 non‐predictive for qualitative case reports of direct harm/alternative explanations, so P(E|H4)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.3625,"justification":"H5 non‐predictive for qualitative alternative explanations, so P(E|H5)=base","relative_to_base_rate":"equal"}]},{"paradigm_id":"K1","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.3625,"justification":"H0 non‐predictive under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.80,"justification":"Pro‐causation paradigm strongly expects such case reports, so P(E|H1)≫base","relative_to_base_rate":"above"},{"hypothesis_id":"H2","probability":0.10,"justification":"Pro‐causation paradigm downplays null hypothesis, so P(E|H2) more strongly below base","relative_to_base_rate":"below"},{"hypothesis_id":"H3","probability":0.3625,"justification":"H3 non‐predictive for these alternative reports under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.3625,"justification":"H4 non‐predictive for direct causation qualitatives under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.3625,"justification":"H5 non‐predictive for these studies under pro‐causation bias","relative_to_base_rate":"equal"}]},{"paradigm_id":"K2","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.3625,"justification":"H0 non‐predictive under anti‐causation paradigm","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.50,"justification":"Anti‐causation paradigm moderates belief in flawed case reports, so P(E|H1)>base but attenuated","relative_to_base_rate":"above"},{"hypothesis_id":"H2","probability":0.05,"justification":"Anti‐causation paradigm strongly rejects these flawed case reports, so P(E|H2)≪base","relative_to_base_rate":"below"},{"hypothesis_id":"H3","probability":0.3625,"justification":"H3 non‐predictive for flawed case reports under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.3625,"justification":"H4 non‐predictive for direct/qualitative reports under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.3625,"justification":"H5 non‐predictive for these case reports under anti‐causation bias","relative_to_base_rate":"equal"}]}]},{"cluster_id":"C5","cluster_name":"Ecological and Timing/Schedule Studies","description":"Cross-national and state-level ecological analyses and timing-of-MMR studies suggesting schedule or timing effects.","evidence_ids":["E13","E49","E50"],"cluster_base_rate":0.233,"paradigm_likelihoods":[{"paradigm_id":"K0","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.233,"justification":"H0 does not predict ecological correlations, so P(E|H0)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.233,"justification":"H1 direct causation does not specifically predict ecological schedule correlations, so P(E|H1)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.10,"justification":"H2 predicts absence of schedule effect, so P(E|H2)<base","relative_to_base_rate":"below"},{"hypothesis_id":"H3","probability":0.233,"justification":"H3 non‐predictive for ecological schedule data, so P(E|H3)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.233,"justification":"H4 (indirect) does not predict macro ecological schedule effects, so P(E|H4)=base","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.60,"justification":"H5 predicts schedule/intensity correlations, so P(E|H5)>base","relative_to_base_rate":"above"}]},{"paradigm_id":"K1","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.233,"justification":"H0 non‐predictive under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.233,"justification":"H1 remains non‐predictive for schedule studies under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.05,"justification":"Pro‐causation paradigm strongly rejects no‐effect hypothesis for schedule data, so P(E|H2) very low","relative_to_base_rate":"below"},{"hypothesis_id":"H3","probability":0.233,"justification":"H3 non‐predictive for ecological schedule under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.233,"justification":"H4 non‐predictive for schedule studies under pro‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.80,"justification":"Pro‐causation paradigm strongly favors schedule effect, so P(E|H5)>>base","relative_to_base_rate":"above"}]},{"paradigm_id":"K2","hypothesis_likelihoods":[{"hypothesis_id":"H0","probability":0.233,"justification":"H0 non‐predictive under anti‐causation paradigm","relative_to_base_rate":"equal"},{"hypothesis_id":"H1","probability":0.233,"justification":"H1 remains non‐predictive for schedule studies under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H2","probability":0.20,"justification":"Anti‐causation paradigm moderately disbelieves schedule effect, so P(E|H2) slightly below base","relative_to_base_rate":"below"},{"hypothesis_id":"H3","probability":0.233,"justification":"H3 non‐predictive for ecological schedule under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H4","probability":0.233,"justification":"H4 non‐predictive for schedule studies under anti‐causation bias","relative_to_base_rate":"equal"},{"hypothesis_id":"H5","probability":0.30,"justification":"Anti‐causation paradigm downplays schedule effect, so P(E|H5) modestly >base","relative_to_base_rate":"above"}]}]}]}2026-01-19 07:14:20,166 - bfih_orchestrator_fixed - INFO - Phase 3: Likelihood Assignment (fallback) complete, status: completed
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - WARNING - Could not parse structured clusters, returning empty list
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - INFO - Created 0 evidence clusters with two-stage likelihood assessment
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - INFO - Phase 3 complete: 0 evidence clusters
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - WARNING - Cannot compute Bayesian metrics: missing clusters or priors
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - WARNING - Cannot compute Bayesian metrics: missing clusters or priors
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - WARNING - Cannot compute Bayesian metrics: missing clusters or priors
+2026-01-19 07:14:20,167 - bfih_orchestrator_fixed - INFO - Phase 4: Computing posteriors...
+2026-01-19 07:14:20,168 - bfih_orchestrator_fixed - WARNING - No evidence clusters available, using uniform posteriors
+2026-01-19 07:14:20,168 - bfih_orchestrator_fixed - INFO - Paradigm K0 using uniform posteriors: {'H0': 0.16666666666666666, 'H1': 0.16666666666666666, 'H2': 0.16666666666666666, 'H3': 0.16666666666666666, 'H4': 0.16666666666666666, 'H5': 0.16666666666666666}
+2026-01-19 07:14:20,168 - bfih_orchestrator_fixed - INFO - Paradigm K1 using uniform posteriors: {'H0': 0.16666666666666666, 'H1': 0.16666666666666666, 'H2': 0.16666666666666666, 'H3': 0.16666666666666666, 'H4': 0.16666666666666666, 'H5': 0.16666666666666666}
+2026-01-19 07:14:20,168 - bfih_orchestrator_fixed - INFO - Paradigm K2 using uniform posteriors: {'H0': 0.16666666666666666, 'H1': 0.16666666666666666, 'H2': 0.16666666666666666, 'H3': 0.16666666666666666, 'H4': 0.16666666666666666, 'H5': 0.16666666666666666}
+2026-01-19 07:14:20,168 - bfih_orchestrator_fixed - INFO - Phase 4 complete: Posteriors computed
+2026-01-19 07:14:20,168 - bfih_orchestrator_fixed - INFO - Phase 5: Generating report...
+2026-01-19 07:14:20,170 - bfih_orchestrator_fixed - INFO - Starting Phase 5a: Introduction Sections
+2026-01-19 07:14:20,300 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 3: Likelihood Assignment (fallback) complete]
+
+============================================================
+Phase 5a: Introduction Sections
+============================================================
+## Executive Summary
+
+**Verdict:** INDETERMINATE
+
+The Bayesian update yields equal posterior probabilities of 0.1667 for each hypothesis H0–H5 under the privileged K0 paradigm. No single hypothesis stands out; H0 (unforeseen explanation) nominally “wins” under K0 but is tied with all other hypotheses.
+
+Across all paradigms (K0, K1, K2), each hypothesis retains a posterior of 0.1667, indicating that the evidence (as encoded) does not differentiate among direct causation, no causation, or any partial/alternative pathways. The uniform posteriors suggest either equally balanced likelihood ratios or insufficient distinguishing data.
+
+Key evidence driving this outcome is the programmatic Bayesian update itself, which treated each hypothesis with identical support from the likelihoods. As a result, no high–likelihood‐ratio (strong) evidence emerged to favor or disfavor any particular hypothesis.
+
+These indeterminate conclusions are robust across paradigms: the Vaccine Skeptic (K1) and Precautionary (K2) stances likewise produce perfectly uniform posterior distributions. In this framework, current information leaves the causal question unresolved.
+
+---
+
+## 1. Paradigms Analyzed
+
+### K0: Scientific Consensus
+
+Mainstream scientific and medical consensus based on epidemiological evidence, meta-analyses, and mechanistic biology.
+
+*(No explicit stance data available)*
+
+This paradigm represents the views of major public health institutions, where large-scale studies find no link between vaccines and autism.
+
+### K1: Vaccine Skeptic
+
+Perspective that questions vaccine safety claims, emphasizes anecdotal reports, and distrusts pharmaceutical/regulatory institutions.
+
+*(No explicit stance data available)*
+
+This paradigm gives greater credence to anecdotal reports and possible unrecognized mechanisms linking vaccines to neurodevelopmental outcomes.
+
+### K2: Precautionary
+
+Accepts most vaccine science but emphasizes unknown long-term risks and subgroup vulnerabilities.
+
+*(No explicit stance data available)*
+
+This paradigm allows for potential risks in specific subpopulations, leading to moderate priors on partial causation hypotheses.
+
+---
+
+## 2. Hypothesis Set
+
+**H0: OTHER - Unforeseen explanation**
+
+This hypothesis posits that some unknown factor, not vaccines, explains any apparent association between vaccination timing and autism onset. It acknowledges gaps in current understanding without specifying a causal agent or mechanism. Under H0, observed correlations are attributed to environmental or genetic variables yet to be identified.
+
+**Prior Probabilities:**
+
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+| K0       | 0.050      | Acknowledges small chance of unknown causative factors under consensus. |
+| K1       | 0.100      | Skeptics allocate moderate weight to unexplored explanations. |
+| K2       | 0.100      | Precautionary view allows for unidentified risks. |
+
+**H1: TRUE - Vaccines directly cause autism**
+
+This hypothesis asserts that vaccines or their components (e.g., thimerosal, aluminum) directly induce autism via neurotoxicity, immune activation, or gut–brain axis disruption. It relies on proposed biological mechanisms linking vaccine antigens or adjuvants to neurodevelopmental damage. Under H1, every vaccinated child faces a nonzero risk of autism directly attributable to vaccination.
+
+**Prior Probabilities:**
+
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+| K0       | 0.050      | Consensus deems direct causation highly unlikely. |
+| K1       | 0.350      | Skeptics strongly favor a vaccine–autism link. |
+| K2       | 0.100      | Precautionary assigns low but non-negligible chance. |
+
+**H2: FALSE - No causal link exists**
+
+This hypothesis holds that vaccines do not cause autism; the temporal overlap is coincidental. Large epidemiological studies and meta-analyses show no increased risk following vaccination. Under H2, autism onset is driven by genetic and developmental factors independent of immunization.
+
+**Prior Probabilities:**
+
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+| K0       | 0.600      | Consensus heavily supports no causal link. |
+| K1       | 0.100      | Skeptics assign low weight to no-link explanation. |
+| K2       | 0.300      | Precautionary supports no link but leaves room for caution. |
+
+**H3: PARTIAL - Rare subgroup vulnerability**
+
+This hypothesis proposes that while vaccines are safe for most, a small subset of genetically or immunologically predisposed children may develop autism-like neurodevelopmental issues post-vaccination. The subgroup is too small for detection in broad studies. Under H3, autism risk is elevated only in these rare vulnerable individuals.
+
+**Prior Probabilities:**
+
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+| K0       | 0.100      | Consensus allows some genetic/immunological vulnerability. |
+| K1       | 0.200      | Skeptics consider subgroup effects plausible. |
+| K2       | 0.200      | Precautionary focuses on rare individual risks. |
+
+**H4: PARTIAL - Indirect pathway via immune activation**
+
+This hypothesis asserts that vaccines do not directly cause autism but that the immune response they trigger may, in rare cases, interact with pre-existing conditions to influence neurodevelopment. Under H4, indirect mechanisms (e.g., cytokine release) mediate a small increase in autism risk for susceptible children.
+
+**Prior Probabilities:**
+
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+| K0       | 0.100      | Consensus moderately recognizes indirect immune roles. |
+| K1       | 0.150      | Skeptics accept indirect mechanisms as possible. |
+| K2       | 0.150      | Precautionary allows indirect interaction effects. |
+
+**H5: PARTIAL - Timing/schedule effects only**
+
+This hypothesis maintains that individual vaccines are safe, but the cumulative effect of the recommended immunization schedule may overwhelm some children’s immune systems, contributing to developmental issues in susceptible subgroups. Under H5, the schedule timing, not any single vaccine, is implicated.
+
+**Prior Probabilities:**
+
+| Paradigm | Prior P(H) | Rationale |
+|----------|------------|-----------|
+| K0       | 0.100      | Consensus sees schedule effects as unlikely based on studies. |
+| K1       | 0.100      | Skeptics attribute potential schedule overload effects. |
+| K2       | 0.150      | Precautionary emphasizes schedule timing concerns. |2026-01-19 07:14:45,974 - bfih_orchestrator_fixed - INFO - Phase 5a: Introduction Sections complete, status: completed
+2026-01-19 07:14:45,974 - bfih_orchestrator_fixed - INFO - Starting Phase 5b1: Evidence Clusters
+2026-01-19 07:14:46,127 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 5a: Introduction Sections complete]
+
+============================================================
+Phase 5b1: Evidence Clusters
+============================================================
+## 3. Evidence Clusters
+
+(No cluster metrics available)
+
+No evidence clusters or corresponding Bayesian metrics were provided, so there are no likelihood ratios or weights of evidence to interpret.2026-01-19 07:14:51,910 - bfih_orchestrator_fixed - INFO - Phase 5b1: Evidence Clusters complete, status: completed
+2026-01-19 07:14:51,910 - bfih_orchestrator_fixed - INFO - Starting Phase 5b2: Evidence Items batch 1/4
+2026-01-19 07:14:52,114 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 5b1: Evidence Clusters complete]
+
+============================================================
+Phase 5b2: Evidence Items batch 1/4
+============================================================
+### E1: Retrospective cohort of 537,303 Danish children found MMR vaccination (82%) had RR=0.92 (95% CI 0.68–1.24) for autistic disorder and RR=0.83 (95% CI 0.65–1.07) for other ASD, with no timing effects.
+
+- **Source:** New England Journal of Medicine  
+- **URL:** https://www.nejm.org/doi/full/10.1056/NEJMoa021134  
+- **Citation:** Madsen, K. M., et al. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477–1482.  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This large, high-quality cohort provides strong evidence (LR≈1; CI spans 1) that MMR vaccination is not associated with increased autism risk.
+
+### E2: 2014 meta-analysis of five cohort (1,256,407 children) and five case-control (9,920 children) studies found no association between any vaccine (MMR, thimerosal, mercury) and autism or ASD.
+
+- **Source:** Vaccine  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/24814559/  
+- **Citation:** Taylor, L. E., Swerdfeger, A. L., & Eslick, G. D. (2014). Vaccines are not associated with autism: An evidence-based meta-analysis of case-control and cohort studies. Vaccine, 32(29), 3623–3629.  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+Aggregated data across multiple high-quality studies yield ORs ≈1, reinforcing lack of causal link between vaccination and autism.
+
+### E3: 2004 Institute of Medicine review concluded epidemiological evidence favors rejection of a causal link between MMR or thimerosal vaccines and autism; proposed mechanisms remain theoretical.
+
+- **Source:** The National Academies Press  
+- **URL:** https://nap.nationalacademies.org/read/10997/chapter/3  
+- **Citation:** Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. doi:10.17226/10997  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+A leading institutional review synthesizes available data and finds no credible evidence supporting vaccine-induced autism.
+
+### E4: Case-control study of 256 ASD cases and 752 controls showed no association between cumulative vaccine antigen exposure by age 2 and ASD or ASD with regression.
+
+- **Source:** The Journal of Pediatrics  
+- **URL:** https://doi.org/10.1016/j.jpeds.2013.02.001  
+- **Citation:** DeStefano, F., et al. (2013). Increasing exposure to antibody-stimulating proteins and polysaccharides in vaccines is not associated with risk of autism. The Journal of Pediatrics, 163(2), 561–567. doi:10.1016/j.jpeds.2013.02.001  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This study directly addresses antigen load hypotheses and finds no risk increase, weakening biological plausibility of vaccine-triggered autism.
+
+### E5: UK case-control (1,294 PDD cases vs. 4,469 controls) found MMR coverage 78.1% vs. 82.1% and adjusted ORs 0.86 (PDD) and 0.88 (autism), indicating no association.
+
+- **Source:** The Lancet  
+- **URL:** https://doi.org/10.1016/S0140-6736(04)17020-7  
+- **Citation:** Smeeth, L., et al. (2004). MMR vaccination and pervasive developmental disorders: A case-control study. The Lancet, 364(9438), 963–969. doi:10.1016/S0140-6736(04)17020-7  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+Robust matched-control design shows lower vaccination rates among cases, further undermining a causal link.
+
+### E6: 1998 case series of 12 children reported regression and ileal-lymphoid hyperplasia temporally associated with MMR, based on parental/physician reports.
+
+- **Source:** CBS News  
+- **URL:** https://www.cbsnews.com/news/study-linking-autism-to-vaccine-retracted/  
+- **Citation:** CBS News. (n.d.). Study Linking Autism to Vaccine Retracted. Retrieved 2026, from https://www.cbsnews.com/news/study-linking-autism-to-vaccine-retracted/  
+- **Accessed:** 2026-01-19  
+- **Type:** qualitative  
+- **Cluster:** Unassigned  
+
+This early, small-scale report catalyzed concern but lacks controls and was later overshadowed by larger epidemiological studies.
+
+### E7: WHO Global Advisory Committee (2010–2025) reviewed 31 studies, reaffirming no causal link between childhood vaccines (including thiomersal, aluminum) and autism; excluded two flawed aluminum studies.
+
+- **Source:** People.com  
+- **URL:** https://people.com/world-health-organization-who-says-childhood-vaccines-do-not-cause-autism-no-link-asd-11868287  
+- **Citation:** People.com. (2026). WHO Reaffirms That 'Childhood Vaccines Do Not Cause Autism' After Reviewing Latest Research. People. Retrieved from https://people.com/world-health-organization-who-says-childhood-vaccines-do-not-cause-autism-no-link-asd-11868287  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+A global authority’s systematic review of numerous studies provides high-level, paradigm-independent confirmation of no link.
+
+### E8: CDC vaccine safety page cites IOM review and nine CDC-funded analyses showing no link between vaccines or ingredients and ASD; a 2013 CDC study found equal antigen exposure in ASD vs. non-ASD.
+
+- **Source:** CDC  
+- **URL:** https://beta.cdc.gov/vaccine-safety/about/autism.html  
+- **Citation:** Centers for Disease Control and Prevention. (2024, December 30). Autism and vaccines. CDC. Retrieved 2026, from https://beta.cdc.gov/vaccine-safety/about/autism.html  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+CDC’s summary of multiple studies offers consolidated, authoritative evidence against a vaccine-autism link.
+
+### E9: 2012 Cochrane review of 138 studies (13 million children) found no evidence MMR, MMRV, or MMR+V vaccines increase autism risk; rates similar in vaccinated vs. unvaccinated groups.
+
+- **Source:** Cochrane  
+- **URL:** https://www.cochrane.org/news/cochrane-review-confirms-effectiveness-mmr-vaccines  
+- **Citation:** Di Pietrantonj, C., et al. (2012). Cochrane Review confirms effectiveness of MMR vaccines. Cochrane. Retrieved from https://www.cochrane.org/news/cochrane-review-confirms-effectiveness-mmr-vaccines  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+This comprehensive systematic review reinforces the null association across diverse populations and study designs.
+
+### E10: Ecological analysis in Denmark (1971–2000) showed autism incidence continued rising after thimerosal removal in 1992, with no post-withdrawal decline.
+
+- **Source:** Pediatrics  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/12963758/  
+- **Citation:** Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., Plesner, A. M., Andersen, P. H., & Mortensen, P. B. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604–606.  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+Temporal analysis contradicts the hypothesis that thimerosal exposure drives autism trends.
+
+### E11: Danish registry study of 1.2 million children (1997–2018) found no association between cumulative aluminum exposure by age 2 and ASD (HR 0.93; 95% CI 0.89–0.97) or ADHD (HR 0.90; 95% CI 0.84–0.96).
+
+- **Source:** EMJ Reviews  
+- **URL:** https://www.emjreviews.com/en-us/amj/neurology/news/no-link-between-aluminium-in-vaccines-and-autism-or-adhd-landmark-study-finds/  
+- **Citation:** EMJ Reviews. (2025, August 2). No Link Between Aluminium in Vaccines and Autism or ADHD, Landmark Study Finds. EMJ Reviews.  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+High‐power registry data show a slight protective HR (<1), offering robust evidence against aluminum adjuvant causation.
+
+### E12: 2021 review article proposes aluminum adjuvants may etiologically contribute to ASD, citing elevated brain aluminum in ASD patients and animal behavioral changes.
+
+- **Source:** PubMed  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/33930617/  
+- **Citation:** Author information not available. (2021). Reviewing the association between aluminum adjuvants in the vaccines and autism spectrum disorder. Vaccine, Elsevier GmbH.  
+- **Accessed:** 2026-01-19  
+- **Type:** qualitative  
+- **Cluster:** Unassigned  
+
+This hypothesis-driven review presents mechanistic speculation but lacks strong epidemiological validation, making it paradigm-dependent.
+
+### E13: Reanalysis of CDC data (2014) reported higher autism risk in African American males vaccinated with MMR before 24 months (RR 1.73) and before 36 months (RR 3.36).
+
+- **Source:** Translational Neurodegeneration  
+- **URL:** https://translationalneurodegeneration.biomedcentral.com/articles/10.1186/2047-9158-3-16  
+- **Citation:** de Stefano, F., et al. (2014). Measles-mumps-rubella vaccination timing and autism among young African American boys: a reanalysis of CDC data. Translational Neurodegeneration, 3(16). doi:10.1186/2047-9158-3-16  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This subgroup analysis suggests a possible signal but has been critiqued for multiple comparisons and selection bias, and is not replicated in larger studies.
+
+### E14: The 1998 Lancet paper by Wakefield et al. falsely linking MMR to autism was retracted in 2010 due to fraud and undisclosed conflicts of interest.
+
+- **Source:** Wikipedia  
+- **URL:** https://en.wikipedia.org/wiki/Fraudulent_Lancet_MMR_vaccine-autism_study  
+- **Citation:** Wikipedia contributors. (2026). Fraudulent Lancet MMR vaccine-autism study. In Wikipedia. Retrieved January 19, 2026, from https://en.wikipedia.org/wiki/Fraudulent_Lancet_MMR_vaccine-autism_study  
+- **Accessed:** 2026-01-19  
+- **Type:** historical_analogy  
+- **Cluster:** Unassigned  
+
+This foundational fraud case triggered widespread vaccine hesitancy but has been thoroughly discredited, underscoring the importance of study quality.
+
+### E15: 2004 ScienceDaily summary of clinical and epidemiological reviews concluded neither thimerosal nor MMR is associated with ASD and mechanistic hypotheses remain theoretical.
+
+- **Source:** ScienceDaily  
+- **URL:** https://www.sciencedaily.com/releases/2004/05/040519064239.htm  
+- **Citation:** ScienceDaily. (2004, May 19). Vaccines Are Not Associated With Autism, Report Says. ScienceDaily.  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+Popular science coverage echoes consensus findings of no association, reflecting broad scientific agreement.2026-01-19 07:15:16,079 - bfih_orchestrator_fixed - INFO - Phase 5b2: Evidence Items batch 1/4 complete, status: completed
+2026-01-19 07:15:16,079 - bfih_orchestrator_fixed - INFO - Starting Phase 5b2: Evidence Items batch 2/4
+2026-01-19 07:15:16,221 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 5b2: Evidence Items batch 1/4 complete]
+
+============================================================
+Phase 5b2: Evidence Items batch 2/4
+============================================================
+### E16: Population-based Danish cohort (537,303) found no increased autism risk (RR 0.92, 95% CI 0.68–1.24) among MMR-vaccinated children.
+
+- Source: New England Journal of Medicine  
+- URL: https://doi.org/10.1056/NEJMoa021134  
+- Citation: Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477–1482. https://doi.org/10.1056/NEJMoa021134  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+This large, adjusted cohort provides strong evidence against an MMR–autism link, with RRs below 1 and confidence intervals spanning unity.
+
+### E17: Nationwide Danish cohort (657,461) reported no increased autism risk post-MMR (adjusted HR 0.93; no post-vaccine clustering).
+
+- Source: ScienceDaily  
+- URL: https://www.sciencedaily.com/releases/2019/03/190304182130.htm  
+- Citation: ScienceDaily. (2019, March 5). No link found between MMR vaccine and autism, even among children with other risk factors for autism. ScienceDaily.  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Confirms E16’s null finding and extends it to high-risk subgroups (e.g., siblings), further disfavoring MMR causation.
+
+### E18: Case–control study (256 ASD cases, 752 controls) found no association between prenatal/infant thimerosal exposure and ASD.
+
+- Source: Centers for Disease Control and Prevention  
+- URL: https://archive.cdc.gov/www_cdc_gov/vaccinesafety/concerns/thimerosal/study-risk-autism.html  
+- Citation: Price, C. S., Thompson, W. W., Goodson, B., Weintraub, E. S., Croen, L. A., Hinrichsen, V. L., Marcy, M., Robertson, A., Eriksen, E., Lewis, E., Bernal, P., Shay, D., Davis, R. L., & DeStefano, F. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656–664. https://doi.org/10.1542/peds.2010-0309  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Demonstrates similar ethylmercury exposures in ASD and non-ASD groups, undermining the thimerosal–autism hypothesis.
+
+### E19: Meta-analysis of 5 cohort (1,256,407 children) and 5 case–control (9,920 children) studies found OR for autism 0.99 (95% CI 0.92–1.06) and ASD 0.91 (95% CI 0.68–1.20).
+
+- Source: Vaccine  
+- URL: https://www.sciencedirect.com/science/article/pii/S0264410X14006367  
+- Citation: Taylor, L. E., Swerdfeger, A. L., & Eslick, G. D. (2014). Vaccines are not associated with autism: An evidence-based meta-analysis of case-control and cohort studies. Vaccine, 32(29), 3623–3629. https://doi.org/10.1016/j.vaccine.2014.04.085  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Pooling over a million subjects yields no vaccine–autism association, offering high-strength evidence against causality.
+
+### E20: The Lancet retracted Wakefield et al.’s 1998 MMR–autism paper due to falsified data and ethical violations.
+
+- Source: BMJ  
+- URL: https://www.bmj.com/content/340/bmj.c696  
+- Citation: Dyer, C. (2010). Lancet retracts Wakefield’s MMR paper. BMJ, 340, c696. https://doi.org/10.1136/bmj.c696  
+- Accessed: 2026-01-19  
+- Type: historical_analogy  
+- Cluster: Unassigned  
+
+This formal retraction discredits the original basis for the MMR–autism claim, undercutting that hypothesis at its origin.
+
+### E21: Nationwide Danish cohort (657,461; 1999–2010) found no autism risk increase post-MMR, including in susceptible subgroups.
+
+- Source: Annals of Internal Medicine  
+- URL: https://www.acpjournals.org/doi/10.7326/M18-2101  
+- Citation: Hviid, A., Hansen, J. V., Frisch, M., & Melbye, M. (2019). Measles, mumps, rubella vaccination and autism: a nationwide cohort study. Annals of Internal Medicine, 170(8), 513–520. https://doi.org/10.7326/M18-2101  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Peer-reviewed replication strengthens the null association across extended follow-up and varied risk strata.
+
+### E22: Institute of Medicine’s 2011 review of >1,000 studies concluded MMR and routine childhood vaccines do not cause autism.
+
+- Source: National Academies Press  
+- URL: https://www.ncbi.nlm.nih.gov/books/NBK223092/  
+- Citation: Institute of Medicine. (2011). Adverse Effects of Vaccines: Evidence and Causality. Washington, DC: The National Academies Press.  
+- Accessed: 2026-01-19  
+- Type: institutional  
+- Cluster: Unassigned  
+
+An authoritative consensus panel found no causal link, providing high-level evidence against vaccine–autism claims.
+
+### E23: Danish cohort (467,450; 1990–1996) saw no difference in ASD rates by thimerosal-containing versus thimerosal-free vaccines (RRs ~1).
+
+- Source: JAMA  
+- URL: https://doi.org/10.1001/jama.290.13.1763  
+- Citation: Hviid, A., Stellfeld, M., Wohlfahrt, J., & Melbye, M. (2003). Association between thimerosal-containing vaccine and autism. JAMA, 290(13), 1763–1766. https://doi.org/10.1001/jama.290.13.1763  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Dose–response analysis shows no ethylmercury effect on autism risk, refuting thimerosal causation.
+
+### E24: California DDS records (n=7,003) attribute 26.4% (95% CI 16.3–36.5) of autism prevalence increase to diagnostic substitution (1992–2005).
+
+- Source: International Journal of Epidemiology  
+- URL: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2800781/  
+- Citation: King, M., & Bearman, P. (2009). Diagnostic change and the increased prevalence of autism. International Journal of Epidemiology, 38(5), 1224–1234. doi:10.1093/ije/dyp261  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Highlights shifting diagnostic practices as a major driver of rising autism rates, reducing the plausibility of vaccines as the cause.
+
+### E25: Danish ecological data (1971–2000) show autism incidence did not decrease during thimerosal exposure or change after its removal in 1992.
+
+- Source: Pediatrics  
+- URL: https://pubmed.ncbi.nlm.nih.gov/12949291/  
+- Citation: Madsen, K. M., Yazbak, J., Pedersen, C. B., et al. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3), 604–606. doi:10.1542/peds.112.3.604  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Ecological trends contradict any temporal association between thimerosal and autism, weakening that causal hypothesis.
+
+### E26: Twin study (2,312 pairs) found genetic heritability accounts for 38% of autism risk and shared environment 62%.
+
+- Source: Archives of General Psychiatry  
+- URL: https://jamanetwork.com/journals/jamapsychiatry/fullarticle/1107328  
+- Citation: Hallmayer, J., Cleveland, S., Torres, A., et al. (2011). Genetic heritability and shared environmental factors among twin pairs with autism. Archives of General Psychiatry, 68(11), 1095–1102. doi:10.1001/archgenpsychiatry.2011.76  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+While not vaccine-specific, this underscores substantial non-genetic environmental contributions to ASD, prompting broader etiologic exploration.
+
+### E27: Mouse model shows maternal immune activation via IL-6 induces autism-like behaviors, reversible by IL-6 blockade.
+
+- Source: Journal of Neuroscience  
+- URL: https://doi.org/10.1523/JNEUROSCI.2178-07.2007  
+- Citation: Smith, S. E. P., Li, J., Garbett, K. A., Mirnics, K., & Patterson, P. H. (2007). Maternal immune activation alters fetal brain development through interleukin-6. Journal of Neuroscience, 27(40), 10695–10702. https://doi.org/10.1523/JNEUROSCI.2178-07.2007  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Illustrates immune-mediated neurodevelopmental disruption but does not implicate vaccines specifically in autism etiology.
+
+### E28: The Lancet retracted Wakefield et al.’s 1998 study linking MMR and autism, citing ethical breaches and data manipulation.
+
+- Source: The Lancet  
+- URL: https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(10)60175-4/fulltext  
+- Citation: Retraction—Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children. (2010). The Lancet, 375(9713), 445. doi:10.1016/S0140-6736(10)60175-4  
+- Accessed: 2026-01-19  
+- Type: institutional  
+- Cluster: Unassigned  
+
+This retraction invalidates the primary MMR–autism hypothesis at its source, eliminating its foundational support.
+
+### E29: Population-based Danish cohort (537,303) found no association between MMR and autism (RR 0.92, 95% CI 0.68–1.24).
+
+- Source: New England Journal of Medicine  
+- URL: https://pubmed.ncbi.nlm.nih.gov/12421833/  
+- Citation: Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477–1482. https://doi.org/10.1056/NEJMoa021134  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+A replication of E16’s findings, reinforcing the null association in a large, well-adjusted cohort.
+
+### E30: Nationwide Danish cohort (657,461; 1999–2010) found adjusted HR 0.93 (95% CI 0.85–1.02) for autism post-MMR with no subgroup effects.
+
+- Source: Annals of Internal Medicine  
+- URL: https://pubmed.ncbi.nlm.nih.gov/30831578/  
+- Citation: Hviid, A., Hansen, J. V., Frisch, M., & Melbye, M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513–520. https://doi.org/10.7326/M18-2101  
+- Accessed: 2026-01-19  
+- Type: quantitative  
+- Cluster: Unassigned  
+
+Further peer-reviewed replication over extended follow-up and risk strata, consistently showing no elevated autism risk from MMR.2026-01-19 07:16:02,566 - bfih_orchestrator_fixed - INFO - Phase 5b2: Evidence Items batch 2/4 complete, status: completed
+2026-01-19 07:16:02,567 - bfih_orchestrator_fixed - INFO - Starting Phase 5b2: Evidence Items batch 3/4
+2026-01-19 07:16:02,976 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 5b2: Evidence Items batch 2/4 complete]
+
+============================================================
+Phase 5b2: Evidence Items batch 3/4
+============================================================
+### E31: Institute of Medicine’s 2004 review finds no causal link between MMR or thimerosal-containing vaccines and autism
+
+- **Source:** National Academies Press  
+- **URL:** https://nap.nationalacademies.org/catalog/10997/immunization-safety-review-vaccines-and-autism  
+- **Citation:** Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://doi.org/10.17226/10997  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+This high-level review rejects a causal relationship and notes no epidemiological support for proposed biological mechanisms, strongly weighing against the vaccine-autism hypothesis.
+
+### E32: 2004 Drug Safety review reports no convincing evidence linking MMR vaccination to autism
+
+- **Source:** Drug Safety  
+- **URL:** https://www.ovid.com/journals/drusa/pdf/00002018-200427120-00001~mmr-vaccination-and-autism-what-is-the-evidence-for-a-causal  
+- **Citation:** Madsen, K. M., & Vestergaard, M. (2004). MMR vaccination and autism: What is the evidence for a causal association? Drug Safety, 27(12), 831–840. https://doi.org/10.2165/00002018-200427120-00001  
+- **Accessed:** 2026-01-19  
+- **Type:** qualitative  
+- **Cluster:** Unassigned  
+
+This systematic review finds no epidemiological or biological plausibility for MMR causing autism, reinforcing the absence of a causal link.
+
+### E33: HHS concedes vaccines aggravated mitochondrial disorder in Hannah Poling’s VICP case
+
+- **Source:** CBS News  
+- **URL:** https://www.cbsnews.com/news/learning-from-a-previous-vaccine-autism-case/  
+- **Citation:** CBS News. (n.d.). Learning From a Previous Vaccine-Autism Case? Retrieved January 19, 2026, from https://www.cbsnews.com/news/learning-from-a-previous-vaccine-autism-case/  
+- **Accessed:** 2026-01-19  
+- **Type:** qualitative  
+- **Cluster:** Unassigned  
+
+This rare conceded case shows vaccines may aggravate an underlying mitochondrial defect, but does not establish vaccines as a general cause of autism.
+
+### E34: Officials acknowledge Hannah Poling exception due to unique mitochondrial disease
+
+- **Source:** KPBS Public Media  
+- **URL:** https://www.kpbs.org/news/national/2008/03-07/case-stokes-debate-about-autism-vaccines  
+- **Citation:** KPBS Public Media. (2008, March 7). Case Stokes Debate About Autism, Vaccines. Retrieved January 19, 2026, from https://www.kpbs.org/news/national/2008-03-07/case-stokes-debate-about-autism-vaccines  
+- **Accessed:** 2026-01-19  
+- **Type:** qualitative  
+- **Cluster:** Unassigned  
+
+Federal clarification frames Poling’s outcome as an outlier tied to her rare mitochondrial condition, limiting generalizability to autism overall.
+
+### E35: VICP settlement recognizes vaccines triggered encephalopathy and autism-like symptoms in Hannah Poling
+
+- **Source:** Wikipedia  
+- **URL:** https://en.wikipedia.org/wiki/National_Vaccine_Injury_Compensation_Program  
+- **Citation:** Wikipedia contributors. (n.d.). National Vaccine Injury Compensation Program. In Wikipedia, The Free Encyclopedia. Retrieved January 19, 2026, from https://en.wikipedia.org/wiki/National_Vaccine_Injury_Compensation_Program  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+The compensation finding acknowledges vaccine-triggered neurological injury in a single individual with a mitochondrial defect, not a broader autism cause.
+
+### E36: JAMA cohort of 95,727 US children finds MMR vaccination not associated with increased autism risk
+
+- **Source:** JAMA  
+- **URL:** https://jamanetwork.com/journals/jama/fullarticle/2275444  
+- **Citation:** Jain, A., Marshall, J., Buikema, A., Bancroft, T., Kelly, J. P., & Newschaffer, C. J. (2015). Autism Occurrence by MMR Vaccine Status Among US Children With Older Siblings With and Without Autism. JAMA, 313(15), 1534–1540. https://doi.org/10.1001/jama.2015.3077  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+A large sibling-controlled cohort shows no increased autism risk after one or two MMR doses, even among high-risk families, strongly countering causation.
+
+### E37: Danish nationwide cohort (657,461 children) shows no increased autism risk with MMR vaccination
+
+- **Source:** Annals of Internal Medicine  
+- **URL:** https://doi.org/10.7326/M18-2101  
+- **Citation:** Hviid, A., Hansen, J. V., Frisch, M., & Melbye, M. (2019). Measles, Mumps, Rubella Vaccination and Autism: A Nationwide Cohort Study. Annals of Internal Medicine, 170(8), 513–520. https://doi.org/10.7326/M18-2101  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+A very large population study finds a hazard ratio of 0.93 (95% CI 0.85–1.02), indicating no elevated autism risk from MMR.
+
+### E38: Expert review finds no evidence that vaccines cause autism in individuals with mitochondrial disorders
+
+- **Source:** Science Feedback  
+- **URL:** https://science.feedback.org/review/claim-that-vaccines-can-cause-individuals-with-mitochondrial-disorders-to-develop-autism-is-unsupported/  
+- **Citation:** Science Feedback. (2019, July 26). Claim that vaccines can cause individuals with mitochondrial disorders to develop autism is unsupported. Retrieved January 19, 2026, from https://science.feedback.org/review/claim-that-vaccines-can-cause-individuals-with-mitochondrial-disorders-to-develop-autism-is-unsupported/  
+- **Accessed:** 2026-01-19  
+- **Type:** expert_testimony  
+- **Cluster:** Unassigned  
+
+This expert consensus deems the single Poling case insufficient to generalize vaccine-induced autism in mitochondrial disease, undermining that causal claim.
+
+### E39: Study of 30 children with mitochondrial disease finds vaccines largely safe with no metabolic crises
+
+- **Source:** Immunology Letters  
+- **URL:** https://www.sciencedirect.com/science/article/abs/pii/S0165247824001202  
+- **Citation:** de Vreugd, A., Zimmermann, F. A., Steinbrücker, K., de Vries, M. C., de Boer, L., Janssen, M. C. H., ... & Wortmann, S. B. (2025). Vaccine safety in children with genetically confirmed mitochondrial disease. Immunology Letters, 271, 106946. https://doi.org/10.1016/j.imlet.2024.106946  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+In a cohort undergoing 376 immunizations, most doses caused no adverse events and none led to metabolic or seizure deterioration, challenging the vaccine-aggravation hypothesis.
+
+### E40: Cedillo v. HHS special masters rule against vaccine-autism causation in genetic susceptibility theory
+
+- **Source:** Wikipedia  
+- **URL:** https://en.wikipedia.org/wiki/Cedillo_v._Secretary_of_Health_and_Human_Services  
+- **Citation:** Wikipedia contributors. (n.d.). Cedillo v. Secretary of Health and Human Services. In Wikipedia, The Free Encyclopedia. Retrieved January 19, 2026, from https://en.wikipedia.org/wiki/Cedillo_v._Secretary_of_Health_and_Human_Services  
+- **Accessed:** 2026-01-19  
+- **Type:** institutional  
+- **Cluster:** Unassigned  
+
+A key legal decision finds petitioners failed to validate genetic-susceptibility theories linking vaccines to autism, further undermining causation claims.
+
+### E41: Investigation finds 83 autism cases quietly compensated as vaccine-induced brain injuries in VICP
+
+- **Source:** PR Newswire  
+- **URL:** https://www.prnewswire.com/news-releases/study-reveals-83-individuals-with-autism-quietly-compensated-by-federal-vaccine-injury-court-121599503.html  
+- **Citation:** PR Newswire. (2025). Study Reveals 83 Individuals with Autism Quietly Compensated by Federal Vaccine Injury Court. Retrieved January 19, 2026, from https://www.prnewswire.com/news-releases/study-reveals-83-individuals-with-autism-quietly-compensated-by-federal-vaccine-injury-court-121599503.html  
+- **Accessed:** 2026-01-19  
+- **Type:** policy  
+- **Cluster:** Unassigned  
+
+This report suggests rare VICP compensations for autism-related injuries, but lacks clinical detail to establish broad vaccine-autism causation.
+
+### E42: Murine study shows transient brain aluminium rise after aluminium-adjuvanted vaccines
+
+- **Source:** PubMed  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/1608913/  
+- **Citation:** Redhead, K., Quinlan, G. J., Das, R. G., & Gutteridge, J. M. (1992). Aluminium-adjuvanted vaccines transiently increase aluminium levels in murine brain tissue. Pharmacol Toxicol, 70(4), 278–280. doi:10.1111/j.1600-0773.1992.tb00471.x  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This early animal study confirms aluminium adjuvant can reach the brain transiently, suggesting a potential—and yet unproven—pathway for neuroimmune effects.
+
+### E43: Gardasil and aluminium adjuvant induce hippocampal microglial activation and depression-like behavior in mice
+
+- **Source:** PubMed  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/27421722/  
+- **Citation:** Inbar, R., Weiss, R., Tomljenovic, L., Arango, M.-T., Deri, Y., Shaw, C. A., Chapman, J., Blank, M., & Shoenfeld, Y. (2017). Behavioral abnormalities in female mice following administration of aluminum adjuvants and the human papillomavirus (HPV) vaccine Gardasil. Immunol Res, 65(1), 136–149. doi:10.1007/s12026-016-8826-6  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+Findings of neuroinflammation and altered behavior in mice point to adjuvant effects but do not establish relevance to human autism pathology.
+
+### E44: Neonatal mice given aluminium hydroxide show long-term social impairments
+
+- **Source:** PubMed  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/29221615/  
+- **Citation:** Sheth, S. K. S., Li, Y., & Shaw, C. A. (2018). Is exposure to aluminium adjuvants associated with social impairments in mice? A pilot study. J Inorg Biochem, 181, 96–103. doi:10.1016/j.jinorgbio.2017.11.012  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This pilot animal study suggests aluminium adjuvant can impair social behaviors, raising hypotheses but lacking direct human translation.
+
+### E45: “Immunoexcitotoxicity” review proposes aluminium-triggered neuroinflammation and excitotoxic damage as ASD mechanism
+
+- **Source:** PMC  
+- **URL:** https://pmc.ncbi.nlm.nih.gov/articles/PMC11152537/  
+- **Citation:** Blaylock, R. L. (2024). Additive aluminum as a cause of induced immunoexcitotoxicity resulting in neurodevelopmental and neurodegenerative disorders: A biochemical, pathophysiological, and pharmacological analysis. Surg Neurol Int, 15, 171. doi:10.25259/SNI_296_2024  
+- **Accessed:** 2026-01-19  
+- **Type:** qualitative  
+- **Cluster:** Unassigned  
+
+This theoretical framework links aluminium adjuvants to ASD via proinflammatory and excitotoxic pathways but remains speculative without epidemiological support.2026-01-19 07:16:26,939 - bfih_orchestrator_fixed - INFO - Phase 5b2: Evidence Items batch 3/4 complete, status: completed
+2026-01-19 07:16:26,939 - bfih_orchestrator_fixed - INFO - Starting Phase 5b2: Evidence Items batch 4/4
+2026-01-19 07:16:27,347 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 5b2: Evidence Items batch 3/4 complete]
+
+============================================================
+Phase 5b2: Evidence Items batch 4/4
+============================================================
+### E46: Nationwide Danish cohort finds no link between aluminium-adjuvanted vaccines and autism
+
+- **Source:** Business Wire  
+- **URL:** https://www.businesswire.com/news/home/20250714416158/en/Statens-Serum-Institut-Large-Danish-Study-Finds-No-Link-Between-Vaccines-and-Autism-or-49-Other-Health-Conditions  
+- **Citation:** Andersson, N. W., Bech Svalgaard, I., Hoffmann, S. S., et al. (2025, July 15). Aluminum-adsorbed vaccines and chronic diseases in childhood: A nationwide cohort study. Annals of Internal Medicine. Advance online publication. doi:10.7326/ANNALS-25-00997  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This large register-based study (N > 1 million) provides strong evidence against any association between aluminium adjuvant exposure and autism, reinforcing vaccine safety.
+
+### E47: Self-controlled analysis shows no increased adverse events in ASD children post-vaccination
+
+- **Source:** PubMed  
+- **URL:** https://pubmed.ncbi.nlm.nih.gov/35315325/  
+- **Citation:** Zerbo, O., Modaressi, S., Goddard, K., Lewis, E., Fireman, B., Daley, M. F., Irving, S. A., Jackson, L. A., Donahue, J. G., Qian, L., Getahun, D., DeStefano, F., McNeil, M. M., & Klein, N. P. (2022). Safety of measles and pertussis-containing vaccines in children with autism spectrum disorders. Vaccine, 40(18), 2568–2573. doi:10.1016/j.vaccine.2022.03.031  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+No increase in fever or emergency‐department visits was observed in children with ASD following measles- or pertussis-containing vaccines, suggesting no heightened vaccine-triggered immune response in this group.
+
+### E48: Journal editor upholds integrity of Danish aluminium–vaccine study
+
+- **Source:** LiveScience  
+- **URL:** https://www.livescience.com/health/medicine-drugs/prominent-medical-journal-refuses-rfks-call-to-retract-a-vaccine-study  
+- **Citation:** Live Science Staff. (2025, August 13). Prominent medical journal refuses RFK’s call to retract a vaccine study. LiveScience. Retrieved from https://www.livescience.com/health/medicine-drugs/prominent-medical-journal-refuses-rfks-call-to-retract-a-vaccine-study  
+- **Accessed:** 2026-01-19  
+- **Type:** expert_testimony  
+- **Cluster:** Unassigned  
+
+The Annals of Internal Medicine editor affirms the methodological integrity and absence of misconduct in the >1 million–child Danish study, reinforcing its null findings on aluminium adjuvants and autism.
+
+### E49: Ecological correlation between infant vaccine intensity and autism prevalence (r = 0.87)
+
+- **Source:** Science, Public Health Policy and the Law  
+- **URL:** https://publichealthpolicyjournal.com/new-study-infant-vaccine-intensity-strongly-predicts-autism-rates-worldwide/  
+- **Citation:** Hulscher, N. (2025). Infant Vaccine Intensity Strongly Predicts Autism Rates Worldwide. Science, Public Health Policy and the Law. Retrieved from https://publichealthpolicyjournal.com/new-study-infant-vaccine-intensity-strongly-predicts-autism-rates-worldwide/  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+This cross-national ecological analysis shows a strong positive correlation between early-life vaccine schedule intensity and autism prevalence, but its design precludes causal inference due to potential confounding and ecological fallacy.
+
+### E50: U.S. state‐level study links vaccination uptake to autism prevalence
+
+- **Source:** Journal of Toxicology and Environmental Health, Part A  
+- **URL:** http://www.ncbi.nlm.nih.gov/pubmed/21623535  
+- **Citation:** DeLong, G. (2011). A positive association found between autism prevalence and childhood vaccination uptake across the U.S. Journal of Toxicology and Environmental Health, Part A, 74(14), 903–916. https://doi.org/10.1080/15287394.2011.573736  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+An ecological analysis reports that each 1 % rise in full vaccination by age 2 is associated with 680 additional autism or speech/language impairment cases per state; however, ecological confounding limits causal claims.
+
+### E51: Large cohort shows no association between MMR timing and autism
+
+- **Source:** BMJ Evidence-Based Medicine  
+- **URL:** https://ebm.bmj.com/content/8/3/93  
+- **Citation:** Miller, E., Farrington, C. P., Farrington, C. P., & Andrews, N. (2003). The measles, mumps, and rubella vaccine was not associated with autism in children. BMJ Evidence-Based Medicine, 8(3), 93–96.  
+- **Accessed:** 2026-01-19  
+- **Type:** quantitative  
+- **Cluster:** Unassigned  
+
+Analyses of 537,303 children found no significant association between age at MMR vaccination or time since vaccination and autism risk, providing robust evidence against the MMR–autism hypothesis.2026-01-19 07:16:53,763 - bfih_orchestrator_fixed - INFO - Phase 5b2: Evidence Items batch 4/4 complete, status: completed
+2026-01-19 07:16:53,763 - bfih_orchestrator_fixed - INFO - Starting Phase 5c: Results & Conclusions
+2026-01-19 07:16:53,966 - httpx - INFO - HTTP Request: POST https://api.openai.com/v1/responses "HTTP/1.1 200 OK"
+
+[Phase 5b2: Evidence Items batch 4/4 complete]
+
+============================================================
+Phase 5c: Results & Conclusions
+============================================================
+## 5. Joint Evidence Computation
+
+**Cumulative Evidence Effect (all clusters combined under K0):**
+
+  
+| Hypothesis | Posterior |
+|------------|-----------|
+| H0         | 0.1667    |
+| H1         | 0.1667    |
+| H2         | 0.1667    |
+| H3         | 0.1667    |
+| H4         | 0.1667    |
+| H5         | 0.1667    |
+
+**Normalization Check:** Sum of posteriors ≈ 1.0
+
+**Interpretation:**  
+With no evidence clusters analyzed, the total likelihood ratio for every hypothesis is 1, so posteriors revert to the priors normalized under K0. Every hypothesis is equally supported (WoE = 0), yielding a uniform posterior of 0.1667. No hypothesis is distinguished by the available evidence.
+
+---
+
+## 6. Paradigm Comparison
+
+### K0 (Privileged Paradigm) - Baseline
+
+**Winning Hypothesis:** H0 (posterior: 0.1667)
+
+| Hypothesis | Posterior |
+|------------|-----------|
+| H0 | 0.1667 |
+| H1 | 0.1667 |
+| H2 | 0.1667 |
+| H3 | 0.1667 |
+| H4 | 0.1667 |
+| H5 | 0.1667 |
+
+---
+
+### K1: Vaccine Skeptic
+
+**Bias Type:** Not specified  
+**Winning Hypothesis:** H0 (posterior: 0.1667) ✓ Agrees with K0
+
+**Comparison with K0:**
+
+| Hypothesis | K1 Posterior | K0 Posterior | Δ (difference) |
+|------------|--------------|--------------|----------------|
+| H0 | 0.1667 | 0.1667 | 0.0000 |
+| H1 | 0.1667 | 0.1667 | 0.0000 |
+| H2 | 0.1667 | 0.1667 | 0.0000 |
+| H3 | 0.1667 | 0.1667 | 0.0000 |
+| H4 | 0.1667 | 0.1667 | 0.0000 |
+| H5 | 0.1667 | 0.1667 | 0.0000 |
+
+**Interpretation:** K1 agrees with K0 on the winning hypothesis, suggesting this conclusion is robust across paradigms despite K1's different perspective.
+
+---
+
+### K2: Precautionary
+
+**Bias Type:** Not specified  
+**Winning Hypothesis:** H0 (posterior: 0.1667) ✓ Agrees with K0
+
+**Comparison with K0:**
+
+| Hypothesis | K2 Posterior | K0 Posterior | Δ (difference) |
+|------------|--------------|--------------|----------------|
+| H0 | 0.1667 | 0.1667 | 0.0000 |
+| H1 | 0.1667 | 0.1667 | 0.0000 |
+| H2 | 0.1667 | 0.1667 | 0.0000 |
+| H3 | 0.1667 | 0.1667 | 0.0000 |
+| H4 | 0.1667 | 0.1667 | 0.0000 |
+| H5 | 0.1667 | 0.1667 | 0.0000 |
+
+**Interpretation:** K2 agrees with K0 on the winning hypothesis, suggesting this conclusion is robust across paradigms despite K2's different perspective.
+
+Discussion:
+1. Robustness: All three paradigms converge on H0 as the “winning” hypothesis under equal evidence—this uniformity indicates that in the absence of distinguishing data, no paradigm can claim a unique advantage. No hypothesis is paradigm-dependent since evidence provides no differential support.
+2. Bias Effects: Although K1 and K2 start with different priors, the lack of evidence (LR = 1) nullifies their biases, revealing a blind spot: without empirical data, skepticism or precaution cannot drive conclusions. Real-world biased paradigms might overinterpret anecdotal signals, but here forcing functions expose that no signal exists.
+3. K0 Advantage: The privileged paradigm’s systematic use of multiple forcing functions (ontological scan, ancestral check, paradigm inversion) ensures that even with no clusters, the analysis remains transparent, pluralistic and free of hidden weighting. K0’s neutrality offers the most reliable baseline against which biases can be measured.
+
+---
+
+## 7. Sensitivity Analysis
+
+With ±20% variation in K0 priors (before normalization):
+
+- Because posteriors ∝ priors (no evidence), any increase in a hypothesis’s prior directly raises its posterior by the same factor, and vice versa.
+- Conclusions are unstable: the “winning” hypothesis under K0 shifts to whichever hypothesis’s prior is inflated by 20%.
+- Hypotheses with the largest absolute prior weight (e.g., H2 at 0.6 ± 20%) are most sensitive, dominating posterior mass when boosted, and vulnerable to down-weighting when reduced.
+
+---
+
+## 8. Conclusions
+
+**Primary Finding:** In the absence of any evidence clusters, all six hypotheses about vaccines and autism remain equally plausible under Bayesian updating.  
+**Verdict:** INDETERMINATE  
+**Confidence Level:** Low, due to uniform posteriors and lack of discriminating data (WoE = 0 for all).  
+**Key Uncertainties:**
+- No empirical LR/WoE computed from studies or observations.
+- Potential subgroup or timing effects remain untested.
+- Risk of unexamined confounders (OTHER hypothesis).  
+**Recommendations:**
+- Assemble and include epidemiological, immunological, and genetic studies to generate non-unit likelihood ratios.
+- Apply ontological scans to identify missing causal pathways.
+- Conduct a paradigm inversion audit to test alternative data interpretations.
+- Re-run the BFIH pipeline once substantive evidence clusters (e.g., cohort studies, randomized trials) are available.2026-01-19 07:17:16,501 - bfih_orchestrator_fixed - INFO - Phase 5c: Results & Conclusions complete, status: completed
+2026-01-19 07:17:16,504 - bfih_orchestrator_fixed - INFO - Phase 5 complete: Report generated
+2026-01-19 07:17:16,504 - bfih_orchestrator_fixed - INFO - Generating evidence flow DOT for: forced_05d64f2d
+2026-01-19 07:17:16,504 - bfih_orchestrator_fixed - INFO - Generated DOT script: 129 lines
+2026-01-19 07:17:16,504 - bfih_orchestrator_fixed - INFO - Saved DOT file: /tmp/forced_05d64f2d-evidence-flow.dot
+2026-01-19 07:17:16,762 - bfih_orchestrator_fixed - INFO - Rendered PNG to: /tmp/forced_05d64f2d-evidence-flow.png
+2026-01-19 07:17:16,762 - bfih_orchestrator_fixed - INFO - Generated evidence flow visualization: /tmp/forced_05d64f2d-evidence-flow.png
+2026-01-19 07:17:16,762 - bfih_orchestrator_fixed - INFO - BFIH analysis completed successfully: 390ab43a-5f88-4869-a863-a4d68629ef88
+2026-01-19 07:17:16,762 - bfih_orchestrator_fixed - INFO - Duration: 1183.8s
+2026-01-19 07:17:16,762 - bfih_orchestrator_fixed - INFO - Evidence: 51 items in 0 clusters
+
+[Phase 5c: Results & Conclusions complete]
+
+Saved report: calibration_tests/vaccines_autism_forced/bfih_report_forced_05d64f2d.md
+Saved JSON: calibration_tests/vaccines_autism_forced/bfih_report_forced_05d64f2d.json
+Saved config: calibration_tests/vaccines_autism_forced/scenario_config_forced_05d64f2d.json
+
+======================================================================
+CALIBRATION TEST RESULTS
+======================================================================
+
+Proposition: Do vaccines cause autism in children?
+
+Expected Result: H2 (FALSE - No causal link) should WIN decisively
+                 H3-H5 (PARTIAL hypotheses) should NOT win
+
+----------------------------------------
+K0 (Scientific Consensus) Posteriors:
+----------------------------------------
+  H0 (Unforeseen): 0.1667 (16.7%) <-- WINNER
+  H1 (Direct Causation): 0.1667 (16.7%)
+  H2 (No Causation): 0.1667 (16.7%)
+  H3 (Subgroup Effect): 0.1667 (16.7%)
+  H4 (Indirect Pathway): 0.1667 (16.7%)
+  H5 (Timing Effects): 0.1667 (16.7%)
+
+----------------------------------------
+CALIBRATION ASSESSMENT:
+----------------------------------------
+? UNCLEAR: H0 won - unexpected result
+
+Total PARTIAL hypothesis probability: 50.0%
+⚠ WARNING: Combined PARTIAL > FALSE probability - possible hedging bias

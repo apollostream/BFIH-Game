@@ -2138,96 +2138,270 @@ Each item needs:
         logger.warning("Could not parse structured evidence, returning empty list")
         return []
 
+    def _estimate_base_rates_stage1(self, request: BFIHAnalysisRequest,
+                                     evidence_items: List[Dict]) -> Dict[str, float]:
+        """Stage 1 of two-stage likelihood estimation: Estimate P(E) base rates.
+
+        For each evidence item, estimates the marginal probability P(E) - the probability
+        of observing that evidence regardless of which hypothesis is true.
+
+        This is computed as: P(E) = Σ P(E|Hj) × P(Hj)
+
+        The base rates are then used in Stage 2 to guide relative likelihood assessment,
+        ensuring that non-predictive hypotheses get P(E|H) = P(E), yielding LR = 1.
+
+        Returns:
+            Dict mapping evidence_id -> P(E) base rate estimate
+        """
+        hypotheses = request.scenario_config.get("hypotheses", [])
+        priors = request.scenario_config.get("priors_by_paradigm", {}).get("K0", {})
+
+        # If no priors set, use uniform
+        if not priors:
+            n_hyp = len(hypotheses)
+            priors = {h.get("id", f"H{i}"): 1.0/n_hyp for i, h in enumerate(hypotheses)}
+
+        # Build hypothesis summary with priors for context
+        hyp_summary = []
+        for h in hypotheses:
+            h_id = h.get("id", "H?")
+            h_name = h.get("name", "Unknown")
+            h_desc = h.get("description", "")[:150]
+            prior = priors.get(h_id, 0.1)
+            hyp_summary.append(f"- {h_id} (prior={prior:.2f}): {h_name} - {h_desc}")
+        hyp_text = "\n".join(hyp_summary)
+
+        # Build evidence summary
+        evidence_summary = json.dumps([{
+            "evidence_id": e.get("evidence_id"),
+            "description": e.get("description", "")[:200],
+            "source_name": e.get("source_name", "Unknown"),
+            "evidence_type": e.get("evidence_type", "unknown")
+        } for e in evidence_items], indent=2)
+
+        bfih_context = get_bfih_system_context("Base Rate Estimation", "3a")
+        prompt = f"""{bfih_context}
+PROPOSITION: "{request.proposition}"
+
+HYPOTHESES (with priors):
+{hyp_text}
+
+EVIDENCE ITEMS:
+{evidence_summary}
+
+## STAGE 1: BASE RATE ESTIMATION
+
+For each evidence item, estimate P(E) - the marginal probability of observing this evidence
+regardless of which hypothesis is true.
+
+P(E) represents: "How likely is it that we would observe this evidence in the world as it is?"
+
+This is conceptually: P(E) = Σ P(E|Hj) × P(Hj) summed over all hypotheses.
+
+### Guidelines:
+- P(E) reflects how surprising/common this evidence is in the general landscape
+- Common findings (e.g., "experts disagree on X") have high P(E) ≈ 0.7-0.9
+- Rare, specific findings (e.g., "RCT finds 47% effect size") have lower P(E) ≈ 0.1-0.4
+- P(E) should NOT depend on which hypothesis you think is true - it's the unconditional probability
+
+### Response Format:
+Return a JSON object with "base_rates" array. Each item needs:
+- evidence_id: The ID of the evidence item
+- base_rate: Your estimate of P(E) between 0.01 and 0.99
+- reasoning: Brief explanation of why this evidence has this base rate
+
+IMPORTANT: Return ONLY valid JSON. No additional text before or after.
+
+Example format:
+{{
+  "base_rates": [
+    {{"evidence_id": "E1", "base_rate": 0.75, "reasoning": "Common finding in meta-analyses"}},
+    {{"evidence_id": "E2", "base_rate": 0.25, "reasoning": "Rare specific result from large RCT"}}
+  ]
+}}
+"""
+        try:
+            self._log_progress("Phase 3a: Estimating evidence base rates P(E)...")
+            result = self._run_reasoning_phase(
+                prompt, "Phase 3a: Base Rate Estimation",
+                schema_name=None  # Will parse JSON manually
+            )
+
+            # Parse base rates from response
+            base_rates = {}
+            if isinstance(result, dict) and "base_rates" in result:
+                for item in result.get("base_rates", []):
+                    e_id = item.get("evidence_id")
+                    rate = item.get("base_rate", 0.5)
+                    if e_id:
+                        base_rates[e_id] = max(0.01, min(0.99, rate))
+                        logger.info(f"Base rate for {e_id}: P(E)={rate:.2f}")
+
+            # Fill in missing evidence with default 0.5
+            for e in evidence_items:
+                e_id = e.get("evidence_id")
+                if e_id and e_id not in base_rates:
+                    base_rates[e_id] = 0.5
+                    logger.warning(f"Missing base rate for {e_id}, using default 0.5")
+
+            logger.info(f"Estimated base rates for {len(base_rates)} evidence items")
+            return base_rates
+
+        except Exception as e:
+            logger.error(f"Base rate estimation failed: {e}, using default 0.5 for all")
+            return {e.get("evidence_id"): 0.5 for e in evidence_items if e.get("evidence_id")}
+
     def _run_phase_3_likelihoods(self, request: BFIHAnalysisRequest, evidence_text: str,
                                    evidence_items: List[Dict]) -> Tuple[str, List[Dict]]:
-        """Phase 3: Assign PARADIGM-SPECIFIC likelihoods to evidence using structured output.
+        """Phase 3: Assign PARADIGM-SPECIFIC likelihoods using TWO-STAGE prompting.
+
+        STAGE 1: Estimate P(E) base rate for each evidence item
+        STAGE 2: Assign P(E|H,K) relative to P(E), ensuring non-predictive hypotheses get LR=1
 
         Returns (markdown_text, structured_clusters) where likelihoods are P(E|H,K)
         - different for each paradigm-hypothesis combination.
         """
+        # STAGE 1: Estimate base rates P(E) for each evidence item
+        base_rates = self._estimate_base_rates_stage1(request, evidence_items)
+
         # Get hypotheses and paradigms
         hypotheses = request.scenario_config.get("hypotheses", [])
         paradigms = request.scenario_config.get("paradigms", [])
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
         paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
-        # Summarize evidence items (include source info for quality assessment)
-        evidence_summary = json.dumps([{
+        # Build hypothesis descriptions for better assessment
+        hyp_descriptions = []
+        for h in hypotheses:
+            h_id = h.get("id", "H?")
+            h_name = h.get("name", "Unknown")
+            h_desc = h.get("description", "")[:200]
+            verdict_type = h.get("verdict_type", "")
+            hyp_descriptions.append(f"- {h_id}: {h_name}\n  Description: {h_desc}\n  Type: {verdict_type}")
+        hyp_text = "\n".join(hyp_descriptions)
+
+        # Summarize evidence items WITH base rates from Stage 1
+        evidence_with_base_rates = [{
             "evidence_id": e.get("evidence_id"),
             "description": e.get("description", "")[:200],
             "source_name": e.get("source_name", "Unknown"),
             "source_url": e.get("source_url", ""),
             "evidence_type": e.get("evidence_type", "unknown"),
             "supports": e.get("supports_hypotheses", []),
-            "refutes": e.get("refutes_hypotheses", [])
-        } for e in evidence_items], indent=2)
+            "refutes": e.get("refutes_hypotheses", []),
+            "base_rate_P_E": base_rates.get(e.get("evidence_id"), 0.5)
+        } for e in evidence_items]
+        evidence_summary = json.dumps(evidence_with_base_rates, indent=2)
 
-        bfih_context = get_bfih_system_context("Likelihood Assignment", "3")
+        bfih_context = get_bfih_system_context("Likelihood Assignment", "3b")
         prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
 
-HYPOTHESES: {hyp_ids}
+HYPOTHESES:
+{hyp_text}
+
 PARADIGMS: {paradigm_ids}
 
-EVIDENCE ITEMS:
+EVIDENCE ITEMS (with pre-computed base rates P(E)):
 {evidence_summary}
 
-CRITICAL CONCEPT: Likelihoods are P(E|H, K) - they depend on BOTH the hypothesis AND the paradigm!
+## STAGE 2: RELATIVE LIKELIHOOD ASSESSMENT
 
-The SAME evidence can have DIFFERENT likelihoods under different paradigms because:
-- Different paradigms weight different types of evidence differently
-- A paradigm skeptical of economic explanations assigns lower P(E|H_economic, K_skeptic)
+You have been provided with P(E) - the base rate for each evidence item. Now you must assign
+P(E|H) for each hypothesis RELATIVE TO P(E).
 
-## SOURCE-QUALITY-AWARE LIKELIHOOD ASSESSMENT (MANDATORY)
+### CRITICAL PRINCIPLE: Likelihood Ratios and Non-Predictive Hypotheses
 
-When assigning P(E|H), you MUST ask: "If H were true vs false, how likely is it that THIS source would publish THIS specific finding?"
+The Likelihood Ratio is: LR(H;E) = P(E|H) / P(E|¬H)
 
-**High-quality sources (peer-reviewed journals, rigorous methodology, large N):**
-- Findings are strongly coupled to ground truth due to methodology
-- If H_true: study likely detects and publishes the effect → high P(E|H_true)
-- If H_false: study likely finds nothing or opposite → low P(E|H_false)
-- Result: High likelihood ratio, strong posterior update
+For a hypothesis to UPDATE posteriors, it must PREDICT the evidence differently than chance:
+- If H specifically PREDICTS E → P(E|H) > P(E) → LR > 1 → positive evidence for H
+- If H specifically PREDICTS ¬E → P(E|H) < P(E) → LR < 1 → negative evidence for H
+- If H is COMPATIBLE with E but makes NO specific prediction → P(E|H) = P(E) → LR = 1 → NO UPDATE
 
-**Low-quality sources (blogs, opinion pieces, anecdotes, unsourced claims):**
-- Author's claims are weakly coupled to ground truth
-- The blog post/opinion would exist regardless of which hypothesis is actually true
-- P(E|H_i) ≈ P(E) for ALL hypotheses (evidence is approximately independent of H)
-- Result: LR ≈ 1, WoE ≈ 0, NO posterior update
+### MANDATORY RULE FOR NON-PREDICTIVE HYPOTHESES
 
-**Operationally:** For low-quality evidence, assign P(E|H_i) ≈ 0.5 for ALL hypotheses.
-This ensures garbage evidence contributes nothing to posteriors, as is epistemologically correct.
+A "catch-all", "unforeseen", or "partial/hedged" hypothesis that does NOT make specific predictions
+MUST have P(E|H) = P(E) for that evidence. This yields LR = 1 and WoE = 0 dB.
 
-A meta-analysis finding X is strong evidence because rigorous methodology ensures truth-tracking.
-A blog post claiming X is NOT evidence because blogs publish claims regardless of truth.
+Why? Because if a hypothesis doesn't predict whether E occurs, then observing E tells us nothing
+about whether that hypothesis is true. The evidence and hypothesis are independent.
+
+WRONG: Assigning P(E|H) = 0.5 to all non-predictive hypotheses (this creates artificial LR shifts)
+RIGHT: Assigning P(E|H) = P(E) (the base rate) to non-predictive hypotheses (this yields LR = 1)
+
+### HOW TO ASSESS P(E|H) RELATIVE TO P(E)
+
+For each evidence item with base rate P(E):
+
+1. **Does hypothesis H make a SPECIFIC prediction about this evidence?**
+   - If YES: Estimate P(E|H) based on how strongly H predicts E
+   - If NO (H is compatible but non-predictive): Set P(E|H) = P(E) exactly
+
+2. **For predictive hypotheses, assess the direction:**
+   - H predicts E should occur: P(E|H) > P(E)
+   - H predicts E should NOT occur: P(E|H) < P(E)
+
+3. **Scale by prediction strength:**
+   - Strong prediction: P(E|H) can be much higher/lower than P(E)
+   - Weak prediction: P(E|H) is only slightly higher/lower than P(E)
+
+### EXAMPLE
+
+Evidence E: "Large meta-analysis finds no link between X and Y" with P(E) = 0.70
+
+- H1 (X causes Y): PREDICTS ¬E → P(E|H1) = 0.10 (much lower than P(E))
+- H2 (X does not cause Y): PREDICTS E → P(E|H2) = 0.95 (higher than P(E))
+- H0 (Unforeseen factor): NO PREDICTION → P(E|H0) = 0.70 = P(E) (exactly equal!)
+- H3 (Subgroup effect only): WEAK PREDICTION toward E → P(E|H3) = 0.75 (slightly above P(E))
+
+### PARADIGM EFFECTS
+
+Different paradigms may weight evidence types differently, affecting P(E|H,K):
+- Paradigm K0 (mainstream): Uses base rates as-is
+- Biased paradigms: May adjust how strongly evidence predicts hypotheses
 
 YOUR TASK:
 1. Group evidence into 3-5 CLUSTERS based on thematic similarity
-2. For EACH cluster, assign likelihoods P(E|H, K) for EACH hypothesis under EACH paradigm
-3. Apply source-quality-aware reasoning: high-quality sources get differential likelihoods; low-quality sources get P(E|H) ≈ 0.5 for all H
-4. Justify how paradigm viewpoint AND source quality affect the likelihood assessment
+2. For EACH cluster, assign P(E|H,K) for EACH hypothesis under EACH paradigm
+3. For EACH likelihood, explicitly compare to the base rate P(E):
+   - If H predicts E: P(E|H) > P(E)
+   - If H predicts ¬E: P(E|H) < P(E)
+   - If H makes no prediction: P(E|H) = P(E) EXACTLY
+4. Justify your assessment relative to the base rate
 
 Return a JSON object with "clusters" array. Each cluster needs:
 - cluster_id, cluster_name, description, evidence_ids (all required)
-- paradigm_likelihoods: array of {{paradigm_id, hypothesis_likelihoods: [{{hypothesis_id, probability, justification}}]}}
+- cluster_base_rate: average P(E) for evidence in this cluster
+- paradigm_likelihoods: array of {{paradigm_id, hypothesis_likelihoods: [{{hypothesis_id, probability, justification, relative_to_base_rate: "above"/"below"/"equal"}}]}}
 
 IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
         try:
             # Use reasoning model for likelihood assessment (requires careful evidence-paradigm analysis)
             # Falls back to structured output (o4-mini) if JSON parsing fails
+            self._log_progress("Phase 3b: Assigning likelihoods relative to base rates...")
             result = self._run_reasoning_phase(
-                prompt, "Phase 3: Likelihood Assignment (reasoning)",
+                prompt, "Phase 3b: Likelihood Assignment (reasoning)",
                 schema_name="clusters"  # Enables structured output fallback
             )
             raw_clusters = result.get("clusters", [])
             # Convert array format to dict format for compatibility
             clusters = []
             for c in raw_clusters:
+                # Compute average base rate for this cluster
+                cluster_evidence_ids = c.get("evidence_ids", [])
+                cluster_base_rate = c.get("cluster_base_rate")
+                if cluster_base_rate is None and cluster_evidence_ids:
+                    rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
+                    cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
+
                 converted = {
                     "cluster_id": c.get("cluster_id"),
                     "cluster_name": c.get("cluster_name"),
                     "description": c.get("description"),
-                    "evidence_ids": c.get("evidence_ids", []),
+                    "evidence_ids": cluster_evidence_ids,
+                    "cluster_base_rate": cluster_base_rate,
                     "likelihoods_by_paradigm": {}
                 }
                 for pl in c.get("paradigm_likelihoods", []):
@@ -2237,65 +2411,118 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                         for hl in pl.get("hypothesis_likelihoods", []):
                             h_id = hl.get("hypothesis_id")
                             if h_id:
+                                prob = hl.get("probability", 0.5)
+                                rel = hl.get("relative_to_base_rate", "")
                                 converted["likelihoods_by_paradigm"][paradigm_id][h_id] = {
-                                    "probability": hl.get("probability", 0.5),
-                                    "justification": hl.get("justification", "")
+                                    "probability": prob,
+                                    "justification": hl.get("justification", ""),
+                                    "relative_to_base_rate": rel
                                 }
+                                # Log when LR = 1 (non-predictive)
+                                if rel == "equal" or (cluster_base_rate and abs(prob - cluster_base_rate) < 0.02):
+                                    logger.info(f"  {h_id} is non-predictive for cluster {c.get('cluster_id')}: P(E|H)={prob:.2f} ≈ P(E)={cluster_base_rate:.2f} → LR≈1")
                 clusters.append(converted)
-            # Generate markdown summary
-            markdown_summary = self._generate_clusters_markdown(clusters)
+            # Generate markdown summary with base rate info
+            markdown_summary = self._generate_clusters_markdown(clusters, base_rates)
         except Exception as e:
             logger.error(f"Structured output failed for clusters: {e}, falling back to text extraction")
             # Fallback to old method
             markdown_summary = self._run_phase(prompt, [], "Phase 3: Likelihood Assignment (fallback)")
             clusters = self._parse_clusters_json(markdown_summary)
 
-        logger.info(f"Created {len(clusters)} evidence clusters with paradigm-specific likelihoods")
+        logger.info(f"Created {len(clusters)} evidence clusters with two-stage likelihood assessment")
         return markdown_summary, clusters
 
-    def _generate_clusters_markdown(self, clusters: List[Dict]) -> str:
-        """Generate markdown summary from structured clusters"""
-        lines = ["## Evidence Clusters with Likelihoods\n"]
+    def _generate_clusters_markdown(self, clusters: List[Dict], base_rates: Dict[str, float] = None) -> str:
+        """Generate markdown summary from structured clusters with base rate information."""
+        lines = ["## Evidence Clusters with Likelihoods (Two-Stage Assessment)\n"]
         for cluster in clusters:
             c_id = cluster.get("cluster_id", "C?")
             name = cluster.get("cluster_name", "Unknown")
             desc = cluster.get("description", "")
             evidence_ids = cluster.get("evidence_ids", [])
+            cluster_base_rate = cluster.get("cluster_base_rate")
 
             lines.append(f"### {c_id}: {name}")
             lines.append(f"- **Description:** {desc}")
             lines.append(f"- **Evidence:** {', '.join(evidence_ids)}")
 
-            # Show likelihoods by paradigm
+            # Show base rate for this cluster
+            if cluster_base_rate is not None:
+                lines.append(f"- **Cluster Base Rate P(E):** {cluster_base_rate:.2f}")
+
+            # Show likelihoods by paradigm with relative indicators
             lh_by_paradigm = cluster.get("likelihoods_by_paradigm", {})
+            base_rate_display = f"{cluster_base_rate:.2f}" if cluster_base_rate is not None else "0.50"
             for paradigm_id, hyp_likelihoods in lh_by_paradigm.items():
-                lines.append(f"\n**{paradigm_id} Likelihoods:**")
+                lines.append(f"\n**{paradigm_id} Likelihoods (relative to P(E)={base_rate_display}):**")
                 for hyp_id, lh_data in hyp_likelihoods.items():
-                    prob = lh_data.get("probability", 0.5) if isinstance(lh_data, dict) else lh_data
-                    lines.append(f"  - {hyp_id}: {prob:.2f}")
+                    if isinstance(lh_data, dict):
+                        prob = lh_data.get("probability", 0.5)
+                        rel = lh_data.get("relative_to_base_rate", "")
+                        # Determine indicator symbol
+                        if rel == "equal" or (cluster_base_rate and abs(prob - cluster_base_rate) < 0.02):
+                            indicator = "= P(E) → LR≈1"
+                        elif rel == "above" or (cluster_base_rate and prob > cluster_base_rate):
+                            indicator = "> P(E) → LR>1"
+                        elif rel == "below" or (cluster_base_rate and prob < cluster_base_rate):
+                            indicator = "< P(E) → LR<1"
+                        else:
+                            indicator = ""
+                        lines.append(f"  - {hyp_id}: {prob:.2f} {indicator}")
+                    else:
+                        lines.append(f"  - {hyp_id}: {lh_data:.2f}")
             lines.append("")
 
         return "\n".join(lines)
 
     def _parse_clusters_json(self, text: str) -> List[Dict]:
-        """Extract structured clusters from CLUSTERS_JSON_START/END markers"""
+        """Extract structured clusters from various JSON formats.
+
+        Handles:
+        - CLUSTERS_JSON_START/END markers
+        - Direct JSON object with "clusters" key
+        - Direct JSON array of clusters
+        """
+        # Try 1: Look for explicit markers
         pattern = r"CLUSTERS_JSON_START\s*(\[.*?\])\s*CLUSTERS_JSON_END"
         match = re.search(pattern, text, re.DOTALL)
-
         if match:
             try:
                 clusters = json.loads(match.group(1))
-                logger.info(f"Parsed {len(clusters)} evidence clusters")
+                logger.info(f"Parsed {len(clusters)} evidence clusters (markers)")
                 return clusters
             except json.JSONDecodeError as e:
-                logger.warning(f"Failed to parse clusters JSON: {e}")
+                logger.warning(f"Failed to parse clusters JSON from markers: {e}")
 
-        # Fallback: try to find any JSON array with cluster structure
+        # Try 2: Parse entire text as JSON object with "clusters" key
+        try:
+            data = json.loads(text.strip())
+            if isinstance(data, dict) and "clusters" in data:
+                clusters = data["clusters"]
+                if isinstance(clusters, list):
+                    logger.info(f"Parsed {len(clusters)} clusters (direct JSON object)")
+                    return clusters
+        except json.JSONDecodeError:
+            pass
+
+        # Try 3: Find JSON object with "clusters" key embedded in text
+        try:
+            obj_match = re.search(r'\{\s*"clusters"\s*:\s*\[.*?\]\s*\}', text, re.DOTALL)
+            if obj_match:
+                data = json.loads(obj_match.group(0))
+                clusters = data.get("clusters", [])
+                logger.info(f"Parsed {len(clusters)} clusters (embedded JSON object)")
+                return clusters
+        except (json.JSONDecodeError, AttributeError):
+            pass
+
+        # Try 4: Find any JSON array with cluster_id
         try:
             array_match = re.search(r'\[\s*\{[^]]*"cluster_id"[^]]+\}\s*\]', text, re.DOTALL)
             if array_match:
                 clusters = json.loads(array_match.group(0))
-                logger.info(f"Parsed {len(clusters)} clusters (fallback)")
+                logger.info(f"Parsed {len(clusters)} clusters (array fallback)")
                 return clusters
         except:
             pass
