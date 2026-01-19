@@ -565,6 +565,7 @@ class BFIHOrchestrator:
             self._log_progress(f"Phase 3 complete: {len(evidence_clusters)} evidence clusters")
 
             # Compute Bayesian metrics for ALL paradigms
+            # (Following the same pattern as conduct_analysis)
             priors_by_paradigm = request.scenario_config.get(
                 "priors_by_paradigm",
                 request.scenario_config.get("priors", {})
@@ -575,28 +576,44 @@ class BFIHOrchestrator:
             hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
             paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
-            enriched_clusters = []
-            for cluster in evidence_clusters:
-                enriched = dict(cluster)
-                enriched["bayesian_metrics_by_paradigm"] = {}
+            # Compute metrics for each paradigm and merge into bayesian_metrics_by_paradigm
+            enriched_clusters = None
+            joint_metrics = {}
 
-                for paradigm_id in paradigm_ids:
-                    paradigm_priors = priors_by_paradigm.get(paradigm_id, {})
-                    if not paradigm_priors:
-                        continue
+            for paradigm_id in paradigm_ids:
+                # Extract priors for this paradigm (clamped to avoid extremes)
+                computation_priors = {}
+                raw_priors = priors_by_paradigm.get(paradigm_id, {})
+                for h_id, p in raw_priors.items():
+                    raw_prior = p if isinstance(p, (int, float)) else p.get("probability", 0.5)
+                    computation_priors[h_id] = clamp_probability(raw_prior, f"prior {h_id} in {paradigm_id}")
 
-                    likelihoods = cluster.get("likelihoods_by_paradigm", {}).get(paradigm_id, {})
-                    if not likelihoods:
-                        likelihoods = cluster.get("likelihoods", {})
+                if not computation_priors:
+                    continue
 
-                    metrics = self._compute_cluster_bayesian_metrics(
-                        likelihoods, paradigm_priors, hyp_ids
-                    )
-                    enriched["bayesian_metrics_by_paradigm"][paradigm_id] = metrics
+                # Compute metrics for this paradigm
+                paradigm_enriched, paradigm_joint = self._compute_cluster_bayesian_metrics(
+                    evidence_clusters, computation_priors, paradigm_id
+                )
 
-                enriched_clusters.append(enriched)
+                if enriched_clusters is None:
+                    # First paradigm: initialize enriched_clusters with bayesian_metrics_by_paradigm
+                    enriched_clusters = []
+                    for cluster in paradigm_enriched:
+                        new_cluster = {k: v for k, v in cluster.items() if k != "bayesian_metrics"}
+                        new_cluster["bayesian_metrics_by_paradigm"] = {
+                            paradigm_id: cluster.get("bayesian_metrics", {})
+                        }
+                        enriched_clusters.append(new_cluster)
+                    joint_metrics = paradigm_joint
+                else:
+                    # Subsequent paradigms: merge metrics into existing clusters
+                    for i, cluster in enumerate(paradigm_enriched):
+                        enriched_clusters[i]["bayesian_metrics_by_paradigm"][paradigm_id] = cluster.get("bayesian_metrics", {})
 
-            evidence_clusters = enriched_clusters
+            # Fallback if no paradigms processed
+            if enriched_clusters is None:
+                enriched_clusters = evidence_clusters
 
             # Store structured evidence in scenario_config for report
             if "evidence" not in request.scenario_config:
@@ -631,6 +648,9 @@ class BFIHOrchestrator:
                     "table": table
                 })
 
+            # Build joint metrics table (using joint_metrics from paradigm computation)
+            precomputed_joint_table = self._format_joint_metrics_table(joint_metrics, hyp_ids)
+
             # Build paradigm comparison table
             paradigm_comparison_table = self._format_paradigm_comparison_table(
                 posteriors_by_paradigm, request.scenario_config
@@ -647,7 +667,7 @@ class BFIHOrchestrator:
                 evidence_items=evidence_items,
                 evidence_clusters=enriched_clusters,
                 precomputed_cluster_tables=precomputed_cluster_tables,
-                precomputed_joint_table="",  # Not computed for meta-analysis
+                precomputed_joint_table=precomputed_joint_table,
                 posteriors_by_paradigm=posteriors_by_paradigm,
                 paradigm_comparison_table=paradigm_comparison_table
             )
