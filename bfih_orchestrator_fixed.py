@@ -203,6 +203,129 @@ else:
 # Available reasoning models for configuration
 AVAILABLE_REASONING_MODELS = ["o3-mini", "o3", "o4-mini", "gpt-5", "gpt-5.2", "gpt-5-mini"]
 
+
+# ============================================================================
+# COST TRACKING
+# ============================================================================
+# Pricing per 1K tokens (as of Jan 2026 - update as needed)
+# Source: https://openai.com/pricing
+
+MODEL_PRICING = {
+    # GPT-5.x series
+    "gpt-5.2": {"input": 0.010, "output": 0.030, "reasoning": 0.030},  # Same as output for reasoning
+    "gpt-5": {"input": 0.010, "output": 0.030, "reasoning": 0.030},
+    "gpt-5-mini": {"input": 0.002, "output": 0.006, "reasoning": 0.006},
+    # o-series (reasoning models)
+    "o3": {"input": 0.010, "output": 0.040, "reasoning": 0.040},
+    "o3-mini": {"input": 0.001, "output": 0.004, "reasoning": 0.004},
+    "o4-mini": {"input": 0.001, "output": 0.004, "reasoning": 0.004},
+    # Fallback for unknown models
+    "default": {"input": 0.010, "output": 0.030, "reasoning": 0.030},
+}
+
+
+class CostTracker:
+    """Tracks API costs and enforces budget limits."""
+
+    def __init__(self, budget_limit: Optional[float] = None):
+        """
+        Initialize cost tracker.
+
+        Args:
+            budget_limit: Maximum allowed cost in USD. None = unlimited.
+        """
+        self.budget_limit = budget_limit
+        self.total_cost = 0.0
+        self.call_costs = []  # List of (model, phase, cost) tuples
+        self.total_input_tokens = 0
+        self.total_output_tokens = 0
+        self.total_reasoning_tokens = 0
+
+    def get_model_pricing(self, model: str) -> dict:
+        """Get pricing for a model, falling back to default if unknown."""
+        # Check for exact match
+        if model in MODEL_PRICING:
+            return MODEL_PRICING[model]
+        # Check for partial match (e.g., "gpt-5.2" matches "gpt-5")
+        for key in MODEL_PRICING:
+            if key in model or model in key:
+                return MODEL_PRICING[key]
+        return MODEL_PRICING["default"]
+
+    def add_cost(self, model: str, phase: str, input_tokens: int, output_tokens: int, reasoning_tokens: int = 0):
+        """
+        Record cost from an API call.
+
+        Args:
+            model: Model name used
+            phase: Phase name for logging
+            input_tokens: Number of input tokens
+            output_tokens: Number of output tokens
+            reasoning_tokens: Number of reasoning tokens (for o-series/GPT-5)
+        """
+        pricing = self.get_model_pricing(model)
+        cost = (
+            (input_tokens / 1000) * pricing["input"] +
+            (output_tokens / 1000) * pricing["output"] +
+            (reasoning_tokens / 1000) * pricing["reasoning"]
+        )
+
+        self.total_cost += cost
+        self.call_costs.append((model, phase, cost, input_tokens, output_tokens, reasoning_tokens))
+        self.total_input_tokens += input_tokens
+        self.total_output_tokens += output_tokens
+        self.total_reasoning_tokens += reasoning_tokens
+
+        logger.info(f"[COST] {phase}: ${cost:.4f} ({input_tokens}i/{output_tokens}o/{reasoning_tokens}r tokens) | Total: ${self.total_cost:.2f}")
+
+        return cost
+
+    def check_budget(self, phase: str, estimated_cost: float = 0.50) -> None:
+        """
+        Check if proceeding would exceed budget. Raises exception if so.
+
+        Args:
+            phase: Phase about to execute (for error message)
+            estimated_cost: Estimated cost of next operation (default $0.50)
+
+        Raises:
+            RuntimeError: If budget would be exceeded
+        """
+        if self.budget_limit is None:
+            return  # No limit set
+
+        if self.total_cost + estimated_cost > self.budget_limit:
+            raise RuntimeError(
+                f"BUDGET LIMIT EXCEEDED: Cannot proceed with {phase}.\n"
+                f"Current cost: ${self.total_cost:.2f}\n"
+                f"Estimated next: ${estimated_cost:.2f}\n"
+                f"Budget limit: ${self.budget_limit:.2f}\n"
+                f"Analysis aborted to prevent overspend."
+            )
+
+    def get_summary(self) -> dict:
+        """Get cost summary."""
+        return {
+            "total_cost_usd": round(self.total_cost, 4),
+            "budget_limit_usd": self.budget_limit,
+            "total_input_tokens": self.total_input_tokens,
+            "total_output_tokens": self.total_output_tokens,
+            "total_reasoning_tokens": self.total_reasoning_tokens,
+            "calls": len(self.call_costs),
+            "breakdown": [
+                {
+                    "model": m,
+                    "phase": p,
+                    "cost_usd": round(c, 4),
+                    "input_tokens": i,
+                    "output_tokens": o,
+                    "reasoning_tokens": r
+                }
+                for m, p, c, i, o, r in self.call_costs
+            ]
+        }
+
+
 @dataclass
 class BFIHAnalysisRequest:
     """Request to conduct BFIH analysis"""
@@ -211,6 +334,7 @@ class BFIHAnalysisRequest:
     scenario_config: Dict
     user_id: Optional[str] = None
     reasoning_model: Optional[str] = None  # Override default reasoning model
+    budget_limit: Optional[float] = None  # Max cost in USD, None = unlimited
 
     def to_dict(self):
         return asdict(self)
@@ -324,6 +448,12 @@ class BFIHOrchestrator:
         """
         analysis_start = datetime.now(timezone.utc)
 
+        # Initialize cost tracking (preserve existing tracker if already initialized, e.g., from analyze_topic)
+        if not hasattr(self, 'cost_tracker') or self.cost_tracker is None:
+            self.cost_tracker = CostTracker(budget_limit=request.budget_limit)
+            if request.budget_limit:
+                self._log_progress(f"Budget limit set: ${request.budget_limit:.2f}")
+
         # Override reasoning model if specified in request
         if request.reasoning_model and request.reasoning_model in AVAILABLE_REASONING_MODELS:
             self.reasoning_model = request.reasoning_model
@@ -333,21 +463,24 @@ class BFIHOrchestrator:
         self._log_progress(f"Proposition: {request.proposition}")
 
         try:
-            # Phase 1: Retrieve methodology from vector store
+            # Phase 1: Retrieve methodology from vector store (cheap)
             self._report_status("phase:methodology")
             self._log_progress("Phase 1: Retrieving methodology...")
+            self.cost_tracker.check_budget("Phase 1: Methodology", estimated_cost=0.10)
             methodology = self._run_phase_1_methodology(request)
             self._log_progress("Phase 1 complete: Methodology retrieved")
 
-            # Phase 2: Gather evidence via web search (returns structured evidence)
+            # Phase 2: Gather evidence via web search (most expensive - web search + reasoning)
             self._report_status("phase:evidence")
             self._log_progress("Phase 2: Gathering evidence via web search...")
+            self.cost_tracker.check_budget("Phase 2: Evidence", estimated_cost=2.00)
             evidence_text, evidence_items = self._run_phase_2_evidence(request, methodology)
             self._log_progress(f"Phase 2 complete: Found {len(evidence_items)} evidence items")
 
-            # Phase 3: Assign likelihoods to evidence (returns structured clusters)
+            # Phase 3: Assign likelihoods to evidence (expensive - reasoning model)
             self._report_status("phase:likelihoods")
             self._log_progress("Phase 3: Assigning likelihoods...")
+            self.cost_tracker.check_budget("Phase 3: Likelihoods", estimated_cost=1.50)
             likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
                 request, evidence_text, evidence_items
             )
@@ -429,6 +562,7 @@ class BFIHOrchestrator:
             # Phase 5: Generate final report (pass pre-computed Bayesian tables AND paradigm posteriors)
             self._report_status("phase:report")
             self._log_progress("Phase 5: Generating report...")
+            self.cost_tracker.check_budget("Phase 5: Report Generation", estimated_cost=1.00)
             bfih_report = self._run_phase_5_report(
                 request, methodology, evidence_text, likelihoods_text,
                 evidence_items, enriched_clusters,
@@ -445,6 +579,10 @@ class BFIHOrchestrator:
             analysis_end = datetime.now(timezone.utc)
             duration_seconds = (analysis_end - analysis_start).total_seconds()
 
+            # Get cost summary
+            cost_summary = self.cost_tracker.get_summary()
+            self._log_progress(f"Analysis cost: ${cost_summary['total_cost_usd']:.2f} ({cost_summary['calls']} API calls)")
+
             result = BFIHAnalysisResult(
                 analysis_id=analysis_id,
                 scenario_id=request.scenario_id,
@@ -457,7 +595,8 @@ class BFIHOrchestrator:
                     "duration_seconds": duration_seconds,
                     "user_id": request.user_id,
                     "evidence_items_count": len(evidence_items),
-                    "evidence_clusters_count": len(evidence_clusters)
+                    "evidence_clusters_count": len(evidence_clusters),
+                    "cost": cost_summary
                 },
                 created_at=analysis_end.isoformat(),
                 scenario_config=request.scenario_config
@@ -488,9 +627,77 @@ class BFIHOrchestrator:
             logger.info(f"Evidence: {len(evidence_items)} items in {len(evidence_clusters)} clusters")
             return result
 
+        except RuntimeError as e:
+            # Check if this is a budget limit error
+            if "BUDGET LIMIT EXCEEDED" in str(e):
+                # Save checkpoint with all progress so far
+                checkpoint = self._save_budget_checkpoint(
+                    request=request,
+                    analysis_start=analysis_start,
+                    completed_phases=locals()
+                )
+                self._log_progress(f"Budget limit reached. Checkpoint saved: {checkpoint}")
+                # Re-raise with checkpoint info
+                raise RuntimeError(
+                    f"{str(e)}\n\nCheckpoint saved to: {checkpoint}\n"
+                    f"Resume by loading checkpoint and continuing with remaining phases."
+                ) from e
+            else:
+                logger.error(f"Error conducting BFIH analysis: {str(e)}", exc_info=True)
+                raise
+
         except Exception as e:
             logger.error(f"Error conducting BFIH analysis: {str(e)}", exc_info=True)
             raise
+
+    def _save_budget_checkpoint(self, request: BFIHAnalysisRequest, analysis_start: datetime,
+                                 completed_phases: dict) -> str:
+        """Save checkpoint when budget limit is reached so analysis can be resumed."""
+        checkpoint_id = f"{request.scenario_id}_checkpoint_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}"
+        checkpoint_path = f"{checkpoint_id}.json"
+
+        # Extract completed data from locals
+        checkpoint_data = {
+            "checkpoint_id": checkpoint_id,
+            "scenario_id": request.scenario_id,
+            "proposition": request.proposition,
+            "scenario_config": request.scenario_config,
+            "analysis_start": analysis_start.isoformat(),
+            "checkpoint_time": datetime.now(timezone.utc).isoformat(),
+            "cost_summary": self.cost_tracker.get_summary(),
+            "completed_phases": {},
+            "resume_from": None
+        }
+
+        # Record which phases completed and their data
+        if "methodology" in completed_phases and completed_phases.get("methodology"):
+            checkpoint_data["completed_phases"]["methodology"] = completed_phases["methodology"][:5000]  # Truncate
+            checkpoint_data["resume_from"] = "Phase 2"
+
+        if "evidence_items" in completed_phases and completed_phases.get("evidence_items"):
+            checkpoint_data["completed_phases"]["evidence_items"] = completed_phases["evidence_items"]
+            checkpoint_data["completed_phases"]["evidence_text"] = completed_phases.get("evidence_text", "")[:10000]
+            checkpoint_data["resume_from"] = "Phase 3"
+
+        if "evidence_clusters" in completed_phases and completed_phases.get("evidence_clusters"):
+            checkpoint_data["completed_phases"]["evidence_clusters"] = completed_phases["evidence_clusters"]
+            checkpoint_data["completed_phases"]["likelihoods_text"] = completed_phases.get("likelihoods_text", "")[:10000]
+            checkpoint_data["resume_from"] = "Phase 4"
+
+        if "enriched_clusters" in completed_phases and completed_phases.get("enriched_clusters"):
+            checkpoint_data["completed_phases"]["enriched_clusters"] = completed_phases["enriched_clusters"]
+            checkpoint_data["completed_phases"]["posteriors_by_paradigm"] = completed_phases.get("posteriors_by_paradigm", {})
+            checkpoint_data["resume_from"] = "Phase 5"
+
+        # Save checkpoint
+        with open(checkpoint_path, 'w') as f:
+            json.dump(checkpoint_data, f, indent=2, default=str)
+
+        logger.info(f"Saved budget checkpoint: {checkpoint_path}")
+        logger.info(f"Resume from: {checkpoint_data['resume_from']}")
+        logger.info(f"Total cost at checkpoint: ${checkpoint_data['cost_summary']['total_cost_usd']:.2f}")
+
+        return checkpoint_path
 
     def conduct_analysis_with_injected_evidence(
         self,
@@ -1199,6 +1406,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 if response is None:
                     raise RuntimeError(f"No response received for {phase_name}")
 
+                # Track costs if usage data is available
+                if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
+                    input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
+                    output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
+                    reasoning_tokens = getattr(response.usage, 'reasoning_tokens', 0) or 0
+                    self.cost_tracker.add_cost(self.model, phase_name, input_tokens, output_tokens, reasoning_tokens)
+
                 try:
                     print(f"\n[{phase_name} complete]")
                 except BrokenPipeError:
@@ -1325,6 +1539,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 print(f"[Calling API with structured output schema: {schema_name}...]")
 
                 response = self.client.responses.create(**request_params)
+
+                # Track costs if usage data is available
+                if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
+                    input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
+                    output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
+                    reasoning_tokens = getattr(response.usage, 'reasoning_tokens', 0) or 0
+                    self.cost_tracker.add_cost(model, phase_name, input_tokens, output_tokens, reasoning_tokens)
 
                 # Extract the output
                 output_text = response.output_text
@@ -1529,6 +1750,13 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 response = self.client.responses.create(**request_params)
 
+                # Track costs if usage data is available
+                if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
+                    input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
+                    output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
+                    reasoning_tokens = getattr(response.usage, 'reasoning_tokens', 0) or 0
+                    self.cost_tracker.add_cost(self.reasoning_model, phase_name, input_tokens, output_tokens, reasoning_tokens)
+
                 # Extract the output
                 output_text = response.output_text
                 print(f"\n[Received reasoning output, extracting JSON...]")
@@ -1670,6 +1898,11 @@ Return ONLY the inverse proposition, nothing else."""
                 model="o4-mini",  # Fast model for simple task
                 input=prompt,
             )
+            # Track costs if usage data is available
+            if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
+                input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
+                output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
+                self.cost_tracker.add_cost("o4-mini", "inverse_proposition", input_tokens, output_tokens, 0)
             inverse = response.output_text.strip().strip('"')
             logger.info(f"Generated inverse proposition: {inverse}")
             return inverse
@@ -1802,6 +2035,11 @@ For questions about philosophical schools, epistemology, or reasoning frameworks
                 input=prompt,
                 max_output_tokens=20,
             )
+            # Track costs if usage data is available
+            if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
+                input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
+                output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
+                self.cost_tracker.add_cost("o4-mini", "topic_classification", input_tokens, output_tokens, 0)
             topic_type = response.output_text.strip().lower()
             # Validate it's a known type
             if topic_type in self.TOPIC_SEARCH_TEMPLATES:
@@ -2377,61 +2615,265 @@ Return a JSON object with "clusters" array. Each cluster needs:
 
 IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
-        try:
-            # Use reasoning model for likelihood assessment (requires careful evidence-paradigm analysis)
-            # Falls back to structured output (o4-mini) if JSON parsing fails
-            self._log_progress("Phase 3b: Assigning likelihoods relative to base rates...")
-            result = self._run_reasoning_phase(
-                prompt, "Phase 3b: Likelihood Assignment (reasoning)",
-                schema_name="clusters"  # Enables structured output fallback
-            )
-            raw_clusters = result.get("clusters", [])
-            # Convert array format to dict format for compatibility
-            clusters = []
-            for c in raw_clusters:
-                # Compute average base rate for this cluster
-                cluster_evidence_ids = c.get("evidence_ids", [])
-                cluster_base_rate = c.get("cluster_base_rate")
-                if cluster_base_rate is None and cluster_evidence_ids:
-                    rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
-                    cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
+        # Check schema complexity - if too large, use batched paradigm approach
+        schema_complexity = len(paradigms) * len(hypotheses)
+        use_batched = schema_complexity > 24  # More than ~24 entries per cluster = batch
 
-                converted = {
-                    "cluster_id": c.get("cluster_id"),
-                    "cluster_name": c.get("cluster_name"),
-                    "description": c.get("description"),
-                    "evidence_ids": cluster_evidence_ids,
-                    "cluster_base_rate": cluster_base_rate,
-                    "likelihoods_by_paradigm": {}
-                }
-                for pl in c.get("paradigm_likelihoods", []):
-                    paradigm_id = pl.get("paradigm_id")
-                    if paradigm_id:
-                        converted["likelihoods_by_paradigm"][paradigm_id] = {}
-                        for hl in pl.get("hypothesis_likelihoods", []):
-                            h_id = hl.get("hypothesis_id")
-                            if h_id:
-                                prob = hl.get("probability", 0.5)
-                                rel = hl.get("relative_to_base_rate", "")
-                                converted["likelihoods_by_paradigm"][paradigm_id][h_id] = {
-                                    "probability": prob,
-                                    "justification": hl.get("justification", ""),
-                                    "relative_to_base_rate": rel
-                                }
-                                # Log when LR = 1 (non-predictive)
-                                if rel == "equal" or (cluster_base_rate and abs(prob - cluster_base_rate) < 0.02):
-                                    logger.info(f"  {h_id} is non-predictive for cluster {c.get('cluster_id')}: P(E|H)={prob:.2f} ≈ P(E)={cluster_base_rate:.2f} → LR≈1")
-                clusters.append(converted)
-            # Generate markdown summary with base rate info
+        if use_batched:
+            logger.info(f"Schema complexity {schema_complexity} > 24, using batched paradigm approach")
+            clusters = self._run_phase_3b_batched(
+                request, evidence_items, base_rates, hypotheses, paradigms, hyp_text, evidence_summary
+            )
             markdown_summary = self._generate_clusters_markdown(clusters, base_rates)
-        except Exception as e:
-            logger.error(f"Structured output failed for clusters: {e}, falling back to text extraction")
-            # Fallback to old method
-            markdown_summary = self._run_phase(prompt, [], "Phase 3: Likelihood Assignment (fallback)")
-            clusters = self._parse_clusters_json(markdown_summary)
+        else:
+            try:
+                # Use reasoning model for likelihood assessment (requires careful evidence-paradigm analysis)
+                # Falls back to structured output (o4-mini) if JSON parsing fails
+                self._log_progress("Phase 3b: Assigning likelihoods relative to base rates...")
+                result = self._run_reasoning_phase(
+                    prompt, "Phase 3b: Likelihood Assignment (reasoning)",
+                    schema_name="clusters"  # Enables structured output fallback
+                )
+                raw_clusters = result.get("clusters", [])
+                # Convert array format to dict format for compatibility
+                clusters = []
+                for c in raw_clusters:
+                    # Compute average base rate for this cluster
+                    cluster_evidence_ids = c.get("evidence_ids", [])
+                    cluster_base_rate = c.get("cluster_base_rate")
+                    if cluster_base_rate is None and cluster_evidence_ids:
+                        rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
+                        cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
+
+                    converted = {
+                        "cluster_id": c.get("cluster_id"),
+                        "cluster_name": c.get("cluster_name"),
+                        "description": c.get("description"),
+                        "evidence_ids": cluster_evidence_ids,
+                        "cluster_base_rate": cluster_base_rate,
+                        "likelihoods_by_paradigm": {}
+                    }
+                    for pl in c.get("paradigm_likelihoods", []):
+                        paradigm_id = pl.get("paradigm_id")
+                        if paradigm_id:
+                            converted["likelihoods_by_paradigm"][paradigm_id] = {}
+                            for hl in pl.get("hypothesis_likelihoods", []):
+                                h_id = hl.get("hypothesis_id")
+                                if h_id:
+                                    prob = hl.get("probability", 0.5)
+                                    rel = hl.get("relative_to_base_rate", "")
+                                    converted["likelihoods_by_paradigm"][paradigm_id][h_id] = {
+                                        "probability": prob,
+                                        "justification": hl.get("justification", ""),
+                                        "relative_to_base_rate": rel
+                                    }
+                                    # Log when LR = 1 (non-predictive)
+                                    if rel == "equal" or (cluster_base_rate and abs(prob - cluster_base_rate) < 0.02):
+                                        logger.info(f"  {h_id} is non-predictive for cluster {c.get('cluster_id')}: P(E|H)={prob:.2f} ≈ P(E)={cluster_base_rate:.2f} → LR≈1")
+                    clusters.append(converted)
+                # Generate markdown summary with base rate info
+                markdown_summary = self._generate_clusters_markdown(clusters, base_rates)
+            except Exception as e:
+                logger.error(f"Structured output failed for clusters: {e}, falling back to batched approach")
+                # Fallback to batched paradigm approach
+                clusters = self._run_phase_3b_batched(
+                    request, evidence_items, base_rates, hypotheses, paradigms, hyp_text, evidence_summary
+                )
+                markdown_summary = self._generate_clusters_markdown(clusters, base_rates)
 
         logger.info(f"Created {len(clusters)} evidence clusters with two-stage likelihood assessment")
         return markdown_summary, clusters
+
+    def _run_phase_3b_batched(
+        self,
+        request: BFIHAnalysisRequest,
+        evidence_items: List[Dict],
+        base_rates: Dict[str, float],
+        hypotheses: List[Dict],
+        paradigms: List[Dict],
+        hyp_text: str,
+        evidence_summary: str
+    ) -> List[Dict]:
+        """Phase 3b with batched paradigm processing for complex schemas.
+
+        When there are many paradigms × hypotheses, this method:
+        1. First gets cluster structure (grouping only)
+        2. Then processes each paradigm separately
+        3. Merges all paradigm likelihoods into the clusters
+
+        This reduces each API call from O(paradigms × hypotheses) to O(hypotheses).
+        """
+        self._log_progress("Phase 3b: Using batched paradigm approach for complex schema...")
+
+        paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+
+        # STEP 1: Get cluster structure (no likelihoods yet)
+        bfih_context = get_bfih_system_context("Cluster Formation", "3b-step1")
+        cluster_prompt = f"""{bfih_context}
+PROPOSITION: "{request.proposition}"
+
+EVIDENCE ITEMS (with pre-computed base rates P(E)):
+{evidence_summary}
+
+## STEP 1: CLUSTER FORMATION
+
+Group the evidence items into 3-5 thematic clusters based on what aspect of the proposition they address.
+
+For each cluster provide:
+- cluster_id: C1, C2, etc.
+- cluster_name: Short descriptive name
+- description: What this evidence cluster addresses
+- evidence_ids: List of evidence IDs in this cluster
+- cluster_base_rate: Average P(E) for evidence in this cluster
+
+Return JSON with a "clusters" array. Do NOT include paradigm_likelihoods yet - we will add those separately.
+
+Example format:
+{{"clusters": [
+  {{"cluster_id": "C1", "cluster_name": "Name", "description": "...", "evidence_ids": ["E1", "E2"], "cluster_base_rate": 0.65}},
+  ...
+]}}
+"""
+        try:
+            self._log_progress("Phase 3b Step 1: Forming evidence clusters...")
+            result = self._run_reasoning_phase(
+                cluster_prompt, "Phase 3b Step 1: Cluster Formation",
+                schema_name="clusters_simple"
+            )
+            raw_clusters = result.get("clusters", [])
+        except Exception as e:
+            logger.warning(f"Cluster formation failed: {e}, using default single cluster")
+            # Fallback: single cluster with all evidence
+            raw_clusters = [{
+                "cluster_id": "C1",
+                "cluster_name": "All Evidence",
+                "description": "All gathered evidence items",
+                "evidence_ids": [e.get("evidence_id") for e in evidence_items],
+                "cluster_base_rate": sum(base_rates.values()) / len(base_rates) if base_rates else 0.5
+            }]
+
+        # Initialize clusters with empty paradigm likelihoods
+        clusters = []
+        for c in raw_clusters:
+            cluster_evidence_ids = c.get("evidence_ids", [])
+            cluster_base_rate = c.get("cluster_base_rate")
+            if cluster_base_rate is None and cluster_evidence_ids:
+                rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
+                cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
+
+            clusters.append({
+                "cluster_id": c.get("cluster_id"),
+                "cluster_name": c.get("cluster_name"),
+                "description": c.get("description"),
+                "evidence_ids": cluster_evidence_ids,
+                "cluster_base_rate": cluster_base_rate,
+                "likelihoods_by_paradigm": {}
+            })
+
+        logger.info(f"Phase 3b Step 1: Created {len(clusters)} evidence clusters")
+
+        # STEP 2: Get likelihoods for each paradigm separately
+        cluster_summary = json.dumps([{
+            "cluster_id": c["cluster_id"],
+            "cluster_name": c["cluster_name"],
+            "description": c["description"],
+            "evidence_ids": c["evidence_ids"],
+            "cluster_base_rate": c["cluster_base_rate"]
+        } for c in clusters], indent=2)
+
+        for p_idx, paradigm in enumerate(paradigms):
+            paradigm_id = paradigm.get("id", f"K{p_idx}")
+            paradigm_name = paradigm.get("name", "Unknown")
+            paradigm_desc = paradigm.get("description", "")[:200]
+
+            self._log_progress(f"Phase 3b Step 2: Assigning likelihoods for {paradigm_id} ({p_idx + 1}/{len(paradigms)})...")
+
+            paradigm_prompt = f"""{bfih_context}
+PROPOSITION: "{request.proposition}"
+
+HYPOTHESES:
+{hyp_text}
+
+PARADIGM: {paradigm_id} - {paradigm_name}
+Description: {paradigm_desc}
+
+EVIDENCE CLUSTERS:
+{cluster_summary}
+
+## STEP 2: LIKELIHOOD ASSIGNMENT FOR {paradigm_id}
+
+For EACH cluster, assign P(E|H) for EACH hypothesis under paradigm {paradigm_id}.
+
+CRITICAL RULES:
+1. If hypothesis H makes NO specific prediction about this evidence → P(E|H) = cluster_base_rate (LR = 1)
+2. If H predicts this evidence → P(E|H) > cluster_base_rate
+3. If H predicts AGAINST this evidence → P(E|H) < cluster_base_rate
+
+Return JSON with cluster likelihoods for this paradigm only:
+{{"paradigm_id": "{paradigm_id}", "cluster_likelihoods": [
+  {{"cluster_id": "C1", "hypothesis_likelihoods": [
+    {{"hypothesis_id": "H0", "probability": 0.65, "relative_to_base_rate": "equal"}},
+    {{"hypothesis_id": "H1", "probability": 0.85, "relative_to_base_rate": "above"}},
+    ...
+  ]}},
+  ...
+]}}
+"""
+            try:
+                result = self._run_reasoning_phase(
+                    paradigm_prompt, f"Phase 3b: {paradigm_id} Likelihoods",
+                    schema_name="paradigm_likelihoods"
+                )
+
+                # Merge results into clusters
+                cluster_likelihoods = result.get("cluster_likelihoods", [])
+                for cl in cluster_likelihoods:
+                    c_id = cl.get("cluster_id")
+                    # Find matching cluster
+                    for cluster in clusters:
+                        if cluster["cluster_id"] == c_id:
+                            cluster["likelihoods_by_paradigm"][paradigm_id] = {}
+                            cluster_base_rate = cluster.get("cluster_base_rate", 0.5)
+                            for hl in cl.get("hypothesis_likelihoods", []):
+                                h_id = hl.get("hypothesis_id")
+                                if h_id:
+                                    prob = hl.get("probability", 0.5)
+                                    rel = hl.get("relative_to_base_rate", "")
+                                    cluster["likelihoods_by_paradigm"][paradigm_id][h_id] = {
+                                        "probability": prob,
+                                        "justification": hl.get("justification", ""),
+                                        "relative_to_base_rate": rel
+                                    }
+                                    # Log non-predictive
+                                    if rel == "equal" or abs(prob - cluster_base_rate) < 0.02:
+                                        logger.info(f"  {h_id} is non-predictive for {c_id} under {paradigm_id}: P(E|H)={prob:.2f} ≈ P(E)={cluster_base_rate:.2f}")
+                            break
+
+            except Exception as e:
+                logger.error(f"FATAL: Failed to get likelihoods for {paradigm_id}: {e}")
+                raise RuntimeError(
+                    f"Phase 3b ABORTED: Could not obtain valid likelihoods for paradigm {paradigm_id}. "
+                    f"Error: {e}. Refusing to continue with meaningless fallback values."
+                )
+
+        # Validate that we got actual likelihoods for all paradigms
+        for cluster in clusters:
+            for paradigm_id in paradigm_ids:
+                if paradigm_id not in cluster.get("likelihoods_by_paradigm", {}):
+                    raise RuntimeError(
+                        f"Phase 3b ABORTED: Missing likelihoods for paradigm {paradigm_id} in cluster {cluster.get('cluster_id')}. "
+                        f"Refusing to continue with incomplete data."
+                    )
+                paradigm_likelihoods = cluster["likelihoods_by_paradigm"][paradigm_id]
+                if len(paradigm_likelihoods) < len(hyp_ids) * 0.5:  # At least 50% of hypotheses
+                    raise RuntimeError(
+                        f"Phase 3b ABORTED: Incomplete likelihoods for paradigm {paradigm_id} in cluster {cluster.get('cluster_id')}. "
+                        f"Got {len(paradigm_likelihoods)}/{len(hyp_ids)} hypotheses. Refusing to continue with incomplete data."
+                    )
+
+        logger.info(f"Phase 3b batched complete: {len(clusters)} clusters with {len(paradigms)} paradigms each (all validated)")
+        return clusters
 
     def _generate_clusters_markdown(self, clusters: List[Dict], base_rates: Dict[str, float] = None) -> str:
         """Generate markdown summary from structured clusters with base rate information."""
@@ -3544,7 +3986,8 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
 
     def analyze_topic(self, proposition: str, domain: str = "business",
                       difficulty: str = "medium",
-                      reasoning_model: Optional[str] = None) -> BFIHAnalysisResult:
+                      reasoning_model: Optional[str] = None,
+                      budget_limit: Optional[float] = None) -> BFIHAnalysisResult:
         """
         Autonomous BFIH analysis from topic submission.
 
@@ -3560,12 +4003,18 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
             domain: Domain category (business, medical, policy, historical, etc.)
             difficulty: easy (3-4 hyp), medium (5-6 hyp), hard (7+ hyp)
             reasoning_model: Optional reasoning model override (o3-mini, gpt-5.2, etc.)
+            budget_limit: Maximum cost in USD. None = unlimited.
 
         Returns:
             BFIHAnalysisResult with full report and generated config
         """
         analysis_start = datetime.now(timezone.utc)
         scenario_id = f"auto_{uuid.uuid4().hex[:8]}"
+
+        # Initialize cost tracking
+        self.cost_tracker = CostTracker(budget_limit=budget_limit)
+        if budget_limit:
+            self._log_progress(f"Budget limit set: ${budget_limit:.2f}")
 
         # Override reasoning model if specified
         if reasoning_model and reasoning_model in AVAILABLE_REASONING_MODELS:
@@ -3581,12 +4030,14 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
         # Phase 0a: Generate paradigms
         self._report_status("phase:paradigms")
         self._log_progress("Starting Phase 0a: Generating paradigms...")
+        self.cost_tracker.check_budget("Phase 0a: Paradigms", estimated_cost=0.50)
         paradigms = self._generate_paradigms(proposition, domain)
         self._log_progress(f"Generated {len(paradigms)} paradigms")
 
         # Phase 0b: Generate hypotheses with forcing functions + MECE synthesis
         self._report_status("phase:hypotheses")
         self._log_progress("Starting Phase 0b: Generating hypotheses...")
+        self.cost_tracker.check_budget("Phase 0b: Hypotheses", estimated_cost=1.00)
         hypotheses, forcing_functions_log = self._generate_hypotheses_with_forcing_functions(
             proposition, paradigms, difficulty
         )
@@ -3595,6 +4046,7 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
         # Phase 0c: Assign priors per paradigm (BEFORE evidence, based only on background context)
         self._report_status("phase:priors")
         self._log_progress("Starting Phase 0c: Assigning priors...")
+        self.cost_tracker.check_budget("Phase 0c: Priors", estimated_cost=0.50)
         priors_by_paradigm = self._assign_priors(hypotheses, paradigms, proposition)
         self._log_progress("Priors assigned")
 
@@ -3608,11 +4060,13 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
         self._save_scenario_config(scenario_id, scenario_config)
 
         # Create request and run existing phases 1-5
+        # Pass budget_limit so conduct_analysis continues with same budget
         request = BFIHAnalysisRequest(
             scenario_id=scenario_id,
             proposition=proposition,
             scenario_config=scenario_config,
-            user_id="autonomous"
+            user_id="autonomous",
+            budget_limit=budget_limit
         )
 
         result = self.conduct_analysis(request)
@@ -5290,6 +5744,13 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
                 max_output_tokens=16000,  # Increased for longer, richer output
                 reasoning={"effort": "medium"},  # GPT-5.x requires explicit reasoning effort
             )
+
+            # Track costs if usage data is available
+            if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
+                input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
+                output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
+                reasoning_tokens = getattr(response.usage, 'reasoning_tokens', 0) or 0
+                self.cost_tracker.add_cost("gpt-5.2", "magazine_synopsis", input_tokens, output_tokens, reasoning_tokens)
 
             synopsis = response.output_text
 

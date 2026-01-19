@@ -106,13 +106,15 @@ class HermeneuticRunner:
     - Saves all results and intermediate artifacts
     """
 
-    def __init__(self, config: HermeneuticProjectConfig, output_dir: Optional[str] = None):
+    def __init__(self, config: HermeneuticProjectConfig, output_dir: Optional[str] = None,
+                 budget_limit: Optional[float] = None):
         """
         Initialize the runner.
 
         Args:
             config: Project configuration
             output_dir: Override output directory (uses config default if None)
+            budget_limit: Maximum total cost in USD for all analyses. None = unlimited.
         """
         self.config = config
         self.output_dir = Path(output_dir or config.project.output_dir)
@@ -121,6 +123,8 @@ class HermeneuticRunner:
         self.results: Dict[str, AnalysisResult] = {}
         self.checkpoint: Optional[ProjectCheckpoint] = None
         self.orchestrator = BFIHOrchestrator()
+        self.budget_limit = budget_limit
+        self.total_cost = 0.0  # Track cumulative cost across all analyses
 
         # Set up logging
         self._setup_logging()
@@ -250,14 +254,31 @@ class HermeneuticRunner:
         # Map difficulty to model behavior
         # The orchestrator will handle difficulty internally
 
+        # Calculate remaining budget for this analysis
+        remaining_budget = None
+        if self.budget_limit is not None:
+            remaining_budget = self.budget_limit - self.total_cost
+            if remaining_budget <= 0:
+                raise RuntimeError(
+                    f"BUDGET EXHAUSTED: Total cost ${self.total_cost:.2f} has reached limit ${self.budget_limit:.2f}. "
+                    f"Cannot start analysis for topic '{topic.id}'."
+                )
+            logger.info(f"Remaining budget for '{topic.id}': ${remaining_budget:.2f}")
+
         # Run the analysis using the orchestrator's analyze_topic method
         # Include prior context in the proposition if available
         result_obj = self.orchestrator.analyze_topic(
             proposition=proposition,  # Includes prior context if configured
             domain="philosophy",
             difficulty=topic.difficulty,
-            reasoning_model=topic.model
+            reasoning_model=topic.model,
+            budget_limit=remaining_budget
         )
+
+        # Track cost from this analysis
+        analysis_cost = result_obj.metadata.get('cost', {}).get('total_cost_usd', 0.0)
+        self.total_cost += analysis_cost
+        logger.info(f"Analysis '{topic.id}' cost: ${analysis_cost:.2f}, Total project cost: ${self.total_cost:.2f}")
 
         duration = time.time() - start_time
 
@@ -436,7 +457,8 @@ Prior Analysis: {result.proposition}
 def run_project(
     config_path: str,
     output_dir: Optional[str] = None,
-    resume: bool = False
+    resume: bool = False,
+    budget_limit: Optional[float] = None
 ) -> Dict[str, AnalysisResult]:
     """
     Convenience function to run a complete hermeneutic analysis project.
@@ -445,13 +467,21 @@ def run_project(
         config_path: Path to project configuration YAML
         output_dir: Override output directory
         resume: Resume from checkpoint if available
+        budget_limit: Maximum total cost in USD for all analyses. None = unlimited.
 
     Returns:
         Dictionary of analysis results
     """
     config = load_project_config(config_path)
-    runner = HermeneuticRunner(config, output_dir)
+    runner = HermeneuticRunner(config, output_dir, budget_limit=budget_limit)
+    if budget_limit:
+        logger.info(f"Project budget limit: ${budget_limit:.2f}")
     return runner.run_all(resume=resume)
+
+
+def run_hermeneutic_project(config_path: str, budget_limit: Optional[float] = None) -> Dict[str, AnalysisResult]:
+    """Alias for run_project with simplified interface."""
+    return run_project(config_path, budget_limit=budget_limit)
 
 
 if __name__ == "__main__":
@@ -461,10 +491,11 @@ if __name__ == "__main__":
     parser.add_argument("config", help="Path to project configuration YAML")
     parser.add_argument("--output", "-o", help="Output directory override")
     parser.add_argument("--resume", "-r", action="store_true", help="Resume from checkpoint")
+    parser.add_argument("--budget", "-b", type=float, help="Maximum budget in USD (e.g., 5.00)")
 
     args = parser.parse_args()
 
-    results = run_project(args.config, args.output, args.resume)
+    results = run_project(args.config, args.output, args.resume, args.budget)
 
     print("\n" + "=" * 60)
     print("COMPONENT ANALYSES COMPLETE")
