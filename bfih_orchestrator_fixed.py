@@ -491,7 +491,215 @@ class BFIHOrchestrator:
         except Exception as e:
             logger.error(f"Error conducting BFIH analysis: {str(e)}", exc_info=True)
             raise
-    
+
+    def conduct_analysis_with_injected_evidence(
+        self,
+        request: BFIHAnalysisRequest,
+        injected_evidence: List[Dict],
+        skip_methodology: bool = True
+    ) -> BFIHAnalysisResult:
+        """
+        Conduct BFIH analysis with pre-supplied evidence items (skip Phase 2).
+
+        This method is designed for meta-analysis scenarios where evidence items
+        come from prior BFIH analyses rather than web search. It accepts structured
+        evidence and proceeds directly to likelihood assignment (Phase 3).
+
+        Args:
+            request: BFIHAnalysisRequest with scenario config and proposition
+            injected_evidence: List of evidence items in standard BFIH format:
+                [
+                    {
+                        "evidence_id": "E1",
+                        "description": "...",
+                        "source_name": "Prior BFIH Analysis",
+                        "source_url": "file://...",
+                        "evidence_type": "systematic_analysis",
+                        "supports_hypotheses": ["H1", "H2"],
+                        "refutes_hypotheses": ["H3"]
+                    },
+                    ...
+                ]
+            skip_methodology: If True, skip Phase 1 (methodology retrieval)
+
+        Returns:
+            BFIHAnalysisResult with report and posteriors
+        """
+        analysis_start = datetime.now(timezone.utc)
+
+        # Override reasoning model if specified in request
+        if request.reasoning_model and request.reasoning_model in AVAILABLE_REASONING_MODELS:
+            self.reasoning_model = request.reasoning_model
+            self._log_progress(f"Using request-specified reasoning model: {self.reasoning_model}")
+
+        self._log_progress(f"Starting BFIH meta-analysis for scenario: {request.scenario_id}")
+        self._log_progress(f"Proposition: {request.proposition}")
+        self._log_progress(f"Injected evidence items: {len(injected_evidence)}")
+
+        try:
+            # Phase 1: Methodology (optional for meta-analysis)
+            if skip_methodology:
+                methodology = "Meta-analysis using prior BFIH conclusions as evidence."
+                self._log_progress("Phase 1: Skipped (meta-analysis mode)")
+            else:
+                self._report_status("phase:methodology")
+                self._log_progress("Phase 1: Retrieving methodology...")
+                methodology = self._run_phase_1_methodology(request)
+                self._log_progress("Phase 1 complete: Methodology retrieved")
+
+            # Phase 2: SKIPPED - Use injected evidence
+            self._report_status("phase:evidence")
+            self._log_progress("Phase 2: Using injected evidence (skipping web search)")
+            evidence_items = injected_evidence
+
+            # Generate evidence text summary for Phase 3
+            evidence_text = self._format_injected_evidence_as_text(injected_evidence)
+            self._log_progress(f"Phase 2 complete: {len(evidence_items)} injected evidence items")
+
+            # Phase 3: Assign likelihoods to evidence (returns structured clusters)
+            self._report_status("phase:likelihoods")
+            self._log_progress("Phase 3: Assigning likelihoods...")
+            likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
+                request, evidence_text, evidence_items
+            )
+            self._log_progress(f"Phase 3 complete: {len(evidence_clusters)} evidence clusters")
+
+            # Compute Bayesian metrics for ALL paradigms
+            priors_by_paradigm = request.scenario_config.get(
+                "priors_by_paradigm",
+                request.scenario_config.get("priors", {})
+            )
+
+            hypotheses = request.scenario_config.get("hypotheses", [])
+            paradigms = request.scenario_config.get("paradigms", [])
+            hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+            paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
+
+            enriched_clusters = []
+            for cluster in evidence_clusters:
+                enriched = dict(cluster)
+                enriched["bayesian_metrics_by_paradigm"] = {}
+
+                for paradigm_id in paradigm_ids:
+                    paradigm_priors = priors_by_paradigm.get(paradigm_id, {})
+                    if not paradigm_priors:
+                        continue
+
+                    likelihoods = cluster.get("likelihoods_by_paradigm", {}).get(paradigm_id, {})
+                    if not likelihoods:
+                        likelihoods = cluster.get("likelihoods", {})
+
+                    metrics = self._compute_cluster_bayesian_metrics(
+                        likelihoods, paradigm_priors, hyp_ids
+                    )
+                    enriched["bayesian_metrics_by_paradigm"][paradigm_id] = metrics
+
+                enriched_clusters.append(enriched)
+
+            evidence_clusters = enriched_clusters
+
+            # Store structured evidence in scenario_config for report
+            if "evidence" not in request.scenario_config:
+                request.scenario_config["evidence"] = {}
+            request.scenario_config["evidence"]["items"] = evidence_items
+            request.scenario_config["evidence"]["clusters"] = evidence_clusters
+            request.scenario_config["evidence"]["total_items"] = len(evidence_items)
+            request.scenario_config["evidence"]["total_clusters"] = len(evidence_clusters)
+
+            # Phase 4: Bayesian computation
+            self._report_status("phase:computation")
+            self._log_progress("Phase 4: Computing posteriors...")
+
+            posteriors_by_paradigm = {}
+            for paradigm_id in paradigm_ids:
+                paradigm_priors = priors_by_paradigm.get(paradigm_id, {})
+                if not paradigm_priors:
+                    continue
+
+                posteriors = self._compute_posteriors_from_clusters(
+                    paradigm_priors, enriched_clusters, hyp_ids, paradigm_id
+                )
+                posteriors_by_paradigm[paradigm_id] = posteriors
+                logger.info(f"Paradigm {paradigm_id} posteriors: {posteriors}")
+
+            request.scenario_config["posteriors_by_paradigm"] = posteriors_by_paradigm
+            self._log_progress("Phase 4 complete: Posteriors computed")
+
+            # Phase 5: Generate report
+            self._report_status("phase:report")
+            self._log_progress("Phase 5: Generating report...")
+            bfih_report = self._run_phase_5_report(
+                request, evidence_items, evidence_clusters, posteriors_by_paradigm
+            )
+            self._log_progress("Phase 5 complete: Report generated")
+
+            posteriors = posteriors_by_paradigm
+
+            # Create result object
+            analysis_id = str(uuid.uuid4())
+            analysis_end = datetime.now(timezone.utc)
+            duration_seconds = (analysis_end - analysis_start).total_seconds()
+
+            result = BFIHAnalysisResult(
+                analysis_id=analysis_id,
+                scenario_id=request.scenario_id,
+                proposition=request.proposition,
+                report=bfih_report,
+                posteriors=posteriors,
+                metadata={
+                    "model": self.model,
+                    "phases_completed": 5,
+                    "duration_seconds": duration_seconds,
+                    "user_id": request.user_id,
+                    "evidence_items_count": len(evidence_items),
+                    "evidence_clusters_count": len(evidence_clusters),
+                    "meta_analysis": True,
+                    "injected_evidence": True
+                },
+                created_at=analysis_end.isoformat(),
+                scenario_config=request.scenario_config
+            )
+
+            result.metadata["evidence_items"] = evidence_items
+            result.metadata["evidence_clusters"] = enriched_clusters
+
+            # Generate visualization
+            try:
+                import tempfile
+                viz_dir = tempfile.gettempdir()
+                viz_output = self.generate_evidence_flow_visualization(result, output_dir=viz_dir)
+                if viz_output.get("png"):
+                    result.metadata["visualization"] = {
+                        "dot": viz_output["dot"],
+                        "png": viz_output["png"],
+                        "dot_content": viz_output.get("dot_content")
+                    }
+                    logger.info(f"Generated evidence flow visualization: {viz_output['png']}")
+            except Exception as viz_error:
+                logger.warning(f"Could not generate visualization: {viz_error}")
+
+            self._log_progress(f"BFIH meta-analysis completed successfully: {analysis_id}")
+            self._log_progress(f"Duration: {duration_seconds:.1f}s")
+            return result
+
+        except Exception as e:
+            logger.error(f"Error conducting BFIH meta-analysis: {str(e)}", exc_info=True)
+            raise
+
+    def _format_injected_evidence_as_text(self, evidence_items: List[Dict]) -> str:
+        """Format injected evidence items as text for Phase 3 processing."""
+        lines = ["# Injected Evidence Items\n"]
+        for item in evidence_items:
+            lines.append(f"## {item.get('evidence_id', 'E?')}: {item.get('description', '')[:200]}")
+            lines.append(f"Source: {item.get('source_name', 'Unknown')}")
+            lines.append(f"Type: {item.get('evidence_type', 'unknown')}")
+            if item.get('supports_hypotheses'):
+                lines.append(f"Supports: {', '.join(item['supports_hypotheses'])}")
+            if item.get('refutes_hypotheses'):
+                lines.append(f"Refutes: {', '.join(item['refutes_hypotheses'])}")
+            lines.append("")
+        return "\n".join(lines)
+
     def _build_orchestration_prompt(self, request: BFIHAnalysisRequest) -> str:
         """Build the orchestration prompt for LLM"""
         scenario_json = json.dumps(request.scenario_config, indent=2)
