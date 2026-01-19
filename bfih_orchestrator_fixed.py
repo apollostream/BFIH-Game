@@ -610,26 +610,46 @@ class BFIHOrchestrator:
             self._report_status("phase:computation")
             self._log_progress("Phase 4: Computing posteriors...")
 
-            posteriors_by_paradigm = {}
-            for paradigm_id in paradigm_ids:
-                paradigm_priors = priors_by_paradigm.get(paradigm_id, {})
-                if not paradigm_priors:
-                    continue
-
-                posteriors = self._compute_posteriors_from_clusters(
-                    paradigm_priors, enriched_clusters, hyp_ids, paradigm_id
-                )
-                posteriors_by_paradigm[paradigm_id] = posteriors
-                logger.info(f"Paradigm {paradigm_id} posteriors: {posteriors}")
+            # Use the existing _compute_paradigm_posteriors method
+            posteriors_by_paradigm = self._compute_paradigm_posteriors(
+                request.scenario_config, enriched_clusters
+            )
 
             request.scenario_config["posteriors_by_paradigm"] = posteriors_by_paradigm
             self._log_progress("Phase 4 complete: Posteriors computed")
+
+            # Build precomputed tables for report
+            first_paradigm = paradigm_ids[0] if paradigm_ids else None
+            precomputed_cluster_tables = []
+            for cluster in enriched_clusters:
+                cluster_name = cluster.get("cluster_id") or cluster.get("cluster_name", "Unknown")
+                table = self._format_cluster_metrics_table(cluster, hyp_ids, first_paradigm)
+                precomputed_cluster_tables.append({
+                    "name": cluster_name,
+                    "description": cluster.get("description", ""),
+                    "evidence_ids": cluster.get("evidence_ids", []),
+                    "table": table
+                })
+
+            # Build paradigm comparison table
+            paradigm_comparison_table = self._format_paradigm_comparison_table(
+                posteriors_by_paradigm, request.scenario_config
+            )
 
             # Phase 5: Generate report
             self._report_status("phase:report")
             self._log_progress("Phase 5: Generating report...")
             bfih_report = self._run_phase_5_report(
-                request, evidence_items, evidence_clusters, posteriors_by_paradigm
+                request=request,
+                methodology=methodology,
+                evidence=evidence_text,
+                likelihoods=likelihoods_text,
+                evidence_items=evidence_items,
+                evidence_clusters=enriched_clusters,
+                precomputed_cluster_tables=precomputed_cluster_tables,
+                precomputed_joint_table="",  # Not computed for meta-analysis
+                posteriors_by_paradigm=posteriors_by_paradigm,
+                paradigm_comparison_table=paradigm_comparison_table
             )
             self._log_progress("Phase 5 complete: Report generated")
 
@@ -1134,24 +1154,35 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 )
 
                 for event in stream:
-                    if event.type == "response.output_text.delta":
-                        print(event.delta, end="", flush=True)
-                    elif event.type == "response.web_search_call.searching":
-                        print(f"\n[Searching web...]")
-                    elif event.type == "response.file_search_call.searching":
-                        print(f"\n[Searching vector store...]")
-                    elif event.type == "response.code_interpreter_call.interpreting":
-                        print(f"\n[Running Python code...]")
-                    elif event.type == "response.completed":
-                        response = event.response
-                    elif event.type == "error":
-                        logger.error(f"Error in {phase_name}: {event.error.message}")
-                        raise RuntimeError(f"API error in {phase_name}: {event.error.message}")
+                    try:
+                        if event.type == "response.output_text.delta":
+                            print(event.delta, end="", flush=True)
+                        elif event.type == "response.web_search_call.searching":
+                            print(f"\n[Searching web...]")
+                        elif event.type == "response.file_search_call.searching":
+                            print(f"\n[Searching vector store...]")
+                        elif event.type == "response.code_interpreter_call.interpreting":
+                            print(f"\n[Running Python code...]")
+                        elif event.type == "response.completed":
+                            response = event.response
+                        elif event.type == "error":
+                            logger.error(f"Error in {phase_name}: {event.error.message}")
+                            raise RuntimeError(f"API error in {phase_name}: {event.error.message}")
+                    except BrokenPipeError:
+                        # Ignore broken pipe errors from print statements (happens in background mode)
+                        if event.type == "response.completed":
+                            response = event.response
+                        elif event.type == "error":
+                            logger.error(f"Error in {phase_name}: {event.error.message}")
+                            raise RuntimeError(f"API error in {phase_name}: {event.error.message}")
 
                 if response is None:
                     raise RuntimeError(f"No response received for {phase_name}")
 
-                print(f"\n[{phase_name} complete]")
+                try:
+                    print(f"\n[{phase_name} complete]")
+                except BrokenPipeError:
+                    pass  # Ignore broken pipe in background mode
                 logger.info(f"{phase_name} complete, status: {response.status}")
 
                 return response.output_text

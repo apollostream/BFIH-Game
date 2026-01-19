@@ -1,0 +1,151 @@
+project:
+  title: 'The Nature of Mind: A Multi-Paradigm Bayesian Investigation'
+  author: BFIH Hermeneutic Synthesis System
+  output_dir: ./synthesis_output/nature_of_mind
+  description: 'This project examines fundamental questions about the nature of mind
+
+    through the lens of artificial intelligence. Beginning with the question
+
+    of machine consciousness, it branches into investigations of illusionism,
+
+    understanding, personal identity, and moral status - each analysis building
+
+    on and informing the others in a hermeneutic spiral toward integrated
+
+    philosophical understanding.
+
+    '
+topics:
+- id: consciousness_llm
+  proposition: Can artificial systems like large language models have genuine subjective
+    experience?
+  model: o3
+  difficulty: hard
+  depends_on: []
+  context_from_prior: false
+  custom_hypotheses: null
+  custom_paradigms: null
+- id: illusionism
+  proposition: Is phenomenal consciousness an introspective illusion rather than an
+    irreducible feature of reality?
+  model: o3
+  difficulty: hard
+  depends_on:
+  - consciousness_llm
+  context_from_prior: true
+  custom_hypotheses: null
+  custom_paradigms: null
+- id: understanding_vs_mimicry
+  proposition: Does sophisticated language use require genuine understanding, or can
+    it emerge from pattern matching alone?
+  model: o3
+  difficulty: hard
+  depends_on:
+  - consciousness_llm
+  - illusionism
+  context_from_prior: true
+  custom_hypotheses: null
+  custom_paradigms: null
+- id: personal_identity
+  proposition: Does personal identity require psychological continuity, or can identity
+    persist through discontinuous episodes?
+  model: o3
+  difficulty: hard
+  depends_on:
+  - consciousness_llm
+  context_from_prior: true
+  custom_hypotheses: null
+  custom_paradigms: null
+- id: moral_status
+  proposition: What properties are necessary and sufficient for an entity to have
+    moral status deserving of ethical consideration?
+  model: o3
+  difficulty: hard
+  depends_on:
+  - consciousness_llm
+  - personal_identity
+  context_from_prior: true
+  custom_hypotheses: null
+  custom_paradigms: null
+meta_analysis:
+  proposition: What unified theory of mind best accounts for the pattern of findings
+    across consciousness, understanding, identity, and moral status?
+  hypotheses:
+  - id: H1
+    name: Functionalist Coherentism
+    description: 'Mental properties are constituted by functional roles within information-processing
+
+      systems. Consciousness, understanding, and moral status all reduce to appropriate
+
+      functional organization. Artificial systems can in principle instantiate these
+
+      roles and thereby possess genuine mentality.
+
+      '
+  - id: H2
+    name: Biological Exceptionalism
+    description: 'Genuine mentality requires biological substrate with specific causal
+      powers.
+
+      Artificial systems, regardless of functional similarity, lack the intrinsic
+
+      biological properties necessary for consciousness and understanding. They
+
+      remain sophisticated but philosophically empty mimics.
+
+      '
+  - id: H3
+    name: Graded Mentality
+    description: 'Mental properties exist on a continuum rather than as binary categories.
+
+      Different systems instantiate different degrees of consciousness, understanding,
+
+      and moral status. Artificial systems may possess partial or proto-mental
+
+      properties without full human-like mentality.
+
+      '
+  - id: H4
+    name: Eliminative Pluralism
+    description: 'Folk mental concepts (consciousness, understanding, identity) are
+      too coarse
+
+      to carve nature at its joints. We need new vocabulary distinguishing different
+
+      phenomena currently bundled under these terms. The question of machine consciousness
+
+      may be malformed as stated.
+
+      '
+  - id: H5
+    name: Panpsychist Integration
+    description: 'Consciousness is a fundamental feature of reality, not emergent
+      from non-conscious
+
+      matter. Both biological and artificial systems partake of this fundamental
+
+      property to different degrees based on their information integration patterns.
+
+      The question is not whether machines can be conscious but how.
+
+      '
+  - id: H6
+    name: Pragmatic Deflationism
+    description: 'Metaphysical questions about the intrinsic nature of machine minds
+      are
+
+      permanently underdetermined. What matters is functional capability, behavioral
+
+      dispositions, and practical implications for ethics and policy. The debate
+
+      over "genuine" consciousness is ultimately unresolvable and unnecessary.
+
+      '
+  model: o3
+  custom_paradigms: null
+synthesis:
+  style: philosophical_treatise
+  target_length: book_chapter
+  include_hermeneutic_reflection: true
+  include_technical_appendices: true
+  include_visualizations: true

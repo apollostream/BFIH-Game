@@ -22,7 +22,7 @@ from hermeneutic_config_schema import (
 )
 
 # Import the BFIH orchestrator
-from bfih_orchestrator_fixed import BFIHOrchestrator, AnalysisRequest
+from bfih_orchestrator_fixed import BFIHOrchestrator, BFIHAnalysisRequest
 
 logger = logging.getLogger(__name__)
 
@@ -250,45 +250,30 @@ class HermeneuticRunner:
         # Map difficulty to model behavior
         # The orchestrator will handle difficulty internally
 
-        # Run the analysis using the orchestrator's CLI-equivalent method
-        # We need to call the main analysis flow
-        try:
-            result_data = self.orchestrator.analyze_topic(
-                proposition=topic.proposition,  # Use clean proposition for display
-                topic=topic.proposition,
-                domain="philosophy",  # Default domain
-                difficulty=topic.difficulty,
-                model_name=topic.model,
-                generate_synopsis=True,
-                prior_context=prior_context  # Pass context separately
-            )
-        except TypeError:
-            # If analyze_topic doesn't accept prior_context, use alternative approach
-            # Modify the proposition to include context
-            result_data = self.orchestrator.analyze_topic(
-                proposition=proposition,
-                topic=proposition,
-                domain="philosophy",
-                difficulty=topic.difficulty,
-                model_name=topic.model,
-                generate_synopsis=True
-            )
+        # Run the analysis using the orchestrator's analyze_topic method
+        # Include prior context in the proposition if available
+        result_obj = self.orchestrator.analyze_topic(
+            proposition=proposition,  # Includes prior context if configured
+            domain="philosophy",
+            difficulty=topic.difficulty,
+            reasoning_model=topic.model
+        )
 
         duration = time.time() - start_time
 
-        # Extract result information
-        analysis_id = result_data.get('analysis_id', 'unknown')
-        scenario_id = result_data.get('scenario_id', 'unknown')
+        # Extract result information from BFIHAnalysisResult object
+        analysis_id = result_obj.analysis_id
+        scenario_id = result_obj.scenario_id
 
         # Get posteriors and find winner
-        posteriors = result_data.get('posteriors', {})
+        posteriors = result_obj.posteriors
         k0_posteriors = posteriors.get('K0', {})
 
         winning_hyp_id = max(k0_posteriors, key=k0_posteriors.get) if k0_posteriors else 'H0'
         winning_posterior = k0_posteriors.get(winning_hyp_id, 0.0)
 
         # Get hypothesis name from scenario config
-        scenario_config = result_data.get('scenario_config', {})
+        scenario_config = result_obj.scenario_config or {}
         hypotheses = scenario_config.get('hypotheses', [])
         winning_hyp_name = winning_hyp_id
         for h in hypotheses:
@@ -305,7 +290,7 @@ class HermeneuticRunner:
             verdict = "INDETERMINATE"
 
         # Override with actual verdict if present
-        report = result_data.get('report', '')
+        report = result_obj.report or ''
         if '**Verdict:**' in report:
             for line in report.split('\n'):
                 if '**Verdict:**' in line:
