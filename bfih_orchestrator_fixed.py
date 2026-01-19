@@ -144,8 +144,8 @@ if os.getenv("TREATISE_VECTOR_STORE_ID"):
 
 MODEL = "o4-mini"
 # Reasoning model for cognitively demanding tasks (paradigm/hypothesis/prior/likelihood)
-# Options: o3-mini (default), o3, o4-mini, gpt-5, gpt-5.2
-REASONING_MODEL = os.getenv("BFIH_REASONING_MODEL", "o3-mini")
+# Options: gpt-5.2 (default), o3-mini, o3, o4-mini, gpt-5
+REASONING_MODEL = os.getenv("BFIH_REASONING_MODEL", "gpt-5.2")
 # Whether reasoning model supports structured output (o3-mini and newer do as of 2026)
 REASONING_MODEL_SUPPORTS_STRUCTURED = os.getenv("BFIH_REASONING_STRUCTURED", "true").lower() == "true"
 

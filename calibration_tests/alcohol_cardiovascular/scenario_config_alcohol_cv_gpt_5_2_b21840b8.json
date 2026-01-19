@@ -1,0 +1,101 @@
+{
+  "proposition": "Does moderate alcohol consumption provide cardiovascular health benefits?",
+  "domain": "medicine",
+  "difficulty": "hard",
+  "paradigms": [
+    {
+      "id": "K0",
+      "name": "Scientific Consensus",
+      "description": "Mainstream epidemiological and clinical perspective based on observational studies, meta-analyses, and mechanistic research.",
+      "ontology": "Material, measurable biological and behavioral processes",
+      "epistemology": "Epidemiological evidence, RCTs where available, mechanistic plausibility",
+      "axiology": "Public health guidance, harm reduction, evidence-based recommendations"
+    },
+    {
+      "id": "K1",
+      "name": "Traditional/Cultural",
+      "description": "Perspective that values long-standing cultural practices (Mediterranean diet, French paradox) and observational patterns.",
+      "ontology": "Holistic lifestyle factors, cultural wisdom",
+      "epistemology": "Historical patterns, population-level observations, traditional knowledge",
+      "axiology": "Quality of life, cultural practices, moderate enjoyment"
+    },
+    {
+      "id": "K2",
+      "name": "Strict Precautionary",
+      "description": "Emphasizes that alcohol is a known carcinogen and toxin; any benefit claims should be viewed with extreme skepticism.",
+      "ontology": "Biochemical toxicity, dose-response relationships",
+      "epistemology": "Mechanistic toxicology, no safe level for carcinogens",
+      "axiology": "Absolute harm minimization, precautionary principle"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H0",
+      "name": "OTHER - Unforeseen explanation",
+      "short_name": "Unforeseen",
+      "description": "Some unknown mechanism not captured by the other hypotheses explains the observed associations between moderate alcohol and cardiovascular outcomes.",
+      "verdict_type": "OTHER"
+    },
+    {
+      "id": "H1",
+      "name": "TRUE - Moderate alcohol is cardioprotective",
+      "short_name": "Cardioprotective",
+      "description": "Moderate alcohol consumption (1-2 drinks/day) provides genuine cardiovascular benefits through mechanisms like HDL elevation, reduced platelet aggregation, and improved endothelial function. The J-curve relationship is real.",
+      "verdict_type": "TRUE"
+    },
+    {
+      "id": "H2",
+      "name": "FALSE - No cardiovascular benefit",
+      "short_name": "No Benefit",
+      "description": "Moderate alcohol provides no net cardiovascular benefit. Previous observational findings were confounded by the 'sick quitter' effect, healthy user bias, and other methodological issues. Any benefits are outweighed by cancer and other risks.",
+      "verdict_type": "FALSE"
+    },
+    {
+      "id": "H3",
+      "name": "PARTIAL - Dose and pattern dependent",
+      "short_name": "Dose-Dependent",
+      "description": "Benefits exist but are highly dose and pattern dependent. Light drinking (\u22641 drink/day) with meals may provide modest benefits, but these disappear or reverse at higher doses or with binge patterns. The therapeutic window is narrow.",
+      "verdict_type": "PARTIAL"
+    },
+    {
+      "id": "H4",
+      "name": "PARTIAL - Confounded by lifestyle",
+      "short_name": "Lifestyle Confounding",
+      "description": "Apparent benefits are largely due to confounding - moderate drinkers tend to have healthier lifestyles, better socioeconomic status, and more social connections. When properly controlled, the benefit disappears or becomes minimal.",
+      "verdict_type": "PARTIAL"
+    },
+    {
+      "id": "H5",
+      "name": "PARTIAL - Beverage-type specific",
+      "short_name": "Beverage-Specific",
+      "description": "Benefits are specific to certain beverages (particularly red wine) due to polyphenols, resveratrol, or other compounds - not alcohol itself. Beer and spirits may not provide the same benefits.",
+      "verdict_type": "PARTIAL"
+    }
+  ],
+  "priors_by_paradigm": {
+    "K0": {
+      "H0": 0.05,
+      "H1": 0.2,
+      "H2": 0.25,
+      "H3": 0.25,
+      "H4": 0.15,
+      "H5": 0.1
+    },
+    "K1": {
+      "H0": 0.05,
+      "H1": 0.4,
+      "H2": 0.1,
+      "H3": 0.25,
+      "H4": 0.1,
+      "H5": 0.1
+    },
+    "K2": {
+      "H0": 0.05,
+      "H1": 0.05,
+      "H2": 0.45,
+      "H3": 0.15,
+      "H4": 0.25,
+      "H5": 0.05
+    }
+  }
+}

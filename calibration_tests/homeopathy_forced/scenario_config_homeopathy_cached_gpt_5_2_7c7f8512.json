@@ -1,0 +1,101 @@
+{
+  "proposition": "Does homeopathy work better than placebo for treating medical conditions?",
+  "domain": "medicine",
+  "difficulty": "hard",
+  "paradigms": [
+    {
+      "id": "K0",
+      "name": "Scientific Consensus",
+      "description": "Mainstream scientific and medical consensus based on RCTs, meta-analyses, and mechanistic understanding.",
+      "ontology": "Material, measurable biological and chemical processes",
+      "epistemology": "Empirical observation, RCTs, systematic reviews, falsification",
+      "axiology": "Evidence-based medicine, patient safety, reproducibility"
+    },
+    {
+      "id": "K1",
+      "name": "Integrative Medicine Advocate",
+      "description": "Perspective that values holistic approaches and considers patient-reported outcomes alongside RCTs.",
+      "ontology": "Mind-body connection, vitalistic principles",
+      "epistemology": "Clinical experience, patient narratives, holistic assessment",
+      "axiology": "Patient autonomy, whole-person care, therapeutic relationship"
+    },
+    {
+      "id": "K2",
+      "name": "Skeptical Empiricist",
+      "description": "Strictly materialist view that demands mechanistic explanations and rejects implausible claims.",
+      "ontology": "Physical matter and measurable forces only",
+      "epistemology": "Mechanism-first, extraordinary claims require extraordinary evidence",
+      "axiology": "Scientific rigor, preventing harm from ineffective treatments"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H0",
+      "name": "OTHER - Unforeseen explanation",
+      "short_name": "Unforeseen",
+      "description": "Some unknown mechanism not captured by the other hypotheses explains homeopathy's observed effects (or lack thereof).",
+      "verdict_type": "OTHER"
+    },
+    {
+      "id": "H1",
+      "name": "TRUE - Homeopathy has specific therapeutic effects",
+      "short_name": "Specific Effects",
+      "description": "Homeopathic remedies have specific therapeutic effects beyond placebo through an as-yet-unknown mechanism (e.g., water memory, quantum effects, nanoparticles).",
+      "verdict_type": "TRUE"
+    },
+    {
+      "id": "H2",
+      "name": "FALSE - No effect beyond placebo",
+      "short_name": "No Effect",
+      "description": "Homeopathic remedies have no specific therapeutic effect beyond placebo. Any perceived benefits are due to placebo effect, regression to mean, natural recovery, or concurrent conventional treatment.",
+      "verdict_type": "FALSE"
+    },
+    {
+      "id": "H3",
+      "name": "PARTIAL - Works for some conditions only",
+      "short_name": "Condition-Specific",
+      "description": "Homeopathy has specific effects for certain conditions (e.g., allergies, anxiety) but not others. The mechanism may be placebo-enhanced or condition-specific.",
+      "verdict_type": "PARTIAL"
+    },
+    {
+      "id": "H4",
+      "name": "PARTIAL - Therapeutic ritual effect",
+      "short_name": "Ritual Effect",
+      "description": "Homeopathy's effects come not from the remedies themselves but from the extended consultation, individualized attention, and therapeutic relationship - a real but non-specific effect.",
+      "verdict_type": "PARTIAL"
+    },
+    {
+      "id": "H5",
+      "name": "PARTIAL - Low-dose hormesis",
+      "short_name": "Hormesis",
+      "description": "Some homeopathic preparations at lower dilutions (not ultra-diluted) may have hormetic effects - beneficial responses to low-dose stressors - but this doesn't apply to standard ultra-diluted preparations.",
+      "verdict_type": "PARTIAL"
+    }
+  ],
+  "priors_by_paradigm": {
+    "K0": {
+      "H0": 0.05,
+      "H1": 0.05,
+      "H2": 0.6,
+      "H3": 0.1,
+      "H4": 0.15,
+      "H5": 0.05
+    },
+    "K1": {
+      "H0": 0.1,
+      "H1": 0.3,
+      "H2": 0.15,
+      "H3": 0.2,
+      "H4": 0.2,
+      "H5": 0.05
+    },
+    "K2": {
+      "H0": 0.05,
+      "H1": 0.02,
+      "H2": 0.75,
+      "H3": 0.05,
+      "H4": 0.1,
+      "H5": 0.03
+    }
+  }
+}

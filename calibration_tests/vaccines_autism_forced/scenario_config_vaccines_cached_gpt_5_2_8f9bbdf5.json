@@ -1,0 +1,101 @@
+{
+  "proposition": "Do vaccines cause autism in children?",
+  "domain": "medicine",
+  "difficulty": "hard",
+  "paradigms": [
+    {
+      "id": "K0",
+      "name": "Scientific Consensus",
+      "description": "Mainstream scientific and medical consensus based on epidemiological evidence, meta-analyses, and mechanistic biology.",
+      "ontology": "Material, measurable biological processes",
+      "epistemology": "Empirical observation, RCTs, systematic reviews, falsification",
+      "axiology": "Public health, harm reduction, evidence-based medicine"
+    },
+    {
+      "id": "K1",
+      "name": "Vaccine Skeptic",
+      "description": "Perspective that questions vaccine safety claims, emphasizes anecdotal reports, and distrusts pharmaceutical/regulatory institutions.",
+      "ontology": "Individual experiences and observable outcomes",
+      "epistemology": "Personal testimony, pattern recognition in adverse event reports",
+      "axiology": "Parental autonomy, precaution, distrust of authority"
+    },
+    {
+      "id": "K2",
+      "name": "Precautionary",
+      "description": "Accepts most vaccine science but emphasizes unknown long-term risks and subgroup vulnerabilities.",
+      "ontology": "Complex systems with emergent effects",
+      "epistemology": "Scenario modeling, acknowledging uncertainty",
+      "axiology": "Precautionary principle, intergenerational responsibility"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "H0",
+      "name": "OTHER - Unforeseen explanation",
+      "short_name": "Unforeseen",
+      "description": "Some unknown factor not captured by the other hypotheses explains the relationship (or lack thereof) between vaccines and autism.",
+      "verdict_type": "OTHER"
+    },
+    {
+      "id": "H1",
+      "name": "TRUE - Vaccines directly cause autism",
+      "short_name": "Direct Causation",
+      "description": "Vaccines (or their components like thimerosal, aluminum adjuvants, or antigens) directly cause autism through biological mechanisms such as immune activation, neurotoxicity, or gut-brain axis disruption.",
+      "verdict_type": "TRUE"
+    },
+    {
+      "id": "H2",
+      "name": "FALSE - No causal link exists",
+      "short_name": "No Causation",
+      "description": "There is no causal relationship between vaccines and autism. The temporal correlation (vaccines given around age when autism symptoms appear) is coincidental. Large epidemiological studies consistently show no increased risk.",
+      "verdict_type": "FALSE"
+    },
+    {
+      "id": "H3",
+      "name": "PARTIAL - Rare subgroup vulnerability",
+      "short_name": "Subgroup Effect",
+      "description": "While vaccines don't cause autism in the general population, a small subset of genetically or immunologically vulnerable children may experience adverse neurodevelopmental effects. This subgroup is too small to detect in population studies.",
+      "verdict_type": "PARTIAL"
+    },
+    {
+      "id": "H4",
+      "name": "PARTIAL - Indirect pathway via immune activation",
+      "short_name": "Indirect Pathway",
+      "description": "Vaccines don't directly cause autism, but in rare cases, the immune response they trigger may interact with pre-existing conditions to affect neurodevelopment. The effect is real but indirect and context-dependent.",
+      "verdict_type": "PARTIAL"
+    },
+    {
+      "id": "H5",
+      "name": "PARTIAL - Timing/schedule effects only",
+      "short_name": "Timing Effects",
+      "description": "Individual vaccines are safe, but the cumulative effect of the vaccination schedule (multiple vaccines in short timeframes) may overwhelm some children's immune systems, contributing to developmental issues in susceptible individuals.",
+      "verdict_type": "PARTIAL"
+    }
+  ],
+  "priors_by_paradigm": {
+    "K0": {
+      "H0": 0.05,
+      "H1": 0.05,
+      "H2": 0.6,
+      "H3": 0.1,
+      "H4": 0.1,
+      "H5": 0.1
+    },
+    "K1": {
+      "H0": 0.1,
+      "H1": 0.35,
+      "H2": 0.1,
+      "H3": 0.2,
+      "H4": 0.15,
+      "H5": 0.1
+    },
+    "K2": {
+      "H0": 0.1,
+      "H1": 0.1,
+      "H2": 0.3,
+      "H3": 0.2,
+      "H4": 0.15,
+      "H5": 0.15
+    }
+  }
+}
