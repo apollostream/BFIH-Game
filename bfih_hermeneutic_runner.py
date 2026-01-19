@@ -306,11 +306,8 @@ class HermeneuticRunner:
         topic_dir = self.output_dir / "analyses" / topic.id
         topic_dir.mkdir(parents=True, exist_ok=True)
 
-        # Copy/move result files to topic directory
+        # Save result files to topic directory
         base_name = f"bfih_report_{scenario_id}"
-
-        # The orchestrator saves files in the current directory
-        # We'll copy them to our organized structure
         import shutil
 
         report_path = topic_dir / f"{base_name}.md"
@@ -318,20 +315,30 @@ class HermeneuticRunner:
         synopsis_path = topic_dir / f"{base_name}_synopsis.md"
         viz_path = topic_dir / f"{base_name}_evidence_flow.png"
 
-        # Copy files if they exist in current directory
-        for src_name, dest_path in [
-            (f"{base_name}.md", report_path),
-            (f"{base_name}.json", json_path),
-            (f"{base_name}_synopsis.md", synopsis_path),
-        ]:
-            src_path = Path(src_name)
-            if src_path.exists():
-                shutil.copy(src_path, dest_path)
+        # Save markdown report directly from result object
+        if report:
+            with open(report_path, 'w') as f:
+                f.write(report)
+            logger.info(f"Saved report: {report_path}")
 
-        # Check for visualization in /tmp
+        # Save JSON result
+        result_dict = {
+            'analysis_id': analysis_id,
+            'scenario_id': scenario_id,
+            'proposition': topic.proposition,
+            'posteriors': posteriors,
+            'scenario_config': scenario_config,
+            'created_at': datetime.utcnow().isoformat()
+        }
+        with open(json_path, 'w') as f:
+            json.dump(result_dict, f, indent=2)
+        logger.info(f"Saved JSON: {json_path}")
+
+        # Check for visualization in /tmp and copy it
         tmp_viz = Path(f"/tmp/{scenario_id}-evidence-flow.png")
         if tmp_viz.exists():
             shutil.copy(tmp_viz, viz_path)
+            logger.info(f"Saved visualization: {viz_path}")
 
         # Extract summary from report
         summary = ""
