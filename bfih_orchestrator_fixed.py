@@ -2821,9 +2821,10 @@ Return JSON with cluster likelihoods for this paradigm only:
 ]}}
 """
             try:
+                # Use raw JSON output (no schema) since the structure is simpler per-paradigm
                 result = self._run_reasoning_phase(
                     paradigm_prompt, f"Phase 3b: {paradigm_id} Likelihoods",
-                    schema_name="paradigm_likelihoods"
+                    schema_name=None  # Simpler per-paradigm output doesn't need schema enforcement
                 )
 
                 # Merge results into clusters
