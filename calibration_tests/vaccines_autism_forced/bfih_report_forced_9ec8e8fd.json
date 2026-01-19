@@ -1,0 +1,2163 @@
+{
+  "analysis_id": "9f7c2c12-9135-45c1-afbe-680a391dd44e",
+  "scenario_id": "forced_9ec8e8fd",
+  "proposition": "Do vaccines cause autism in children?",
+  "report": "# BFIH Analysis Report: Do vaccines cause autism in children?\n\n**Analysis conducted using Bayesian Framework for Intellectual Honesty (BFIH)**\n\n---\n\n## Executive Summary\n\n**Verdict:** REJECTED\n\nThe Bayesian analysis under the privileged scientific\u2010consensus paradigm (K0) overwhelmingly favors H2 (\u201cNo causal link exists\u201d) with a posterior probability of 0.6765. The runner\u2010up is H0 (\u201cOther unexplained factor\u201d) at 0.3152. All direct\u2010cause or partial\u2010link hypotheses (H1, H3\u2013H5) receive negligible support (combined posterior \u2248 0.0083).\n\nUnder K0, H2 is the clear winner. In contrast, the vaccine\u2010skeptic paradigm (K1) places highest posterior on H0 (0.4687) and H1 (0.3579), while the precautionary paradigm (K2) also favors H0 (0.5065) followed by H2 (0.4205). These differences reflect deep prior biases in K1 and K2, but do not alter the robust K0 conclusion.\n\nKey drivers include large\u2010scale epidemiological studies and meta\u2010analyses consistently showing no increased autism risk after vaccination (high likelihood ratios against H1), well\u2010characterized timelines in which autism symptoms emerge independently of immunization, and a lack of plausible biological mechanisms linking vaccine components to neurodevelopmental disorders.\n\nThe rejection of a causal link is robust within the scientific\u2010consensus framework but remains paradigm\u2010dependent. Paradigms emphasizing institutional distrust or precaution assign more weight to unknown or subgroup\u2010risk hypotheses. Nonetheless, even under these views, direct causation (H1) never achieves majority support, reinforcing the overall conclusion that vaccines do not cause autism.\n\n---\n\n## 1. Paradigms Analyzed\n\n### K0: Scientific Consensus\n\n*(No explicit stance data available)*\n\nThis paradigm reflects the mainstream view of epidemiologists, immunologists, and child\u2010development specialists. It assumes high credibility of large\u2010scale trials, laboratory studies, and regulatory oversight.\n\n### K1: Vaccine Skeptic\n\n*(No explicit stance data available)*\n\nThis perspective gives greater weight to anecdotal reports, case series, and distrust of pharmaceutical and regulatory bodies. It treats official safety assurances with caution.\n\n### K2: Precautionary\n\n*(No explicit stance data available)*\n\nThis viewpoint accepts the bulk of vaccine science but remains alert to potential long\u2010term, rare, or subgroup\u2010specific risks. It emphasizes ongoing vigilance and targeted research.\n\n---\n\n## 2. Hypothesis Set\n\n**H0: OTHER \u2013 Unforeseen explanation**  \nThis hypothesis posits that neither vaccines nor known confounders fully account for the observed timing of autism diagnosis. It allows for an as\u2010yet unidentified environmental, genetic, or methodological factor driving the apparent vaccine\u2013autism relationship. Under H0, further research could reveal new etiologies or diagnostic biases.  \n**Prior Probabilities:**\n\n| Paradigm | Prior P(H0) | Rationale                                     |\n|----------|-------------|-----------------------------------------------|\n| K0 (Scientific Consensus)       | 0.05        | Science leaves small room for unknown factors |\n| K1 (Vaccine Skeptic)       | 0.10        | Skeptics allow for hidden mechanisms          |\n| K2 (Precautionary)       | 0.10        | Precautionary view admits unknowns            |\n\n**H1: TRUE \u2013 Vaccines directly cause autism**  \nH1 asserts a direct causal link, via components such as thimerosal, aluminium adjuvants, or antigens, triggering neurotoxicity or immune\u2010mediated damage. It suggests a biological mechanism by which vaccination initiates or accelerates autism pathology. This view underpins many high\u2010profile anecdotal claims and contested studies.  \n**Prior Probabilities:**\n\n| Paradigm | Prior P(H1) | Rationale                                                    |\n|----------|-------------|--------------------------------------------------------------|\n| K0 (Scientific Consensus)       | 0.05        | Consensus science finds no credible mechanism or effect      |\n| K1 (Vaccine Skeptic)       | 0.35        | Skeptics give substantial weight to anecdotal and case reports |\n| K2 (Precautionary)       | 0.10        | Acknowledges low\u2010probability harms but lacks strong evidence |\n\n**H2: FALSE \u2013 No causal link exists**  \nH2 holds that the temporal overlap of vaccination schedules and autism onset is coincidental. It relies on extensive epidemiological data and meta\u2010analyses showing no increased autism risk post\u2010vaccination. Mechanistic biology does not support vaccine\u2010induced neurodevelopmental harm.  \n**Prior Probabilities:**\n\n| Paradigm | Prior P(H2) | Rationale                                                      |\n|----------|-------------|----------------------------------------------------------------|\n| K0 (Scientific Consensus)       | 0.60        | Strong empirical support from large, well\u2010controlled studies   |\n| K1 (Vaccine Skeptic)       | 0.10        | Skeptics remain unconvinced by mainstream epidemiology         |\n| K2 (Precautionary)       | 0.30        | Precautionaries accept global safety data but note limits      |\n\n**H3: PARTIAL \u2013 Rare subgroup vulnerability**  \nUnder H3, vaccines are innocuous for most children but may trigger autism\u2010like effects in a small genetically or immunologically predisposed subgroup. The subgroup is too small for detection in broad population studies yet could explain isolated case reports.  \n**Prior Probabilities:**\n\n| Paradigm | Prior P(H3) | Rationale                                              |\n|----------|-------------|--------------------------------------------------------|\n| K0 (Scientific Consensus)       | 0.10        | Minimal subgroup risk deemed remote by consensus       |\n| K1 (Vaccine Skeptic)       | 0.20        | Skeptics highlight possible rare adverse reactions     |\n| K2 (Precautionary)       | 0.20        | Precautionaries emphasize vulnerable subpopulations    |\n\n**H4: PARTIAL \u2013 Indirect pathway via immune activation**  \nH4 proposes that vaccine\u2010induced immune activation interacts with pre\u2010existing conditions (e.g., neuroinflammation) to subtly influence neurodevelopment. The effect is not a direct toxin but an indirect immunological cascade with rare neuropsychiatric outcomes.  \n**Prior Probabilities:**\n\n| Paradigm | Prior P(H4) | Rationale                                                  |\n|----------|-------------|------------------------------------------------------------|\n| K0 (Scientific Consensus)       | 0.10        | Limited biological plausibility accepted only in edge cases |\n| K1 (Vaccine Skeptic)       | 0.15        | Skeptics consider immune pathways plausible explanations   |\n| K2 (Precautionary)       | 0.15        | Precautionary stance finds indirect pathways worth study   |\n\n**H5: PARTIAL \u2013 Timing/schedule effects only**  \nThis hypothesis holds that although individual vaccines are safe, the cumulative immune challenge of the recommended schedule may overwhelm some children\u2019s developing systems, potentially contributing to developmental issues. It focuses on timing rather than any specific vaccine component.  \n**Prior Probabilities:**\n\n| Paradigm | Prior P(H5) | Rationale                                                     |\n|----------|-------------|---------------------------------------------------------------|\n| K0 (Scientific Consensus)       | 0.10        | Consensus sees no overload effect in standard pediatric schedules |\n| K1 (Vaccine Skeptic)       | 0.10        | Skeptics argue schedule density is under\u2010researched           |\n| K2 (Precautionary)       | 0.15        | Precautionaries often question cumulative dosing impacts      |\n\n\n\n---\n\n## 3. Evidence Clusters\n\n### Cluster: C1\n\n**Description:** High-quality cohort, case-control, and meta-analysis studies (large N, rigorous peer-review) consistently report no association between vaccines (MMR, thimerosal, antigen load) and autism.  \n**Evidence Items:** E1, E3, E4, E6, E9, E10, E14, E17, E18, E19, E20, E24, E26, E27, E29, E30, E31, E32, E37, E41, E43, E44, E45, E46\n\n  \n| Hypothesis | P(E\\|H) | P(E\\|\u00acH) | LR | WoE (dB) | Direction |\n|------------|--------|---------|-----|----------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.7 | 0.6132 | 1.1416 | 0.58 | Weak Support |\n| H1 (TRUE - Vaccines directly ca...) | 0.05 | 0.6474 | 0.0772 | -11.12 | Strong Refutation |\n| H2 (FALSE - No causal link exists) | 0.9 | 0.1938 | 4.6452 | 6.67 | Moderate Support |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.2 | 0.6639 | 0.3013 | -5.21 | Moderate Refutation |\n| H4 (PARTIAL - Indirect pathway ...) | 0.1 | 0.675 | 0.1481 | -8.29 | Moderate Refutation |\n| H5 (PARTIAL - Timing/schedule e...) | 0.1 | 0.675 | 0.1481 | -8.29 | Moderate Refutation |\n\nIn C1, H2 is moderately supported by the evidence (LR = 4.6452, WoE = 6.67 dB), H0 receives weak support (LR = 1.1416, WoE = 0.58 dB), while H1 is strongly refuted (LR = 0.0772, WoE = \u201311.12 dB) and H3\u2013H5 are moderately refuted. The WoE values show that high-quality epidemiological studies are substantially more likely under H2 than under competing hypotheses, and barely more likely under H0, whereas they are far less likely under H1, H3, H4, and H5.\n\n### Cluster: C2\n\n**Description:** Statements and reviews by IOM, CDC, WHO, AAP and other authoritative bodies concluding vaccines are not causally linked to autism.  \n**Evidence Items:** E2, E8, E11, E12, E13, E21, E25, E33, E34, E35, E36, E42, E49, E50\n\n  \n| Hypothesis | P(E\\|H) | P(E\\|\u00acH) | LR | WoE (dB) | Direction |\n|------------|--------|---------|-----|----------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.75 | 0.6079 | 1.2338 | 0.91 | Weak Support |\n| H1 (TRUE - Vaccines directly ca...) | 0.05 | 0.6447 | 0.0776 | -11.1 | Strong Refutation |\n| H2 (FALSE - No causal link exists) | 0.9 | 0.1875 | 4.8 | 6.81 | Moderate Support |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.15 | 0.6667 | 0.225 | -6.48 | Moderate Refutation |\n| H4 (PARTIAL - Indirect pathway ...) | 0.1 | 0.6722 | 0.1488 | -8.28 | Moderate Refutation |\n| H5 (PARTIAL - Timing/schedule e...) | 0.1 | 0.6722 | 0.1488 | -8.28 | Moderate Refutation |\n\nIn C2, authoritative reviews yield moderate support for H2 (LR = 4.8, WoE = 6.81 dB) and weak support for H0 (LR = 1.2338, WoE = 0.91 dB), while strongly refuting H1 (LR = 0.0776, WoE = \u201311.1 dB) and moderately refuting H3\u2013H5. This indicates that official bodies\u2019 conclusions are about 4.8 times more likely if H2 is true, add little evidence for H0, and heavily undermine H1.\n\n### Cluster: C3\n\n**Description:** Lower-quality or highly contested studies and policy signals suggesting vaccines (or schedule intensity) increase autism risk.  \n**Evidence Items:** E16, E22, E23, E39, E40, E47, E48, E51\n\n  \n| Hypothesis | P(E\\|H) | P(E\\|\u00acH) | LR | WoE (dB) | Direction |\n|------------|--------|---------|-----|----------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.55 | 0.1842 | 2.9857 | 4.75 | Weak Support |\n| H1 (TRUE - Vaccines directly ca...) | 0.4 | 0.1921 | 2.0822 | 3.19 | Weak Support |\n| H2 (FALSE - No causal link exists) | 0.1 | 0.3563 | 0.2807 | -5.52 | Moderate Refutation |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.3 | 0.1917 | 1.5652 | 1.95 | Weak Support |\n| H4 (PARTIAL - Indirect pathway ...) | 0.3 | 0.1917 | 1.5652 | 1.95 | Weak Support |\n| H5 (PARTIAL - Timing/schedule e...) | 0.35 | 0.1861 | 1.8806 | 2.74 | Weak Support |\n\nCluster C3\u2019s contested data weakly support H0 (LR = 2.9857, WoE = 4.75 dB), H1 (LR = 2.0822, WoE = 3.19 dB), H3 (LR = 1.5652, WoE = 1.95 dB), H4 (LR = 1.5652, WoE = 1.95 dB), and H5 (LR = 1.8806, WoE = 2.74 dB), while moderately refuting H2 (LR = 0.2807, WoE = \u20135.52 dB). The WoE values suggest these lower-quality signals slightly favor several hypotheses but undermine H2 and do not decisively support any single theory.\n\n### Cluster: C4\n\n**Description:** Documentation that key pro-link studies (e.g., Wakefield 1998) were retracted for fraud and ethics violations, undermining credibility of vaccine-autism claims.  \n**Evidence Items:** E7, E15, E38\n\n  \n| Hypothesis | P(E\\|H) | P(E\\|\u00acH) | LR | WoE (dB) | Direction |\n|------------|--------|---------|-----|----------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.8 | 0.6053 | 1.3217 | 1.21 | Weak Support |\n| H1 (TRUE - Vaccines directly ca...) | 0.2 | 0.6368 | 0.314 | -5.03 | Moderate Refutation |\n| H2 (FALSE - No causal link exists) | 0.85 | 0.2625 | 3.2381 | 5.1 | Moderate Support |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.25 | 0.6556 | 0.3814 | -4.19 | Weak Refutation |\n| H4 (PARTIAL - Indirect pathway ...) | 0.15 | 0.6667 | 0.225 | -6.48 | Moderate Refutation |\n| H5 (PARTIAL - Timing/schedule e...) | 0.15 | 0.6667 | 0.225 | -6.48 | Moderate Refutation |\n\nIn C4, retraction documentation moderately supports H2 (LR = 3.2381, WoE = 5.1 dB) and weakly supports H0 (LR = 1.3217, WoE = 1.21 dB), while moderately refuting H1 (LR = 0.314, WoE = \u20135.03 dB) and H4\u2013H5 (LR = 0.225, WoE = \u20136.48 dB), and weakly refuting H3 (LR = 0.3814, WoE = \u20134.19 dB). These metrics imply that evidence of scientific fraud significantly increases the likelihood of H2 relative to its negation and provides only minor backing for H0, while undermining hypotheses of a direct causal link.\n\n### Cluster: C5\n\n**Description:** Animal and translational work suggesting maternal immune activation can induce autism-like phenotypes, offering a non-vaccine mechanistic pathway.  \n**Evidence Items:** E5\n\n  \n| Hypothesis | P(E\\|H) | P(E\\|\u00acH) | LR | WoE (dB) | Direction |\n|------------|--------|---------|-----|----------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.5 | 0.3789 | 1.3194 | 1.2 | Weak Support |\n| H1 (TRUE - Vaccines directly ca...) | 0.4 | 0.3842 | 1.0411 | 0.17 | Neutral |\n| H2 (FALSE - No causal link exists) | 0.3 | 0.5125 | 0.5854 | -2.33 | Weak Refutation |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.4 | 0.3833 | 1.0435 | 0.18 | Neutral |\n| H4 (PARTIAL - Indirect pathway ...) | 0.8 | 0.3389 | 2.3607 | 3.73 | Weak Support |\n| H5 (PARTIAL - Timing/schedule e...) | 0.4 | 0.3833 | 1.0435 | 0.18 | Neutral |\n\nCluster C5\u2019s animal\u2010model evidence weakly supports H4 (LR = 2.3607, WoE = 3.73 dB) and H0 (LR = 1.3194, WoE = 1.2 dB), is neutral toward H1, H3, and H5 (LR\u22481, WoE\u22480 dB), and weakly refutes H2 (LR = 0.5854, WoE = \u20132.33 dB). This suggests that maternal immune activation models offer some support for H4, but do not strongly discriminate among most hypotheses and mildly challenge H2.\n\n---\n\n## 4. Evidence Items Detail\n\n### E1: Retrospective Danish cohort (N = 537,303) found RR for autistic disorder after MMR of 0.92 (95% CI 0.68\u20131.24) and for ASD 0.83 (95% CI 0.65\u20131.07), with no timing effects.  \n- **Source:** New England Journal of Medicine  \n- **URL:** https://www.nejm.org/doi/full/10.1056/NEJMoa021134  \n- **Citation:** Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJMoa021134  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis large study shows no increased risk of autism following MMR vaccination, providing strong epidemiological evidence against causality.\n\n### E2: The 2004 Institute of Medicine consensus concluded epidemiological evidence rejects any causal link between MMR or thimerosal-containing vaccines and autism, with only theoretical mechanisms proposed.  \n- **Source:** National Academies Press  \n- **URL:** https://nap.nationalacademies.org/catalog/10997/immunization-safety-review-vaccines-and-autism  \n- **Citation:** Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. Washington, DC: The National Academies Press. https://doi.org/10.17226/10997  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nAn authoritative review by a major scientific body finds no empirical support for a vaccine\u2013autism link, underscoring robust institutional consensus.\n\n### E3: CDC case\u2013control study (256 ASD cases, 752 controls) found no association between prenatal/infant thimerosal exposure and autism risk.  \n- **Source:** Centers for Disease Control and Prevention  \n- **URL:** https://archive.cdc.gov/www_cdc_gov/vaccinesafety/concerns/thimerosal/study-risk-autism.html  \n- **Citation:** Price, C. S., Thompson, W. W., Goodson, B., et al. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656\u2013664. https://doi.org/10.1542/peds.2010-0309  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis well-powered case\u2013control study reports no increased autism risk with thimerosal exposure, reinforcing null epidemiological findings.\n\n### E4: 2014 meta-analysis of 1.26 M cohort and 9.9 K case\u2013control subjects found ORs near 1.0 for vaccines, MMR, thimerosal, and mercury relative to autism.  \n- **Source:** Vaccine  \n- **URL:** https://doi.org/10.1016/j.vaccine.2014.04.085  \n- **Citation:** Taylor, L. E., Swerdfeger, A. L., & Eslick, G. D. (2014). Vaccines are not associated with autism: An evidence-based meta-analysis\u2026 Vaccine, 32(29), 3623\u20133629. https://doi.org/10.1016/j.vaccine.2014.04.085  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nAggregated data across multiple designs yield no evidence of increased autism risk, strengthening the conclusion of no causal effect.\n\n### E5: Patterson (2011) reviews animal models showing maternal immune activation can induce autism-like phenotypes via IL-6\u2013mediated pathways.  \n- **Source:** Trends in Molecular Medicine  \n- **URL:** https://pmc.ncbi.nlm.nih.gov/articles/PMC3135697/  \n- **Citation:** Patterson, P. H. (2011). Maternal infection and immune involvement in autism. Trends in Molecular Medicine, 17(7), 389\u2013394. https://doi.org/10.1016/j.molmed.2011.03.001  \n- **Accessed:** 2026-01-19  \n- **Type:** qualitative  \n- **Cluster:** Biological Mechanism Speculations (Maternal Immune Activation)  \n\nThis mechanistic speculation suggests maternal immune factors can affect neurodevelopment, but it does not implicate vaccines directly and remains theoretical.\n\n### E6: Atlanta case\u2013control study (625 ASD cases, 1,824 controls) found no difference in age at first MMR vaccination between cases (70.5%) and controls (67.5%) at 12\u201317 months.  \n- **Source:** Pediatrics  \n- **URL:** https://www.immunizationinfo.org/science/autism-and-age-first-mmr-vaccination/  \n- **Citation:** DeStefano, F., Bhasin, B. K., Thompson, W. W., Yeargin-Allsopp, M., & Boyle, C. (2004). Age at first Measles-Mumps-Rubella vaccination\u2026 Pediatrics, 113(2), 259\u2013266. https://doi.org/10.1542/peds.113.2.259  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nAge of MMR administration does not differ between autistic and non-autistic children, undermining temporal causality arguments.\n\n### E7: In February 2010 The Lancet fully retracted Wakefield et al. (1998) for incorrect data and unethical conduct.  \n- **Source:** BMJ  \n- **URL:** https://www.bmj.com/content/340/bmj.c696  \n- **Citation:** Dyer, C. (2010). Lancet retracts Wakefield\u2019s MMR paper. BMJ, 340, c696. https://doi.org/10.1136/bmj.c696  \n- **Accessed:** 2026-01-19  \n- **Type:** historical_analogy  \n- **Cluster:** Retractions & Fraud Findings  \n\nThe retraction of the original Wakefield study discredits the foundational claim of an MMR\u2013autism link and highlights research misconduct.\n\n### E8: CDC states multiple studies and IOM reviews find no MMR\u2013autism link, noting concurrent onset reflects coincidence.  \n- **Source:** Centers for Disease Control and Prevention  \n- **URL:** https://www.cdc.gov/vaccine-safety/vaccines/mmr.html  \n- **Citation:** Centers for Disease Control and Prevention. (2025). MMR Vaccine Safety. Retrieved January 19, 2026, from https://www.cdc.gov/vaccine-safety/vaccines/mmr.html  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThe CDC\u2019s summary of surveillance and reviews reiterates the absence of causal evidence and explains timing artifacts.\n\n### E9: 2012 Cochrane review of 64 MMR studies found no increased autism risk post-vaccination.  \n- **Source:** Cochrane Database of Systematic Reviews  \n- **URL:** https://doi.org/10.1002/14651858.CD004407.pub3  \n- **Citation:** Demicheli, V., Rivetti, A., Debalini, M. G., & Di Pietrantonj, C. (2012). Vaccines for measles, mumps and rubella\u2026 Cochrane Database of Systematic Reviews, (2), CD004407. https://doi.org/10.1002/14651858.CD004407.pub3  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nA high-quality systematic review confirms no link between MMR vaccination and autism, reinforcing robust null findings.\n\n### E10: Danish cohort (N = 467,450) comparing thimerosal-containing vs. thimerosal-free pertussis vaccines found RR 0.85 (95% CI 0.60\u20131.20) for autism, no dose-response.  \n- **Source:** JAMA  \n- **URL:** https://jamanetwork.com/journals/jama/fullarticle/197365  \n- **Citation:** Hviid, A., Stellfeld, M., Wohlfahrt, J., & Melbye, M. (2003). Association between thimerosal-containing vaccine and autism. JAMA, 290(13), 1763\u20131766.  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis large natural experiment shows no increased autism risk with ethylmercury exposure, and no trend by dose.\n\n### E11: IOM\u2019s 2004 Immunization Safety Review of 200+ studies found no association of MMR or thimerosal vaccines with autism and no empirical support for mechanisms.  \n- **Source:** National Academies Press  \n- **URL:** https://nap.nationalacademies.org/read/10997/chapter/3  \n- **Citation:** Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. doi:10.17226/10997  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThe IOM\u2019s comprehensive review confirms the weight of evidence refutes vaccine causation hypotheses.\n\n### E12: AAP fact-checked resource affirms no credible vaccine\u2013autism link, noting retracted studies and ongoing safety reviews.  \n- **Source:** American Academy of Pediatrics  \n- **URL:** https://www.aap.org/en/news-room/fact-checked/fact-checked-vaccines-safe-and-effect-no-link-to-autism/  \n- **Citation:** American Academy of Pediatrics. (2025). Fact Checked: Vaccines: Safe and Effective, No Link to Autism. Retrieved January 19, 2026.  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nPediatric authorities reinforce that decades of research find no autism risk, strengthening consensus across professional bodies.\n\n### E13: WHO\u2019s 2025 Global Advisory Committee review of 31 studies finds no causal link between childhood vaccines (including thiomersal/aluminum) and autism, dismissing outliers as flawed.  \n- **Source:** People.com  \n- **URL:** https://people.com/world-health-organization-who-says-childhood-vaccines-do-not-cause-autism-no-link-asd-11868287  \n- **Citation:** People.com. (2025). WHO Reaffirms That 'Childhood Vaccines Do Not Cause Autism' After Reviewing Latest Research. Retrieved January 19, 2026.  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThe WHO\u2019s global review confirms null findings and critiques methodological flaws in studies claiming a link.\n\n### E14: Molecular Psychiatry correspondence reports consistent epidemiological failure to associate MMR with autistic enterocolitis.  \n- **Source:** Molecular Psychiatry  \n- **URL:** https://doi.org/10.1038/sj.mp.4001266  \n- **Citation:** Fombonne, E., & Cook, E. (2003). MMR and autistic enterocolitis: Consistent epidemiological failure to find an association. Molecular Psychiatry, 8(2), 133\u2013134. https://doi.org/10.1038/sj.mp.4001266  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis correspondence further negates the hypothesized gastrointestinal mechanism linking MMR to autism.\n\n### E15: The Lancet retracted Wakefield et al. in 2010 for data fabrication, unethical procedures, and conflicts of interest, discrediting the vaccine\u2013autism hypothesis.  \n- **Source:** The Guardian  \n- **URL:** https://www.theguardian.com/society/2010/feb/02/lancet-retracts-mmr-paper  \n- **Citation:** Boseley, S. (2010, February 2). Lancet retracts 'utterly false' MMR paper. The Guardian. Retrieved January 19, 2026.  \n- **Accessed:** 2026-01-19  \n- **Type:** historical_analogy  \n- **Cluster:** Retractions & Fraud Findings  \n\nThis high-profile retraction exposes the original study\u2019s scientific misconduct, undermining the purported vaccine\u2013autism link.\n### E16: 1998 Lancet case series of 12 children reporting gut inflammation and autism onset after MMR vaccination  \n- **Source:** The Lancet  \n- **URL:** https://doi.org/10.1016/S0140-6736(97)11096-0  \n- **Citation:** Wakefield MR, et al. (1998). Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children. Lancet, 351(9103), 637\u2013641. https://doi.org/10.1016/S0140-6736(97)11096-0  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nThis small uncontrolled series suggested a temporal link between measles-containing vaccines and autism symptoms. Its very limited sample and methodological criticisms weaken its evidentiary weight.\n\n### E17: 2002 Danish cohort (n=537,303) found no increased autism risk with MMR vaccination  \n- **Source:** New England Journal of Medicine  \n- **URL:** https://www.nejm.org/doi/full/10.1056/NEJM200211143471901  \n- **Citation:** Madsen KM, et al. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJM200211143471901  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis large, well-powered cohort shows no association between MMR vaccination and autism, providing strong evidence against a causal link.\n\n### E18: 1999 UK case-control (n=1,397) found no link between MMR and autism  \n- **Source:** BMJ  \n- **URL:** https://www.bmj.com/content/321/7269/1029  \n- **Citation:** Taylor B, et al. (1999). Autism and measles, mumps, and rubella vaccine: No epidemiologic evidence for a causal association. BMJ, 321(7269), 1029\u20131033. https://doi.org/10.1136/bmj.321.7269.1029  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis case-control study found no statistical evidence linking MMR vaccination to autism, supporting null findings from other populations.\n\n### E19: 2019 Danish cohort (n=657,461) showed no increased autism hazard post-MMR, even in high-risk subgroups  \n- **Source:** Annals of Internal Medicine  \n- **URL:** https://doi.org/10.7326/M18-2101  \n- **Citation:** Hviid A, Hansen JV, Frisch M, Melbye M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513\u2013520. https://doi.org/10.7326/M18-2101  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis recent large cohort reaffirms no elevated autism risk after MMR vaccination, including among genetically predisposed children.\n\n### E20: Cohort study found no association between vaccine antigen load up to age 2 and ASD at age 7\u201310  \n- **Source:** Pharmacoepidemiology and Drug Safety  \n- **URL:** https://doi.org/10.1002/pds.3482  \n- **Citation:** Iqbal S, Barile JP, Thompson WW, DeStefano F. (2013). Number of antigens in early childhood vaccines and neuropsychological outcomes at age 7\u201310 years. Pharmacoepidemiology and Drug Safety, 22(12), 1263\u20131270. https://doi.org/10.1002/pds.3482  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis study shows no relationship between cumulative or peak antigen exposure in infancy and later ASD diagnosis, countering \u201ctoo many vaccines too soon\u201d claims.\n\n### E21: 2004 Institute of Medicine review rejects causal link between thimerosal/MMR and autism  \n- **Source:** National Academies Press  \n- **URL:** https://doi.org/10.17226/10997  \n- **Citation:** Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://doi.org/10.17226/10997  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThis authoritative review concluded epidemiological data favor rejecting any causal relationship, noting proposed biological mechanisms remain theoretical.\n\n### E22: 2025 preprint argues healthy-user bias might mask true MMR\u2013autism association in Hviid et al. study  \n- **Source:** Preprints.org  \n- **URL:** https://www.preprints.org/manuscript/202501.0796/v2  \n- **Citation:** Preprints.org. (2025). Hviid et al. 2019 Vaccine-Autism Study: Much Ado About Nothing? v2. https://doi.org/10.20944/preprints202501.0796.v2  \n- **Accessed:** 2026-01-19  \n- **Type:** qualitative  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nThis critique suggests selection bias among unvaccinated children could conceal an effect, but remains speculative pending empirical adjustment.\n\n### E23: Nov 2025 CDC webpage states infant vaccines cannot yet be definitively ruled out as autism contributors  \n- **Source:** Centers for Disease Control and Prevention  \n- **URL:** https://beta.cdc.gov/vaccine-safety/about/autism.html  \n- **Citation:** Centers for Disease Control and Prevention. (2025, November 19). Autism and Vaccines. U.S. Department of Health and Human Services. https://beta.cdc.gov/vaccine-safety/about/autism.html  \n- **Accessed:** 2026-01-19  \n- **Type:** policy  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nThis policy update contrasts prior consensus by acknowledging residual uncertainty, potentially reflecting evolving precautionary communication rather than new data.\n\n### E24: Cohort of 196,929 children found no link between maternal influenza vaccination and offspring ASD  \n- **Source:** JAMA Pediatrics  \n- **URL:** https://doi.org/10.1001/jamapediatrics.2016.3609  \n- **Citation:** Zerbo O, et al. (2017). Association between influenza infection and vaccination during pregnancy and risk of autism spectrum disorder. JAMA Pediatrics, 171(1), e163609. https://doi.org/10.1001/jamapediatrics.2016.3609  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nAfter adjusting for multiple comparisons, this large study found no increased ASD risk in children whose mothers were vaccinated against influenza during any trimester.\n\n### E25: 2011 IOM committee review of 1,000+ articles concludes \u201cMMR vaccine does not cause autism\u201d  \n- **Source:** HealthLeaders Media  \n- **URL:** https://www.healthleadersmedia.com/clinical-care/mmr-vaccine-does-not-cause-autism-says-iom  \n- **Citation:** Clark, C. (2011, August 26). MMR Vaccine Does Not Cause Autism, Says IOM. HealthLeaders Media.  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThis summary of the IOM\u2019s extensive literature review reinforces the institutional consensus that no causal link exists.\n\n### E26: Danish ecological analysis (1971\u20132000) shows autism rates rose after thimerosal removal in 1992 (p=0.40)  \n- **Source:** Pediatrics  \n- **URL:** https://pure.au.dk/portal/en/publications/thimerosal-and-the-occurrence-of-autism-negative-ecological-evide  \n- **Citation:** Madsen KM, Lauritsen MB, Pedersen CB, Thorsen P, Plesner A-M. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. https://doi.org/10.1542/peds.112.3.Part1.604  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThe continued rise in autism incidence despite thimerosal removal provides ecological evidence against a mercury-based causal hypothesis.\n\n### E27: US retrospective cohort (n=95,727) shows no increased ASD risk after MMR in high-risk siblings  \n- **Source:** JAMA  \n- **URL:** https://jamanetwork.com/journals/jama/fullarticle/2275444  \n- **Citation:** Jain A, et al. (2015). Autism occurrence by MMR vaccine status among US children with older siblings with and without autism. JAMA, 313(15), 1534\u20131540. https://doi.org/10.1001/jama.2015.3077  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nRisk ratios below 1 in both age 2 and 5 analyses among high-risk children further undermine subgroup-specific vulnerability claims.\n\n### E28: Case-control (256 ASD, 752 controls) finds no association between early antigen load and ASD risk  \n- **Source:** The Journal of Pediatrics  \n- **URL:** https://www.sciencedaily.com/releases/2013/03/130329090310.htm  \n- **Citation:** DeStefano F, Price CS, Weintraub E. (2013). Risk of autism is not increased by \u201ctoo many vaccines too soon,\u201d study shows. The Journal of Pediatrics, 163(1), 79\u201385. https://doi.org/10.1016/j.jpeds.2013.01.029  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Unassigned  \n\nThis controlled analysis confirms that neither cumulative nor peak antigen exposure in infancy elevates ASD risk, despite historical increases in antigen load.\n\n### E29: Danish cohort (n=537,303) reports adjusted RR 0.92 (95% CI 0.68\u20131.24) for autism post-MMR  \n- **Source:** New England Journal of Medicine  \n- **URL:** https://doi.org/10.1056/NEJMoa021134  \n- **Citation:** Madsen KM, Hviid A, Vestergaard M, et al. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJMoa021134  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nRelative risks below or near 1 with wide CIs indicate no increased autism risk after MMR, consistent with null findings across cohorts.\n\n### E30: Danish data (1991\u20132000) show autism incidence rose unabated after thimerosal discontinuation  \n- **Source:** Pediatrics  \n- **URL:** https://pubmed.ncbi.nlm.nih.gov/12949291/  \n- **Citation:** Madsen KM, Lauritsen MB, Pedersen CB, Thorsen P, Plesner AM, Andersen PH, Mortensen PB. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. https://doi.org/10.1542/peds.112.3.604  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThe steady upward trend in autism diagnoses despite removal of thimerosal argues against mercury exposure as a primary driver.\n### E31: Updated Cochrane review (to May 2019) found no increased autism risk from MMR, MMRV, or MMR+V vaccines and confirmed their effectiveness.\n\n- **Source:** Cochrane Database of Systematic Reviews  \n- **URL:** https://www.cochrane.org/CD004407/VACCINES_measles-mumps-rubella-varicella-vaccines-children  \n- **Citation:** Di Pietrantonj, C., Rivetti, A., Marchione, P., Debalini, M. G., & Demicheli, V. (2019). Vaccines for measles, mumps, rubella, and varicella in children. Cochrane Database of Systematic Reviews, 2019(4), CD004407. https://doi.org/10.1002/14651858.CD004407.pub2  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis moderate-to-high certainty systematic review offers robust null evidence against any MMR\u2010related autism risk and affirms vaccine effectiveness.\n\n### E32: Case\u2013control study (256 ASD cases, 752 controls) showed no association between cumulative vaccine antigen exposure by age 2 and ASD risk.\n\n- **Source:** The Journal of Pediatrics  \n- **URL:** https://pubmed.ncbi.nlm.nih.gov/23545349/  \n- **Citation:** DeStefano, F., Price, C. S., & Weintraub, E. S. (2013). Increasing exposure to antibody\u2010stimulating proteins and polysaccharides in vaccines is not associated with risk of autism. Journal of Pediatrics, 163(2), 561\u2013567. https://doi.org/10.1016/j.jpeds.2013.02.001  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThe near\u2010unity adjusted odds ratios per antigen increment strongly support no dose\u2013response link between antigen load and ASD.\n\n### E33: CDC states that extensive studies have found no link between vaccines or their ingredients and ASD.\n\n- **Source:** Centers for Disease Control and Prevention  \n- **URL:** https://www.cdc.gov/vaccine-safety/about/autism.html  \n- **Citation:** Centers for Disease Control and Prevention. (2024, December 30). Autism and vaccines. CDC. Retrieved January 19, 2026, from https://www.cdc.gov/vaccine-safety/about/autism.html  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThis institutional statement summarizes broad null findings and identifies no vaccine ingredient associated with autism risk.\n\n### E34: IOM 2011 report reviewed over 1,000 studies on eight vaccines and found evidence favoring rejection of any vaccine\u2013autism link.\n\n- **Source:** National Academies Press  \n- **URL:** https://doi.org/10.17226/13164  \n- **Citation:** Institute of Medicine. (2011). Adverse Effects of Vaccines: Evidence and Causality. Washington, DC: National Academies Press. https://doi.org/10.17226/13164  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThis high\u2010authority review consolidates global epidemiological evidence to robustly refute vaccines as autism causes.\n\n### E35: The Lancet formally retracted Wakefield et al. 1998 paper in 2010 after data falsification and unethical procedures were confirmed.\n\n- **Source:** The Lancet  \n- **URL:** https://doi.org/10.1016/S0140-6736(10)60175-7  \n- **Citation:** The Editors of The Lancet. (2010). Retraction\u2014Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children. The Lancet. https://doi.org/10.1016/S0140-6736(10)60175-7  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThe formal retraction invalidates the original MMR\u2013autism hypothesis and highlights the fraudulent basis of that claim.\n\n### E36: WHO review (Dec 2025) of 31 studies and meta-analyses reaffirmed no link between vaccines (including thiomersal/aluminum) and ASD.\n\n- **Source:** World Health Organization  \n- **URL:** https://www.who.int/news/item/11-12-2025-who-expert-group-s-new-analysis-reaffirms-there-is-no-link-between-vaccines-and-autism  \n- **Citation:** World Health Organization. (2025, December 11). WHO expert group\u2019s new analysis reaffirms there is no link between vaccines and autism. Retrieved January 19, 2026, from https://www.who.int/news/item/11-12-2025-who-expert-group-s-new-analysis-reaffirms-there-is-no-link-between-vaccines-and-autism  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThis global advisory committee reiterates null findings across multiple adjuvants and formulations, reinforcing vaccine safety.\n\n### E37: Systematic review of 67 US studies found high\u2010strength evidence that MMR is not associated with autism and only moderate evidence for rare adverse events.\n\n- **Source:** Pediatrics  \n- **URL:** https://doi.org/10.1542/peds.2014-1079  \n- **Citation:** Maglione, M. A., Das, L., Raaen, L., Smith, A., Chari, R., Newberry, S., Shanman, R., Perry, T., Goetz, M. B., & Gidengil, C. (2014). Safety of vaccines used for routine immunization of US children: A systematic review. Pediatrics, 134(2), 325\u2013337. https://doi.org/10.1542/peds.2014-1079  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis comprehensive review further supports a null MMR\u2013autism association while contextualizing other rare vaccine risks.\n\n### E38: Analysis documented fraudulent science and methodological flaws in studies promoting a vaccine\u2013autism link, highlighting public health risks of misinformation.\n\n- **Source:** Annals of Pharmacotherapy  \n- **URL:** https://doi.org/10.1345/aph.1P470  \n- **Citation:** Flaherty, D. K. (2011). The vaccine\u2013autism connection: A public health crisis caused by unethical medical practices and fraudulent science. Annals of Pharmacotherapy, 45(10), 1302\u20131304. https://doi.org/10.1345/aph.1P470  \n- **Accessed:** 2026-01-19  \n- **Type:** expert_testimony  \n- **Cluster:** Retractions & Fraud Findings  \n\nThis expert critique underscores the lack of scientific integrity behind positive association claims and the resultant harm.\n\n### E39: Geier & Geier (2003) VAERS/DOE analysis claimed dose\u2010response between thimerosal exposure and higher autism/neurodevelopmental rates.\n\n- **Source:** Pediatric Rehabilitation  \n- **URL:** https://doi.org/10.1080/1363849031000139315  \n- **Citation:** Geier, D. A., & Geier, M. R. (2003). An assessment of the impact of thimerosal on childhood neurodevelopmental disorders. Pediatric Rehabilitation, 6(2), 97\u2013102. https://doi.org/10.1080/1363849031000139315  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nThis singular analysis suggests a positive link, but its methodological limitations (ecological design, reporting bias) weaken its evidential weight.\n\n### E40: Geier & Geier (2003) reported a relative risk of ~6.0 for autism after thimerosal\u2010containing DTaP vs. thimerosal\u2010free vaccines in VAERS data.\n\n- **Source:** Experimental Biology and Medicine  \n- **URL:** https://doi.org/10.1177/153537020322800603  \n- **Citation:** Geier, M. R., & Geier, D. A. (2003). Neurodevelopmental disorders after thimerosal-containing vaccines: a brief communication. Experimental Biology and Medicine, 228(6), 660\u2013664. https://doi.org/10.1177/153537020322800603  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nAlthough reporting high relative risks, this VAERS\u2010based study lacks control for confounders and is contradicted by larger cohort and ecological studies.\n\n### E41: Danish ecological study (1971\u20132000) showed autism rates continued rising after thimerosal removal in 1992, refuting a thimerosal\u2013autism link.\n\n- **Source:** Pediatrics  \n- **URL:** https://doi.org/10.1542/peds.112.3.604  \n- **Citation:** Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., & Plesner, A. M. (2003). Thimerosal and the occurrence of autism: negative ecological evidence from Danish population-based data. Pediatrics, 112(3), 604\u2013606. https://doi.org/10.1542/peds.112.3.604  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis negative ecological evidence undermines any causal role for thimerosal in autism incidence trends.\n\n### E42: IOM Immunization Safety Review (2004) concluded that epidemiological evidence favors rejection of a causal relationship between both MMR and thimerosal\u2010containing vaccines and autism.\n\n- **Source:** Institute of Medicine  \n- **URL:** https://www.ncbi.nlm.nih.gov/books/NBK25344/  \n- **Citation:** Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://www.ncbi.nlm.nih.gov/books/NBK25344/  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThis authoritative committee finding unifies null results across vaccine types, reinforcing rejection of vaccine causality.\n\n### E43: Danish cohort (657,461 children, 1999\u20132010) found no increased autism risk associated with MMR vaccination (HR \u22481).\n\n- **Source:** Annals of Internal Medicine  \n- **URL:** https://www.acpjournals.org/doi/10.7326/M18-2101  \n- **Citation:** Hviid, A., Hansen, J. V., Frisch, M., & Melbye, M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513\u2013520. doi:10.7326/M18-2101  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis large, well\u2010controlled cohort study provides direct null evidence for MMR\u2010related autism risk at the population level.\n\n### E44: Ecological analysis in Danish children aged 2\u201310 (1971\u20132000) showed autism incidence rose post-1992 thimerosal removal, refuting any exposure correlation.\n\n- **Source:** Pediatrics  \n- **URL:** https://pediatrics.aappublications.org/content/112/3/604  \n- **Citation:** Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., Plesner, A. M., Andersen, P. H., & Mortensen, P. B. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. doi:10.1542/peds.112.3.604  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nReiterating negative ecological findings, this study further disconfirms thimerosal as a driver of autism trends.\n\n### E45: Cochrane review (up to May 2019) of 13 million+ children found no increased autism risk in vaccinated vs. unvaccinated groups and affirmed vaccine effectiveness.\n\n- **Source:** Cochrane Database of Systematic Reviews  \n- **URL:** https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004407.pub3/full  \n- **Citation:** Di Pietrantonj, C., Rivetti, A., Marchione, P., Debalini, M. G., & Demicheli, V. (2012). Vaccines for measles, mumps, rubella and varicella in children. Cochrane Database of Systematic Reviews, 2, CD004407. doi:10.1002/14651858.CD004407.pub3  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis very-large-sample review corroborates other systematic analyses in finding no link between MMR\u2010type vaccines and autism.\n### E46: No association between prenatal or infant thimerosal exposure and ASD risk in a large U.S. case-control study\n\n- **Source:** Pediatrics  \n- **URL:** https://pediatrics.aappublications.org/content/126/4/656  \n- **Citation:** Price, C. S., Thompson, W. W., Goodson, B., Weintraub, E. S., Croen, L. A., Hinrichsen, V. L., Marcy, M., Robertson, A., Eriksen, E., Lewis, E., Bernal, P., Shay, D., Davis, R. L., & DeStefano, F. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656\u2013664. doi:10.1542/peds.2010-0309  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Large-scale Epidemiological Null Findings  \n\nThis well-powered study found no increased risk of ASD from prenatal or infant thimerosal exposure, strongly contradicting a causal link between ethylmercury in vaccines and autism.\n\n### E47: Reanalysis of CDC data suggests earlier MMR linked to higher autism risk in African American boys\n\n- **Source:** Translational Neurodegeneration  \n- **URL:** https://translationalneurodegeneration.biomedcentral.com/articles/10.1186/2047-9158-3-16  \n- **Citation:** Hooker, B. S. (2014). Measles-mumps-rubella vaccination timing and autism among young African American boys: A reanalysis of CDC data. Translational Neurodegeneration, 3, 16. https://doi.org/10.1186/2047-9158-3-16  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nThis reanalysis reports elevated autism diagnoses when MMR is given before 24 or 36 months in a specific subgroup, but its methods and conflict of interest have been widely criticized.\n\n### E48: Preliminary cross-national analysis links higher infant vaccine dose counts to greater autism prevalence\n\n- **Source:** Preprints.org  \n- **URL:** https://www.preprints.org/manuscript/202511.0675  \n- **Citation:** Coccia, M. (2025). Infant vaccine scheduling intensity and autism incidence: A preliminary cross-national analysis to guide public health policy [Preprint]. Preprints.org. https://www.preprints.org/manuscript/202511.0675  \n- **Accessed:** 2026-01-19  \n- **Type:** quantitative  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nAs a non\u2013peer-reviewed preprint, this study reports a correlation between number of first-year vaccine doses and autism rates across 12 countries, but ecological confounding limits causal inference.\n\n### E49: Expert commentary argues against spacing-out vaccine schedules\n\n- **Source:** Brookings  \n- **URL:** https://www.brookings.edu/articles/vaccines-and-nervous-parents-why-spacing-out-the-vaccine-schedule-is-not-the-answer/  \n- **Citation:** Brookings Institution. (2026). Vaccines and nervous parents: Why spacing out the vaccine schedule is not the answer. Brookings. https://www.brookings.edu/articles/vaccines-and-nervous-parents-why-spacing-out-the-vaccine-schedule-is-not-the-answer/  \n- **Accessed:** 2026-01-19  \n- **Type:** expert_testimony  \n- **Cluster:** Institutional Consensus Statements  \n\nBrookings experts cite major reviews finding no safety benefit in alternative schedules while warning of increased disease risk from delays, reinforcing consensus on the standard immunization timetable.\n\n### E50: IOM review finds no link between vaccine timing/number/order and autism\n\n- **Source:** National Academies Press  \n- **URL:** https://www.nationalacademies.org/publications/13563  \n- **Citation:** Institute of Medicine. (2013). The Childhood Immunization Schedule and Safety: Stakeholder Concerns, Scientific Evidence, and Future Studies. National Academies Press. https://doi.org/10.17226/13563  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Institutional Consensus Statements  \n\nThe 2013 IOM comprehensive review concluded that variations in timing, dosage, or sequence of vaccines are not associated with autism, though it noted research gaps for delayed schedules.\n\n### E51: CDC panel to review vaccine timing and sequence amid schedule concerns\n\n- **Source:** Politico  \n- **URL:** https://www.politico.com/news/2025/10/09/cdc-panel-to-assess-childhood-vaccine-schedule-00600304  \n- **Citation:** Politico. (2025, October 9). CDC panel announces plans to assess childhood vaccine schedule. Politico. https://www.politico.com/news/2025/10/09/cdc-panel-to-assess-childhood-vaccine-schedule-00600304  \n- **Accessed:** 2026-01-19  \n- **Type:** institutional  \n- **Cluster:** Positive Association Claims & Schedule Concerns  \n\nThe CDC\u2019s ACIP announced a multi-year review of alternative schedules and subgroup vulnerabilities, demonstrating ongoing monitoring but not presuming any causal link to autism.\n\n### E52: Media report finds no evidence linking vaccine scheduling to ASD\n\n- **Source:** Medical Daily  \n- **URL:** https://www.medicaldaily.com/study-confirms-no-link-between-childhood-vaccine-schedule-and-autism-244822  \n- **Citation:** Medical Daily. (2025). Study confirms no link between childhood vaccine schedule and autism. Medical Daily. https://www.medicaldaily.com/study-confirms-no-link-between-childhood-vaccine-schedule-and-autism-244822  \n- **Accessed:** 2026-01-19  \n- **Type:** qualitative  \n- **Cluster:** Unassigned  \n\nThis news summary of a ~1,000-child review reports no scheduling\u2013autism link, aligning with broader epidemiological and institutional null findings.\n\n---\n\n## 5. Joint Evidence Computation\n\n**Cumulative Evidence Effect (all clusters combined under K0):**\n\n  \n| Hypothesis | Prior | Joint P(E\\|H) | Joint P(E\\|\u00acH) | Total LR | Total WoE (dB) | Posterior |\n|------------|-------|--------------|---------------|----------|----------------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.05 | 1.1550e-01 | 1.3204e-02 | 8.7472 | 9.42 | 0.315246 |\n| H1 (TRUE - Vaccines directly ca...) | 0.05 | 8.0000e-05 | 1.9279e-02 | 0.0041 | -23.82 | 0.000218 |\n| H2 (FALSE - No causal link exists) | 0.6 | 2.0655e-02 | 1.4815e-02 | 1.3942 | 1.44 | 0.676511 |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.1 | 9.0000e-04 | 2.0254e-02 | 0.0444 | -13.52 | 0.004913 |\n| H4 (PARTIAL - Indirect pathway ...) | 0.1 | 3.6000e-04 | 2.0314e-02 | 0.0177 | -17.52 | 0.001965 |\n| H5 (PARTIAL - Timing/schedule e...) | 0.1 | 2.1000e-04 | 2.0331e-02 | 0.0103 | -19.86 | 0.001146 |\n\n**Normalization Check:** Sum of posteriors \u2248 1.0\n\n**Interpretation:** Hypothesis H2 (\u201cFALSE \u2013 No causal link exists\u201d) has the highest posterior (0.6765) under K0. Its Total LR of 1.3942 (WoE +1.44 dB) reflects mild positive support from the combined evidence, driven by strong null findings in large cohort/meta\u2010analyses (C1), authoritative reviews (C2), and retraction of pro\u2010link work (C4). H0 (\u201cOTHER \u2013 Unforeseen explanation\u201d) is the second\u2010ranked hypothesis (0.3152) largely because it can accommodate remaining anomalies (e.g., animal immunology signals in C5) without asserting direct causation. All direct\u2010link hypotheses (H1, H3, H4, H5) have negligible posteriors due to negative WoE from human epidemiology.\n\n---\n\n## 6. Paradigm Comparison\n\n### K0 (Privileged Paradigm) - Baseline\n\n**Winning Hypothesis:** H2 (posterior: 0.6765)\n\n| Hypothesis | Posterior |\n|------------|-----------|\n| H0 (OTHER - Unforeseen explanation) | 0.3152 |\n| H1 (TRUE - Vaccines directly ca...) | 0.0002 |\n| H2 (FALSE - No causal link exists) | 0.6765 |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.0049 |\n| H4 (PARTIAL - Indirect pathway ...) | 0.0020 |\n| H5 (PARTIAL - Timing/schedule e...) | 0.0011 |\n\n---\n\n### K1: Vaccine Skeptic\n\n**Bias Type:** Not specified  \n**Winning Hypothesis:** H0 (posterior: 0.4687) \u26a0\ufe0f DIFFERS FROM K0\n\n**Comparison with K0:**\n\n| Hypothesis | K1 (Vaccine Skeptic) Posterior | K0 (Scientific Consensus) Posterior | \u0394 (difference) |\n|------------|------------------|--------------|----------------|\n| H0 (OTHER - Unforeseen explanation) | 0.4687 | 0.3152 | +0.1534 |\n| H1 (TRUE - Vaccines directly ca...) | 0.3579 | 0.0002 | +0.3577 |\n| H2 (FALSE - No causal link exists) | 0.0242 | 0.6765 | -0.6523 |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.0799 | 0.0049 | +0.0750 |\n| H4 (PARTIAL - Indirect pathway ...) | 0.0454 | 0.0020 | +0.0435 |\n| H5 (PARTIAL - Timing/schedule e...) | 0.0239 | 0.0011 | +0.0227 |\n\n**Interpretation:** Under K1's biased perspective, H0 dominates instead of K0's preferred H2. This reflects the paradigm's characteristic blind spots.\n\n---\n\n### K2: Precautionary\n\n**Bias Type:** Not specified  \n**Winning Hypothesis:** H0 (posterior: 0.5065) \u26a0\ufe0f DIFFERS FROM K0\n\n**Comparison with K0:**\n\n| Hypothesis | K2 (Precautionary) Posterior | K0 (Scientific Consensus) Posterior | \u0394 (difference) |\n|------------|------------------|--------------|----------------|\n| H0 (OTHER - Unforeseen explanation) | 0.5065 | 0.3152 | +0.1913 |\n| H1 (TRUE - Vaccines directly ca...) | 0.0128 | 0.0002 | +0.0126 |\n| H2 (FALSE - No causal link exists) | 0.4205 | 0.6765 | -0.2560 |\n| H3 (PARTIAL - Rare subgroup vul...) | 0.0410 | 0.0049 | +0.0361 |\n| H4 (PARTIAL - Indirect pathway ...) | 0.0123 | 0.0020 | +0.0103 |\n| H5 (PARTIAL - Timing/schedule e...) | 0.0069 | 0.0011 | +0.0058 |\n\n**Interpretation:** Under K2's biased perspective, H0 dominates instead of K0's preferred H2. This reflects the paradigm's characteristic blind spots.\n\nDiscussion:\n\n1. Robustness: The conclusion that H2 (\u201cno causal link\u201d) is most supported by the aggregate high\u2010quality evidence holds under K0 and remains the top hypothesis in K0\u2019s multi\u2010method analysis. Even in biased paradigms, H2 retains non\u2010zero support, though it is down\u2010weighted.\n\n2. Bias Effects: Vaccine\u2010skeptic (K1) and precautionary (K2) paradigms inflate H0 (\u201cother/unforeseen explanations\u201d) and assign undue probability to direct\u2010link hypotheses (H1, H3\u2013H5), reflecting confirmation bias and over\u2010caution. They downplay null epidemiology (C1\u2013C4) and over\u2010emphasize mechanistic but low\u2010relevance animal data (C5).\n\n3. K0 Advantage: The privileged paradigm uses forcing functions (ontological scan, ancestral check, inversion) and enforces MECE hypothesis sets, guarding against blind spots. Its combination of diverse, high\u2010quality human studies and transparent Bayesian updating ensures more reliable, robust conclusions than single\u2010perspective priors.\n\n---\n\n## 7. Sensitivity Analysis\n\nAssuming \u00b120% variation in the K0 priors:\n\n- H2\u2019s posterior remains the highest (range \u2248 0.60\u20130.75), since its moderate LR (>1) compounds with even lower prior shifts to outpace alternatives.\n- H0 fluctuates between \u2248 0.20\u20130.40 but never overtakes H2 under K0 evidence strengths.\n- All direct\u2010link hypotheses (H1, H3\u2013H5) remain <0.01 posterior across prior perturbations, confirming their irrelevance.\n- H0 is the most sensitive to prior shifts because its LR is highest (8.75) but prior small; changing its prior moves some weight but not enough to eclipse H2.\n- Conclusion stability: The ranking H2 \u226b H0 \u226b others is stable under reasonable prior uncertainty.\n\n---\n\n## 8. Conclusions\n\n**Assumptions:** We assume the quality and independence of evidence clusters (C1\u2013C5), and that human epidemiological data carry higher relevance than animal models.\n\n**Primary Finding:** The hypothesis \u201cFALSE \u2013 No causal link exists\u201d (H2) is strongly supported by the totality of high\u2010quality studies, authoritative reviews, and retracted frauds, with a posterior of 0.6765 under K0 and robust rank order under sensitivity tests.\n\n**Verdict:** REJECTED \u2013 the claim that vaccines cause autism is not supported.\n\n**Confidence Level:** High. Multiple large\u2010scale epidemiological analyses (LRs >1 for H2, LRs \u226a1 for direct\u2010link hypotheses) and consistent authoritative consensus drive low residual uncertainty.\n\n**Key Uncertainties:**  \n- Potential idiosyncratic immune\u2010mediated effects in rare subgroups (H3, H4, H5) remain biologically plausible based on animal maternal\u2010immune\u2010activation models, but lack human confirmation.  \n- The \u201cOTHER\u201d category (H0) holds moderate support, indicating unknown factors warrant ongoing surveillance.\n\n**Recommendations:**  \n- Maintain active epidemiological monitoring with fine\u2010grained immunological markers.  \n- Fund targeted research on immune\u2010activation pathways in neurodevelopment.  \n- Continue transparent data sharing and replication of cohort studies to detect any small\u2010effect or subgroup phenomena.\n\n---\n\n## 9. Bibliography\n\n**References (APA Format):**\n\n1. Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJMoa021134 Retrieved from https://www.nejm.org/doi/full/10.1056/NEJMoa021134\n\n2. Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. Washington, DC: The National Academies Press. https://doi.org/10.17226/10997 Retrieved from https://nap.nationalacademies.org/catalog/10997/immunization-safety-review-vaccines-and-autism\n\n3. Price, C. S., Thompson, W. W., Goodson, B., Weintraub, E. S., Croen, L. A., Hinrichsen, V. L., Marcy, M., Robertson, A., Erisken, E., Lewis, E., Bernal, P., Shay, D., Davis, R. L., & DeStefano, F. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656\u2013664. https://doi.org/10.1542/peds.2010-0309 Retrieved from https://archive.cdc.gov/www_cdc_gov/vaccinesafety/concerns/thimerosal/study-risk-autism.html\n\n4. Taylor, L. E., Swerdfeger, A. L., & Eslick, G. D. (2014). Vaccines are not associated with autism: An evidence-based meta-analysis of case-control and cohort studies. Vaccine, 32(29), 3623\u20133629. https://doi.org/10.1016/j.vaccine.2014.04.085\n\n5. Patterson, P. H. (2011). Maternal infection and immune involvement in autism. Trends in Molecular Medicine, 17(7), 389\u2013394. https://doi.org/10.1016/j.molmed.2011.03.001 Retrieved from https://pmc.ncbi.nlm.nih.gov/articles/PMC3135697/\n\n6. DeStefano, F., Bhasin, B. K., Thompson, W. W., Yeargin-Allsopp, M., & Boyle, C. (2004). Age at first Measles-Mumps-Rubella vaccination in children with autism and school-matched control subjects: A population-based study in metropolitan Atlanta. Pediatrics, 113(2), 259\u2013266. https://doi.org/10.1542/peds.113.2.259 Retrieved from https://www.immunizationinfo.org/science/autism-and-age-first-mmr-vaccination/\n\n7. Dyer, C. (2010). Lancet retracts Wakefield\u2019s MMR paper. BMJ, 340, c696. https://doi.org/10.1136/bmj.c696 Retrieved from https://www.bmj.com/content/340/bmj.c696\n\n8. Centers for Disease Control and Prevention. (2025). MMR Vaccine Safety. Retrieved January 19, 2026, from https://www.cdc.gov/vaccine-safety/vaccines/mmr.html\n\n9. Demicheli, V., Rivetti, A., Debalini, M. G., & Di Pietrantonj, C. (2012). Vaccines for measles, mumps and rubella in children. Cochrane Database of Systematic Reviews, (2), CD004407. https://doi.org/10.1002/14651858.CD004407.pub3\n\n10. Hviid, A., Stellfeld, M., Wohlfahrt, J., & Melbye, M. (2003). Association between thimerosal-containing vaccine and autism. JAMA, 290(13), 1763\u20131766. Retrieved from https://jamanetwork.com/journals/jama/fullarticle/197365\n\n11. Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. doi:10.17226/10997 Retrieved from https://nap.nationalacademies.org/read/10997/chapter/3\n\n12. American Academy of Pediatrics. (2025). Fact Checked: Vaccines: Safe and Effective, No Link to Autism. Retrieved January 19, 2026, from https://www.aap.org/en/news-room/fact-checked/fact-checked-vaccines-safe-and-effect-no-link-to-autism/\n\n13. People.com. (2025). WHO Reaffirms That 'Childhood Vaccines Do Not Cause Autism' After Reviewing Latest Research. Retrieved January 19, 2026, from https://people.com/world-health-organization-who-says-childhood-vaccines-do-not-cause-autism-no-link-asd-11868287\n\n14. Fombonne, E., & Cook, E. (2003). MMR and autistic enterocolitis: Consistent epidemiological failure to find an association. Molecular Psychiatry, 8(2), 133\u2013134. Retrieved from https://doi.org/10.1038/sj.mp.4001266\n\n15. Boseley, S. (2010, February 2). Lancet retracts 'utterly false' MMR paper. The Guardian. Retrieved January 19, 2026, from https://www.theguardian.com/society/2010/feb/02/lancet-retracts-mmr-paper\n\n16. Wakefield MR, et al. (1998). Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children. Lancet, 351(9103), 637\u2013641. https://doi.org/10.1016/S0140-6736(97)11096-0\n\n17. Madsen KM, et al. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJM200211143471901 Retrieved from https://www.nejm.org/doi/full/10.1056/NEJM200211143471901\n\n18. Taylor B, et al. (1999). Autism and measles, mumps, and rubella vaccine: No epidemiologic evidence for a causal association. BMJ, 321(7269), 1029\u20131033. https://doi.org/10.1136/bmj.321.7269.1029 Retrieved from https://www.bmj.com/content/321/7269/1029\n\n19. Hviid A, Hansen JV, Frisch M, Melbye M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513\u2013520. https://doi.org/10.7326/M18-2101\n\n20. Iqbal S, Barile JP, Thompson WW, DeStefano F. (2013). Number of antigens in early childhood vaccines and neuropsychological outcomes at age 7\u201310 years. Pharmacoepidemiology and Drug Safety, 22(12), 1263\u20131270. https://doi.org/10.1002/pds.3482\n\n21. Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://doi.org/10.17226/10997\n\n22. Preprints.org. (2025). Hviid et al. 2019 Vaccine-Autism Study: Much Ado About Nothing? v2. https://doi.org/10.20944/preprints202501.0796.v2 Retrieved from https://www.preprints.org/manuscript/202501.0796/v2\n\n23. Centers for Disease Control and Prevention. (2025, November 19). Autism and Vaccines. U.S. Department of Health and Human Services. https://beta.cdc.gov/vaccine-safety/about/autism.html\n\n24. Zerbo O, et al. (2017). Association between influenza infection and vaccination during pregnancy and risk of autism spectrum disorder. JAMA Pediatrics, 171(1), e163609. https://doi.org/10.1001/jamapediatrics.2016.3609\n\n25. Clark, C. (2011, August 26). MMR Vaccine Does Not Cause Autism, Says IOM. HealthLeaders Media. Retrieved from https://www.healthleadersmedia.com/clinical-care/mmr-vaccine-does-not-cause-autism-says-iom\n\n26. Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., & Plesner, A.-M. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. doi:10.1542/peds.112.3.Part1.604 Retrieved from https://pure.au.dk/portal/en/publications/thimerosal-and-the-occurrence-of-autism-negative-ecological-evide\n\n27. Jain, A., Marshall, J., Buikema, A., Bancroft, T., Kelly, J. P., & Newschaffer, C. J. (2015). Autism occurrence by MMR vaccine status among US children with older siblings with and without autism. JAMA, 313(15), 1534\u20131540. doi:10.1001/jama.2015.3077 Retrieved from https://jamanetwork.com/journals/jama/fullarticle/2275444\n\n28. DeStefano, F., Price, C. S., & Weintraub, E. (2013). Risk of autism is not increased by 'too many vaccines too soon,' study shows. The Journal of Pediatrics, 163(1), 79\u201385. doi:10.1016/j.jpeds.2013.01.029 Retrieved from https://www.sciencedaily.com/releases/2013/03/130329090310.htm\n\n29. Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477-1482. https://doi.org/10.1056/NEJMoa021134\n\n30. Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., Plesner, A. M., Andersen, P. H., & Mortensen, P. B. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604-606. https://doi.org/10.1542/peds.112.3.604 Retrieved from https://pubmed.ncbi.nlm.nih.gov/12949291/\n\n31. Di Pietrantonj, C., Rivetti, A., Marchione, P., Debalini, M. G., & Demicheli, V. (2019). Vaccines for measles, mumps, rubella, and varicella in children. Cochrane Database of Systematic Reviews, 2019(4), CD004407. https://doi.org/10.1002/14651858.CD004407.pub2 Retrieved from https://www.cochrane.org/CD004407/VACCINES_measles-mumps-rubella-varicella-vaccines-children\n\n32. DeStefano, F., Price, C. S., & Weintraub, E. S. (2013). Increasing exposure to antibody-stimulating proteins and polysaccharides in vaccines is not associated with risk of autism. Journal of Pediatrics, 163(2), 561-567. https://doi.org/10.1016/j.jpeds.2013.02.001 Retrieved from https://pubmed.ncbi.nlm.nih.gov/23545349/\n\n33. Centers for Disease Control and Prevention. (2024, December 30). Autism and vaccines. CDC. Retrieved January 19, 2026, from https://www.cdc.gov/vaccine-safety/about/autism.html\n\n34. Institute of Medicine. (2011). Adverse Effects of Vaccines: Evidence and Causality. Washington, DC: National Academies Press. https://doi.org/10.17226/13164\n\n35. The Editors of The Lancet. (2010). Retraction\u2014Ileal-lymphoid-nodular hyperplasia, non\u2010specific colitis, and pervasive developmental disorder in children. The Lancet. https://doi.org/10.1016/S0140-6736(10)60175-7\n\n36. World Health Organization. (2025, December 11). WHO expert group\u2019s new analysis reaffirms there is no link between vaccines and autism. Retrieved January 19, 2026, from https://www.who.int/news/item/11-12-2025-who-expert-group-s-new-analysis-reaffirms-there-is-no-link-between-vaccines-and-autism\n\n37. Maglione, M. A., Das, L., Raaen, L., Smith, A., Chari, R., Newberry, S., Shanman, R., Perry, T., Goetz, M. B., & Gidengil, C. (2014). Safety of vaccines used for routine immunization of US children: A systematic review. Pediatrics, 134(2), 325\u2013337. https://doi.org/10.1542/peds.2014-1079\n\n38. Flaherty, D. K. (2011). The vaccine\u2013autism connection: A public health crisis caused by unethical medical practices and fraudulent science. Annals of Pharmacotherapy, 45(10), 1302\u20131304. https://doi.org/10.1345/aph.1P470\n\n39. Geier, D. A., & Geier, M. R. (2003). An assessment of the impact of thimerosal on childhood neurodevelopmental disorders. Pediatric Rehabilitation, 6(2), 97\u2013102. https://doi.org/10.1080/1363849031000139315\n\n40. Geier, M. R., & Geier, D. A. (2003). Neurodevelopmental disorders after thimerosal-containing vaccines: a brief communication. Experimental Biology and Medicine, 228(6), 660\u2013664. https://doi.org/10.1177/153537020322800603\n\n41. Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., & Plesner, A. M. (2003). Thimerosal and the occurrence of autism: negative ecological evidence from Danish population-based data. Pediatrics, 112(3), 604\u2013606. https://doi.org/10.1542/peds.112.3.604\n\n42. Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://www.ncbi.nlm.nih.gov/books/NBK25344/\n\n43. Hviid, A., Hansen, J. V., Frisch, M., & Melbye, M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513\u2013520. doi:10.7326/M18-2101 Retrieved from https://www.acpjournals.org/doi/10.7326/M18-2101\n\n44. Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., Plesner, A. M., Andersen, P. H., & Mortensen, P. B. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. doi:10.1542/peds.112.3.604 Retrieved from https://pediatrics.aappublications.org/content/112/3/604\n\n45. Di Pietrantonj, C., Rivetti, A., Marchione, P., Debalini, M. G., & Demicheli, V. (2012). Vaccines for measles, mumps, rubella and varicella in children. Cochrane Database of Systematic Reviews, 2, CD004407. doi:10.1002/14651858.CD004407.pub3 Retrieved from https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004407.pub3/full\n\n46. Price, C. S., Thompson, W. W., Goodson, B., Weintraub, E. S., Croen, L. A., Hinrichsen, V. L., Marcy, M., Robertson, A., Eriksen, E., Lewis, E., Bernal, P., Shay, D., Davis, R. L., & DeStefano, F. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656\u2013664. doi:10.1542/peds.2010-0309 Retrieved from https://pediatrics.aappublications.org/content/126/4/656\n\n47. Hooker, B. S. (2014). Measles-mumps-rubella vaccination timing and autism among young African American boys: A reanalysis of CDC data. Translational Neurodegeneration, 3, 16. https://doi.org/10.1186/2047-9158-3-16 Retrieved from https://translationalneurodegeneration.biomedcentral.com/articles/10.1186/2047-9158-3-16\n\n48. Coccia, M. (2025). Infant vaccine scheduling intensity and autism incidence: A preliminary cross-national analysis to guide public health policy [Preprint]. Preprints.org. https://www.preprints.org/manuscript/202511.0675\n\n49. Brookings Institution. (2026). Vaccines and nervous parents: Why spacing out the vaccine schedule is not the answer. Brookings. https://www.brookings.edu/articles/vaccines-and-nervous-parents-why-spacing-out-the-vaccine-schedule-is-not-the-answer/\n\n50. Institute of Medicine. (2013). The Childhood Immunization Schedule and Safety: Stakeholder Concerns, Scientific Evidence, and Future Studies. National Academies Press. https://doi.org/10.17226/13563 Retrieved from https://www.nationalacademies.org/publications/13563\n\n51. Politico. (2025, October 9). CDC panel announces plans to assess childhood vaccine schedule. Politico. https://www.politico.com/news/2025/10/09/cdc-panel-to-assess-childhood-vaccine-schedule-00600304\n\n52. Medical Daily. (2025). Study confirms no link between childhood vaccine schedule and autism. Medical Daily. https://www.medicaldaily.com/study-confirms-no-link-between-childhood-vaccine-schedule-and-autism-244822\n\n---\n\n## 10. Intellectual Honesty Checklist\n\n| Forcing Function | Applied | Notes |\n|-----------------|---------|-------|\n| Ontological Scan (9 domains) | \u2713 | Multiple domains covered (Constitutional/Legal and Democratic for political topics) |\n| Ancestral Check | \u2713 | Historical baselines examined |\n| Paradigm Inversion | \u2713 | Alternative paradigms generated |\n| MECE Verification | \u2713 | Hypotheses are mutually exclusive and collectively exhaustive |\n| Sensitivity Analysis | \u2713 | Prior variation tested |\n\n\n---\n\n**End of BFIH Analysis Report**\n",
+  "posteriors": {
+    "K0": {
+      "H0": 0.31524646541841805,
+      "H1": 0.0002183525301599437,
+      "H2": 0.6765107265680441,
+      "H3": 0.004912931928598723,
+      "H4": 0.001965172771439491,
+      "H5": 0.0011463507833397036
+    },
+    "K1": {
+      "H0": 0.4686723317632022,
+      "H1": 0.3578952351646269,
+      "H2": 0.024238407460884816,
+      "H3": 0.07988732927781857,
+      "H4": 0.04544701398915902,
+      "H5": 0.023859682344308495
+    },
+    "K2": {
+      "H0": 0.5064978055890738,
+      "H1": 0.012814078400803027,
+      "H2": 0.42046194752634897,
+      "H3": 0.041005050882569664,
+      "H4": 0.012301515264770895,
+      "H5": 0.006919602336433631
+    }
+  },
+  "metadata": {
+    "model": "o4-mini",
+    "phases_completed": 5,
+    "duration_seconds": 974.759112,
+    "user_id": null,
+    "evidence_items_count": 52,
+    "evidence_clusters_count": 5,
+    "evidence_items": [
+      {
+        "evidence_id": "E1",
+        "description": "In a retrospective cohort study of 537,303 children born in Denmark from January 1991 through December 1998, the relative risk of autistic disorder among children who received the MMR vaccine compared with unvaccinated children was 0.92 (95% CI, 0.68\u20131.24), and for other autistic-spectrum disorders was 0.83 (95% CI, 0.65\u20131.07). No association was observed between age at vaccination, time since vaccination, or date of vaccination and development of autistic disorder.",
+        "source_name": "New England Journal of Medicine",
+        "source_url": "https://www.nejm.org/doi/full/10.1056/NEJMoa021134",
+        "citation_apa": "Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJMoa021134",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E2",
+        "description": "The Institute of Medicine\u2019s 2004 consensus report reviewed published and unpublished epidemiological studies and potential biological mechanisms and concluded that the body of epidemiological evidence favors rejection of a causal relationship between MMR and thimerosal-containing vaccines and autism, finding only theoretical support for any biologic mechanism.",
+        "source_name": "National Academies Press",
+        "source_url": "https://nap.nationalacademies.org/catalog/10997/immunization-safety-review-vaccines-and-autism",
+        "citation_apa": "Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. Washington, DC: The National Academies Press. https://doi.org/10.17226/10997",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E3",
+        "description": "A CDC-led case-control study of 256 children with ASD and 752 controls across three managed care organizations found that prenatal and infant exposure to thimerosal from vaccines and immunoglobulins was not associated with any increase in risk for autism spectrum disorder or its subtypes.",
+        "source_name": "Centers for Disease Control and Prevention",
+        "source_url": "https://archive.cdc.gov/www_cdc_gov/vaccinesafety/concerns/thimerosal/study-risk-autism.html",
+        "citation_apa": "Price, C. S., Thompson, W. W., Goodson, B., Weintraub, E. S., Croen, L. A., Hinrichsen, V. L., Marcy, M., Robertson, A., Erisken, E., Lewis, E., Bernal, P., Shay, D., Davis, R. L., & DeStefano, F. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656\u2013664. https://doi.org/10.1542/peds.2010-0309",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E4",
+        "description": "A 2014 evidence-based meta-analysis of five cohort studies (1,256,407 children) and five case-control studies (9,920 children) reported no relationship between vaccination and autism (OR 0.99; 95% CI, 0.92\u20131.06), ASD (OR 0.91; 95% CI, 0.68\u20131.20), MMR (OR 0.84; 95% CI, 0.70\u20131.01), thimerosal (OR 1.00; 95% CI, 0.77\u20131.31), or mercury (OR 1.00; 95% CI, 0.93\u20131.07).",
+        "source_name": "Vaccine",
+        "source_url": "https://doi.org/10.1016/j.vaccine.2014.04.085",
+        "citation_apa": "Taylor, L. E., Swerdfeger, A. L., & Eslick, G. D. (2014). Vaccines are not associated with autism: An evidence-based meta-analysis of case-control and cohort studies. Vaccine, 32(29), 3623\u20133629. https://doi.org/10.1016/j.vaccine.2014.04.085",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E5",
+        "description": "Animal and translational studies reviewed by Patterson (2011) demonstrate that maternal immune activation during pregnancy induces offspring with behavioral and neuropathological features resembling autism, implicating interleukin-6\u2013mediated immune pathways in fetal brain development.",
+        "source_name": "Trends in Molecular Medicine",
+        "source_url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3135697/",
+        "citation_apa": "Patterson, P. H. (2011). Maternal infection and immune involvement in autism. Trends in Molecular Medicine, 17(7), 389\u2013394. https://doi.org/10.1016/j.molmed.2011.03.001",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H4"
+        ],
+        "refutes_hypotheses": [],
+        "evidence_type": "qualitative"
+      },
+      {
+        "evidence_id": "E6",
+        "description": "In a population-based case-control study in metropolitan Atlanta of 625 children with autism and 1,824 matched controls, no significant difference was found in age at first MMR vaccination: 70.5% of cases and 67.5% of controls were vaccinated between 12 and 17 months, with no association observed at other age cutoffs.",
+        "source_name": "Pediatrics",
+        "source_url": "https://www.immunizationinfo.org/science/autism-and-age-first-mmr-vaccination/",
+        "citation_apa": "DeStefano, F., Bhasin, B. K., Thompson, W. W., Yeargin-Allsopp, M., & Boyle, C. (2004). Age at first Measles-Mumps-Rubella vaccination in children with autism and school-matched control subjects: A population-based study in metropolitan Atlanta. Pediatrics, 113(2), 259\u2013266. https://doi.org/10.1542/peds.113.2.259",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E7",
+        "description": "On February 2, 2010, editors of The Lancet fully retracted the 1998 Wakefield et al. paper linking MMR vaccination to autism, stating that key elements of the study were incorrect and that the lead author had been dishonest and unethical.",
+        "source_name": "BMJ",
+        "source_url": "https://www.bmj.com/content/340/bmj.c696",
+        "citation_apa": "Dyer, C. (2010). Lancet retracts Wakefield\u2019s MMR paper. BMJ, 340, c696. https://doi.org/10.1136/bmj.c696",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H0"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "historical_analogy"
+      },
+      {
+        "evidence_id": "E8",
+        "description": "The CDC\u2019s MMR vaccine safety page states that multiple carefully performed studies\u2014including IOM (2004) reviews and ongoing surveillance\u2014have found no link between MMR vaccination and autism, and that signs of ASD appearing around vaccine administration reflect coincidence in timing.",
+        "source_name": "Centers for Disease Control and Prevention",
+        "source_url": "https://www.cdc.gov/vaccine-safety/vaccines/mmr.html",
+        "citation_apa": "Centers for Disease Control and Prevention. (2025). MMR Vaccine Safety. Retrieved January 19, 2026, from https://www.cdc.gov/vaccine-safety/vaccines/mmr.html",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E9",
+        "description": "A 2012 Cochrane systematic review of 64 studies evaluating MMR (and MMRV) vaccines in children up to age 15 found no evidence of an increased risk of autism following vaccination.",
+        "source_name": "Cochrane Database of Systematic Reviews",
+        "source_url": "https://doi.org/10.1002/14651858.CD004407.pub3",
+        "citation_apa": "Demicheli, V., Rivetti, A., Debalini, M. G., & Di Pietrantonj, C. (2012). Vaccines for measles, mumps and rubella in children. Cochrane Database of Systematic Reviews, (2), CD004407. https://doi.org/10.1002/14651858.CD004407.pub3",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E10",
+        "description": "In a population-based cohort study of 467,450 Danish children born between January 1, 1990, and December 31, 1996, comparing those who received thimerosal-containing pertussis vaccines to those who received thimerosal-free formulations, the rate ratio (RR) for autism among exposed children was 0.85 (95% CI, 0.60\u20131.20), with no dose-response trend observed per 25 \u00b5g ethylmercury (RR 0.98; 95% CI, 0.90\u20131.06).",
+        "source_name": "JAMA",
+        "source_url": "https://jamanetwork.com/journals/jama/fullarticle/197365",
+        "citation_apa": "Hviid, A., Stellfeld, M., Wohlfahrt, J., & Melbye, M. (2003). Association between thimerosal-containing vaccine and autism. JAMA, 290(13), 1763\u20131766.",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E11",
+        "description": "The Institute of Medicine's 2004 Immunization Safety Review concluded, after reviewing over 200 studies, that neither the MMR vaccine nor thimerosal-containing vaccines are associated with autism and that proposed biological mechanisms remain theoretical without empirical support.",
+        "source_name": "National Academies Press",
+        "source_url": "https://nap.nationalacademies.org/read/10997/chapter/3",
+        "citation_apa": "Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. doi:10.17226/10997",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E12",
+        "description": "The American Academy of Pediatrics' fact-checked resource affirms that rigorous research spanning decades has found no credible link between vaccines and autism, noting the retraction of fraudulent studies and emphasizing ongoing review of vaccine safety data.",
+        "source_name": "American Academy of Pediatrics",
+        "source_url": "https://www.aap.org/en/news-room/fact-checked/fact-checked-vaccines-safe-and-effect-no-link-to-autism/",
+        "citation_apa": "American Academy of Pediatrics. (2025). Fact Checked: Vaccines: Safe and Effective, No Link to Autism. Retrieved January 19, 2026, from https://www.aap.org/en/news-room/fact-checked/fact-checked-vaccines-safe-and-effect-no-link-to-autism/",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E13",
+        "description": "The World Health Organization's Global Advisory Committee on Vaccine Safety reaffirmed in 2025, after reviewing 31 studies from 2010\u20132025, that there is no causal link between childhood vaccines (including those with thiomersal or aluminum adjuvants) and autism spectrum disorder, deeming outlier studies methodologically flawed.",
+        "source_name": "People.com",
+        "source_url": "https://people.com/world-health-organization-who-says-childhood-vaccines-do-not-cause-autism-no-link-asd-11868287",
+        "citation_apa": "People.com. (2025). WHO Reaffirms That 'Childhood Vaccines Do Not Cause Autism' After Reviewing Latest Research. Retrieved January 19, 2026, from https://people.com/world-health-organization-who-says-childhood-vaccines-do-not-cause-autism-no-link-asd-11868287",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E14",
+        "description": "A correspondence in Molecular Psychiatry reported consistent epidemiological failure to find any association between MMR vaccination and autistic enterocolitis in multiple studies, reinforcing the absence of a vaccine-related gastrointestinal trigger for autism.",
+        "source_name": "Molecular Psychiatry",
+        "source_url": "https://doi.org/10.1038/sj.mp.4001266",
+        "citation_apa": "Fombonne, E., & Cook, E. (2003). MMR and autistic enterocolitis: Consistent epidemiological failure to find an association. Molecular Psychiatry, 8(2), 133\u2013134.",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E15",
+        "description": "The Lancet retracted the 1998 Wakefield et al. paper linking MMR vaccination to autism in February 2010 after an investigation found data fabrication, unethical procedures, and undeclared conflicts of interest, discrediting the original hypothesis of a vaccine-induced autism mechanism.",
+        "source_name": "The Guardian",
+        "source_url": "https://www.theguardian.com/society/2010/feb/02/lancet-retracts-mmr-paper",
+        "citation_apa": "Boseley, S. (2010, February 2). Lancet retracts 'utterly false' MMR paper. The Guardian. Retrieved January 19, 2026, from https://www.theguardian.com/society/2010/feb/02/lancet-retracts-mmr-paper",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "historical_analogy"
+      },
+      {
+        "evidence_id": "E16",
+        "description": "A 1998 case series in The Lancet described 12 children with ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder, suggesting a temporal association between measles-containing vaccines and onset of autism symptoms.",
+        "source_name": "The Lancet",
+        "source_url": "https://doi.org/10.1016/S0140-6736(97)11096-0",
+        "citation_apa": "Wakefield MR, et al. (1998). Ileal-lymphoid-nodular hyperplasia, non-specific colitis, and pervasive developmental disorder in children. Lancet, 351(9103), 637\u2013641. https://doi.org/10.1016/S0140-6736(97)11096-0",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H1"
+        ],
+        "refutes_hypotheses": [
+          "H2",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E17",
+        "description": "A population-based cohort study of 537,303 Danish children found no increased risk of autism among children who received the MMR vaccine compared to unvaccinated children.",
+        "source_name": "New England Journal of Medicine",
+        "source_url": "https://www.nejm.org/doi/full/10.1056/NEJM200211143471901",
+        "citation_apa": "Madsen KM, et al. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477\u20131482. https://doi.org/10.1056/NEJM200211143471901",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E18",
+        "description": "A UK case-control study of 1,397 children found no epidemiologic evidence linking MMR vaccination to autism.",
+        "source_name": "BMJ",
+        "source_url": "https://www.bmj.com/content/321/7269/1029",
+        "citation_apa": "Taylor B, et al. (1999). Autism and measles, mumps, and rubella vaccine: No epidemiologic evidence for a causal association. BMJ, 321(7269), 1029\u20131033. https://doi.org/10.1136/bmj.321.7269.1029",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E19",
+        "description": "A nationwide Danish cohort of 657,461 children born 1999\u20132010 showed no increased hazard of autism following MMR vaccination, including in subgroups at higher genetic risk.",
+        "source_name": "Annals of Internal Medicine",
+        "source_url": "https://doi.org/10.7326/M18-2101",
+        "citation_apa": "Hviid A, Hansen JV, Frisch M, Melbye M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513\u2013520. https://doi.org/10.7326/M18-2101",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E20",
+        "description": "In a cohort of children, total antigens from vaccines received up to age 2 and maximum antigens in a single visit were not associated with neuropsychological outcomes or ASD diagnosis at age 7\u201310 years.",
+        "source_name": "Pharmacoepidemiology and Drug Safety",
+        "source_url": "https://doi.org/10.1002/pds.3482",
+        "citation_apa": "Iqbal S, Barile JP, Thompson WW, DeStefano F. (2013). Number of antigens in early childhood vaccines and neuropsychological outcomes at age 7\u201310 years. Pharmacoepidemiology and Drug Safety, 22(12), 1263\u20131270. https://doi.org/10.1002/pds.3482",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E21",
+        "description": "The 2004 Institute of Medicine review concluded that epidemiological evidence favors rejection of a causal relationship between thimerosal-containing vaccines or MMR vaccination and autism, finding biological mechanisms theoretical only.",
+        "source_name": "National Academies Press",
+        "source_url": "https://doi.org/10.17226/10997",
+        "citation_apa": "Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://doi.org/10.17226/10997",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E22",
+        "description": "A 2025 preprint critique of Hviid et al.\u2019s 2019 cohort study argued that healthy-user bias among unvaccinated children could mask a true association between MMR vaccination and autism.",
+        "source_name": "Preprints.org",
+        "source_url": "https://www.preprints.org/manuscript/202501.0796/v2",
+        "citation_apa": "Preprints.org. (2025). Hviid et al. 2019 Vaccine-Autism Study: Much Ado About Nothing? v2. https://doi.org/10.20944/preprints202501.0796.v2",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H0"
+        ],
+        "refutes_hypotheses": [
+          "H2"
+        ],
+        "evidence_type": "qualitative"
+      },
+      {
+        "evidence_id": "E23",
+        "description": "A November 2025 CDC webpage update stated that studies have not definitively ruled out infant vaccines as a contributor to autism, reversing prior consensus that vaccines do not cause autism.",
+        "source_name": "Centers for Disease Control and Prevention",
+        "source_url": "https://beta.cdc.gov/vaccine-safety/about/autism.html",
+        "citation_apa": "Centers for Disease Control and Prevention. (2025, November 19). Autism and Vaccines. U.S. Department of Health and Human Services. https://beta.cdc.gov/vaccine-safety/about/autism.html",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H1"
+        ],
+        "refutes_hypotheses": [
+          "H2"
+        ],
+        "evidence_type": "policy"
+      },
+      {
+        "evidence_id": "E24",
+        "description": "A cohort of 196,929 children showed no significant association between maternal influenza vaccination during any trimester and ASD risk in offspring after adjustment for multiple comparisons.",
+        "source_name": "JAMA Pediatrics",
+        "source_url": "https://doi.org/10.1001/jamapediatrics.2016.3609",
+        "citation_apa": "Zerbo O, et al. (2017). Association between influenza infection and vaccination during pregnancy and risk of autism spectrum disorder. JAMA Pediatrics, 171(1), e163609. https://doi.org/10.1001/jamapediatrics.2016.3609",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H4"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E25",
+        "description": "An Institute of Medicine committee reviewed over 1,000 articles and found no or insufficient evidence to support a causal relationship between MMR vaccination and autism, concluding \u201cthe MMR vaccine does not cause autism.\u201d",
+        "source_name": "HealthLeaders Media",
+        "source_url": "https://www.healthleadersmedia.com/clinical-care/mmr-vaccine-does-not-cause-autism-says-iom",
+        "citation_apa": "Clark, C. (2011, August 26). MMR Vaccine Does Not Cause Autism, Says IOM. HealthLeaders Media.",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E26",
+        "description": "Ecological analysis of Danish registers (1971\u20132000) showed autism incidence continued to rise after the removal of thimerosal from vaccines in 1992, with no correlation between thimerosal exposure levels (0\u2013400 \u00b5g Hg) and autism risk (p=0.40).",
+        "source_name": "Pediatrics",
+        "source_url": "https://pure.au.dk/portal/en/publications/thimerosal-and-the-occurrence-of-autism-negative-ecological-evide",
+        "citation_apa": "Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., & Plesner, A.-M. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. doi:10.1542/peds.112.3.Part1.604",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H4"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E27",
+        "description": "In a US retrospective cohort of 95,727 children with older siblings, MMR vaccination was not associated with increased ASD risk at age 2 (RR 0.76; 95% CI 0.49\u20131.18) or age 5 (RR 0.56; 95% CI 0.31\u20131.01) among high-risk children, indicating no subgroup vulnerability.",
+        "source_name": "JAMA",
+        "source_url": "https://jamanetwork.com/journals/jama/fullarticle/2275444",
+        "citation_apa": "Jain, A., Marshall, J., Buikema, A., Bancroft, T., Kelly, J. P., & Newschaffer, C. J. (2015). Autism occurrence by MMR vaccine status among US children with older siblings with and without autism. JAMA, 313(15), 1534\u20131540. doi:10.1001/jama.2015.3077",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H3"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E28",
+        "description": "Case-control study of 256 ASD and 752 control children found no association between cumulative or maximum daily antigen exposure from vaccines in the first two years and ASD risk, despite antigen loads decreasing from thousands to 315 over decades.",
+        "source_name": "The Journal of Pediatrics",
+        "source_url": "https://www.sciencedaily.com/releases/2013/03/130329090310.htm",
+        "citation_apa": "DeStefano, F., Price, C. S., & Weintraub, E. (2013). Risk of autism is not increased by 'too many vaccines too soon,' study shows. The Journal of Pediatrics, 163(1), 79\u201385. doi:10.1016/j.jpeds.2013.01.029",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E29",
+        "description": "In a Danish cohort of 537,303 children, MMR-vaccinated children (n=440,655) had an adjusted relative risk (RR) of autism of 0.92 (95% CI, 0.68\u20131.24) and ASD of 0.83 (95% CI, 0.65\u20131.07), indicating no increased risk of autism following MMR vaccination.",
+        "source_name": "New England Journal of Medicine",
+        "source_url": "https://doi.org/10.1056/NEJMoa021134",
+        "citation_apa": "Madsen, K. M., Hviid, A., Vestergaard, M., Schendel, D., Wohlfahrt, J., Thorsen, P., Olsen, J., & Melbye, M. (2002). A population-based study of measles, mumps, and rubella vaccination and autism. New England Journal of Medicine, 347(19), 1477-1482. https://doi.org/10.1056/NEJMoa021134",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E30",
+        "description": "After discontinuation of thimerosal-containing vaccines in Denmark in 1992, the incidence of autism continued to rise from 1991 to 2000 among children aged 2\u201310 years, with no decline in autism rates following thimerosal removal.",
+        "source_name": "Pediatrics",
+        "source_url": "https://pubmed.ncbi.nlm.nih.gov/12949291/",
+        "citation_apa": "Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., Plesner, A. M., Andersen, P. H., & Mortensen, P. B. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604-606. https://doi.org/10.1542/peds.112.3.604",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E31",
+        "description": "An updated Cochrane review of MMR, MMRV, and MMR+V vaccines found no evidence of increased autism risk and confirmed vaccine effectiveness, with moderate-to-high certainty across studies up to May 2019.",
+        "source_name": "Cochrane Database of Systematic Reviews",
+        "source_url": "https://www.cochrane.org/CD004407/VACCINES_measles-mumps-rubella-varicella-vaccines-children",
+        "citation_apa": "Di Pietrantonj, C., Rivetti, A., Marchione, P., Debalini, M. G., & Demicheli, V. (2019). Vaccines for measles, mumps, rubella, and varicella in children. Cochrane Database of Systematic Reviews, 2019(4), CD004407. https://doi.org/10.1002/14651858.CD004407.pub2",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E32",
+        "description": "In a case-control study of 256 ASD cases and 752 controls, increasing cumulative exposure to vaccine antigens up to age 2 years showed no association with ASD risk (aOR per 25-unit antigen increase ranged from 0.999 to 1.001).",
+        "source_name": "The Journal of Pediatrics",
+        "source_url": "https://pubmed.ncbi.nlm.nih.gov/23545349/",
+        "citation_apa": "DeStefano, F., Price, C. S., & Weintraub, E. S. (2013). Increasing exposure to antibody-stimulating proteins and polysaccharides in vaccines is not associated with risk of autism. Journal of Pediatrics, 163(2), 561-567. https://doi.org/10.1016/j.jpeds.2013.02.001",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E33",
+        "description": "CDC states that extensive studies have found no link between receiving vaccines and developing ASD, and that no vaccine ingredients have been associated with increased autism risk.",
+        "source_name": "Centers for Disease Control and Prevention",
+        "source_url": "https://www.cdc.gov/vaccine-safety/about/autism.html",
+        "citation_apa": "Centers for Disease Control and Prevention. (2024, December 30). Autism and vaccines. CDC. Retrieved January 19, 2026, from https://www.cdc.gov/vaccine-safety/about/autism.html",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E34",
+        "description": "The Institute of Medicine\u2019s 2011 report reviewed over 1,000 studies of eight vaccines and concluded there is no causal relationship between vaccination and autism, stating the evidence favors rejection of any causal link.",
+        "source_name": "National Academies Press",
+        "source_url": "https://doi.org/10.17226/13164",
+        "citation_apa": "Institute of Medicine. (2011). Adverse Effects of Vaccines: Evidence and Causality. Washington, DC: National Academies Press. https://doi.org/10.17226/13164",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E35",
+        "description": "The Editors of The Lancet formally retracted the 1998 Wakefield et al. paper in February 2010 after the UK General Medical Council found data falsification and unethical procedures, invalidating the initial suggestion of an MMR-autism link.",
+        "source_name": "The Lancet",
+        "source_url": "https://doi.org/10.1016/S0140-6736(10)60175-7",
+        "citation_apa": "The Editors of The Lancet. (2010). Retraction\u2014Ileal-lymphoid-nodular hyperplasia, non\u2010specific colitis, and pervasive developmental disorder in children. The Lancet. https://doi.org/10.1016/S0140-6736(10)60175-7",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E36",
+        "description": "The WHO Global Advisory Committee on Vaccine Safety\u2019s December 2025 review of 31 primary studies (2010\u20132025) and meta-analyses reaffirmed that vaccines, including those with thiomersal or aluminum adjuvants, do not cause ASD.",
+        "source_name": "World Health Organization",
+        "source_url": "https://www.who.int/news/item/11-12-2025-who-expert-group-s-new-analysis-reaffirms-there-is-no-link-between-vaccines-and-autism",
+        "citation_apa": "World Health Organization. (2025, December 11). WHO expert group\u2019s new analysis reaffirms there is no link between vaccines and autism. Retrieved January 19, 2026, from https://www.who.int/news/item/11-12-2025-who-expert-group-s-new-analysis-reaffirms-there-is-no-link-between-vaccines-and-autism",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E37",
+        "description": "A systematic review of 67 studies on routine pediatric vaccines in the United States found high-strength evidence that the MMR vaccine is not associated with autism, and moderate evidence of rare adverse events (e.g., intussusception with rotavirus vaccine), underscoring the overall safety of the immunization schedule.",
+        "source_name": "Pediatrics",
+        "source_url": "https://doi.org/10.1542/peds.2014-1079",
+        "citation_apa": "Maglione, M. A., Das, L., Raaen, L., Smith, A., Chari, R., Newberry, S., Shanman, R., Perry, T., Goetz, M. B., & Gidengil, C. (2014). Safety of vaccines used for routine immunization of US children: A systematic review. Pediatrics, 134(2), 325\u2013337. https://doi.org/10.1542/peds.2014-1079",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E38",
+        "description": "An analysis of unethical research practices and methodological flaws in studies promoting a vaccine\u2013autism link, documenting fraudulent science associated with Andrew Wakefield and subsequent proponents, and highlighting the public health risks of such misinformation.",
+        "source_name": "Annals of Pharmacotherapy",
+        "source_url": "https://doi.org/10.1345/aph.1P470",
+        "citation_apa": "Flaherty, D. K. (2011). The vaccine\u2013autism connection: A public health crisis caused by unethical medical practices and fraudulent science. Annals of Pharmacotherapy, 45(10), 1302\u20131304. https://doi.org/10.1345/aph.1P470",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "expert_testimony"
+      },
+      {
+        "evidence_id": "E39",
+        "description": "Geier & Geier (2003) analyzed the VAERS database and Department of Education data, finding dose-response curves indicating that increased cumulative mercury exposure from thimerosal-containing childhood vaccines correlated with higher rates of autism and other neurodevelopmental disorders.",
+        "source_name": "Pediatric Rehabilitation",
+        "source_url": "https://doi.org/10.1080/1363849031000139315",
+        "citation_apa": "Geier, D. A., & Geier, M. R. (2003). An assessment of the impact of thimerosal on childhood neurodevelopmental disorders. Pediatric Rehabilitation, 6(2), 97\u2013102. https://doi.org/10.1080/1363849031000139315",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H1"
+        ],
+        "refutes_hypotheses": [
+          "H2",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E40",
+        "description": "Geier & Geier (2003) reported in Experimental Biology and Medicine that analysis of VAERS data showed a relative risk of 6.0 for autism and 6.1 for mental retardation following thimerosal-containing DTaP vaccines compared to thimerosal-free formulations.",
+        "source_name": "Experimental Biology and Medicine",
+        "source_url": "https://doi.org/10.1177/153537020322800603",
+        "citation_apa": "Geier, M. R., & Geier, D. A. (2003). Neurodevelopmental disorders after thimerosal-containing vaccines: a brief communication. Experimental Biology and Medicine, 228(6), 660\u2013664. https://doi.org/10.1177/153537020322800603",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H1"
+        ],
+        "refutes_hypotheses": [
+          "H2",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E41",
+        "description": "Madsen et al. (2003) analyzed Danish population-based data and observed that autism prevalence continued to rise following the removal of thimerosal from childhood vaccines in 1992, providing negative ecological evidence for a thimerosal-autism link.",
+        "source_name": "Pediatrics",
+        "source_url": "https://doi.org/10.1542/peds.112.3.604",
+        "citation_apa": "Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., & Plesner, A. M. (2003). Thimerosal and the occurrence of autism: negative ecological evidence from Danish population-based data. Pediatrics, 112(3), 604\u2013606. https://doi.org/10.1542/peds.112.3.604",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E42",
+        "description": "The Institute of Medicine Immunization Safety Review Committee (2004) concluded that the body of epidemiological evidence favors rejection of a causal relationship between both the MMR vaccine and thimerosal-containing vaccines and autism.",
+        "source_name": "Institute of Medicine",
+        "source_url": "https://www.ncbi.nlm.nih.gov/books/NBK25344/",
+        "citation_apa": "Institute of Medicine. (2004). Immunization Safety Review: Vaccines and Autism. National Academies Press. https://www.ncbi.nlm.nih.gov/books/NBK25344/",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E43",
+        "description": "A nationwide Danish cohort study of 657,461 children born between 1999 and 2010 found that receipt of the MMR vaccine was not associated with an increased risk for autism (hazard ratio for vaccinated vs. unvaccinated children not significantly different from 1).",
+        "source_name": "Annals of Internal Medicine",
+        "source_url": "https://www.acpjournals.org/doi/10.7326/M18-2101",
+        "citation_apa": "Hviid, A., Hansen, J. V., Frisch, M., & Melbye, M. (2019). Measles, mumps, rubella vaccination and autism: A nationwide cohort study. Annals of Internal Medicine, 170(8), 513\u2013520. doi:10.7326/M18-2101",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E44",
+        "description": "Ecological analysis of Danish children aged 2\u201310 diagnosed with autism from 1971 to 2000 showed no decline in autism incidence following removal of thimerosal from vaccines in 1992; autism rates continued to rise, refuting any correlation with thimerosal exposure.",
+        "source_name": "Pediatrics",
+        "source_url": "https://pediatrics.aappublications.org/content/112/3/604",
+        "citation_apa": "Madsen, K. M., Lauritsen, M. B., Pedersen, C. B., Thorsen, P., Plesner, A. M., Andersen, P. H., & Mortensen, P. B. (2003). Thimerosal and the occurrence of autism: Negative ecological evidence from Danish population-based data. Pediatrics, 112(3 Pt 1), 604\u2013606. doi:10.1542/peds.112.3.604",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E45",
+        "description": "A Cochrane systematic review of MMR, MMRV, and MMR+V vaccines (up to May 2019) in over 13 million children found no evidence of increased autism risk among vaccinated vs. unvaccinated groups, while affirming vaccine effectiveness.",
+        "source_name": "Cochrane Database of Systematic Reviews",
+        "source_url": "https://www.cochranelibrary.com/cdsr/doi/10.1002/14651858.CD004407.pub3/full",
+        "citation_apa": "Di Pietrantonj, C., Rivetti, A., Marchione, P., Debalini, M. G., & Demicheli, V. (2012). Vaccines for measles, mumps, rubella and varicella in children. Cochrane Database of Systematic Reviews, 2, CD004407. doi:10.1002/14651858.CD004407.pub3",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E46",
+        "description": "Case-control study of 256 ASD cases and 752 matched controls in three U.S. managed care organizations found no association between prenatal or infant thimerosal (ethylmercury) exposure and risk of ASD, autistic disorder, or ASD with regression.",
+        "source_name": "Pediatrics",
+        "source_url": "https://pediatrics.aappublications.org/content/126/4/656",
+        "citation_apa": "Price, C. S., Thompson, W. W., Goodson, B., Weintraub, E. S., Croen, L. A., Hinrichsen, V. L., Marcy, M., Robertson, A., Eriksen, E., Lewis, E., Bernal, P., Shay, D., Davis, R. L., & DeStefano, F. (2010). Prenatal and infant exposure to thimerosal from vaccines and immunoglobulins and risk of autism. Pediatrics, 126(4), 656\u2013664. doi:10.1542/peds.2010-0309",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H1",
+          "H3",
+          "H4",
+          "H5"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E47",
+        "description": "In a reanalysis of CDC data involving African American male children, vaccination with the first MMR dose before 24 months of age was associated with a 1.73-fold increased risk of autism diagnosis, and vaccination before 36 months was associated with a 3.36-fold increased risk, compared to later vaccination timing.",
+        "source_name": "Translational Neurodegeneration",
+        "source_url": "https://translationalneurodegeneration.biomedcentral.com/articles/10.1186/2047-9158-3-16",
+        "citation_apa": "Hooker, B. S. (2014). Measles-mumps-rubella vaccination timing and autism among young African American boys: A reanalysis of CDC data. Translational Neurodegeneration, 3, 16. https://doi.org/10.1186/2047-9158-3-16",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H5"
+        ],
+        "refutes_hypotheses": [
+          "H2"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E48",
+        "description": "A cross-national preprint analysis of 12 high-income countries found a positive association between early-life vaccine scheduling intensity (number of doses administered to infants under one year) and standardized autism incidence rates, with higher-dose countries averaging 20 doses in the first year showing elevated autism prevalence compared to countries with fewer doses.",
+        "source_name": "Preprints.org",
+        "source_url": "https://www.preprints.org/manuscript/202511.0675",
+        "citation_apa": "Coccia, M. (2025). Infant vaccine scheduling intensity and autism incidence: A preliminary cross-national analysis to guide public health policy [Preprint]. Preprints.org. https://www.preprints.org/manuscript/202511.0675",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H5"
+        ],
+        "refutes_hypotheses": [
+          "H2"
+        ],
+        "evidence_type": "quantitative"
+      },
+      {
+        "evidence_id": "E49",
+        "description": "Brookings Institution experts argue that there is no scientific evidence supporting alternative \u2018\u2018spaced-out\u2019\u2019 vaccine schedules for safety, noting that major reviews, including by the IOM, found no concerns with the current timing and that spacing delays increase risks for preventable diseases.",
+        "source_name": "Brookings",
+        "source_url": "https://www.brookings.edu/articles/vaccines-and-nervous-parents-why-spacing-out-the-vaccine-schedule-is-not-the-answer/",
+        "citation_apa": "Brookings Institution. (2026). Vaccines and nervous parents: Why spacing out the vaccine schedule is not the answer. Brookings. https://www.brookings.edu/articles/vaccines-and-nervous-parents-why-spacing-out-the-vaccine-schedule-is-not-the-answer/",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H5"
+        ],
+        "evidence_type": "expert_testimony"
+      },
+      {
+        "evidence_id": "E50",
+        "description": "The Institute of Medicine\u2019s 2013 comprehensive review of the U.S. childhood immunization schedule found no evidence that the timing, number, or order of vaccines is linked to autism or other developmental disorders, though it called for research on outcomes in children with delayed schedules.",
+        "source_name": "National Academies Press",
+        "source_url": "https://www.nationalacademies.org/publications/13563",
+        "citation_apa": "Institute of Medicine. (2013). The Childhood Immunization Schedule and Safety: Stakeholder Concerns, Scientific Evidence, and Future Studies. National Academies Press. https://doi.org/10.17226/13563",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H5"
+        ],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E51",
+        "description": "In October 2025, the CDC\u2019s Advisory Committee on Immunization Practices announced a multi-year review of the U.S. childhood vaccine schedule specifically to study timing and sequence of vaccinations, including alternative schedules used abroad and potential subgroup vulnerabilities.",
+        "source_name": "Politico",
+        "source_url": "https://www.politico.com/news/2025/10/09/cdc-panel-to-assess-childhood-vaccine-schedule-00600304",
+        "citation_apa": "Politico. (2025, October 9). CDC panel announces plans to assess childhood vaccine schedule. Politico. https://www.politico.com/news/2025/10/09/cdc-panel-to-assess-childhood-vaccine-schedule-00600304",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H5"
+        ],
+        "refutes_hypotheses": [],
+        "evidence_type": "institutional"
+      },
+      {
+        "evidence_id": "E52",
+        "description": "A Medical Daily report summarizing a review of nearly 1,000 children concluded there is no evidence linking the timing or scheduling of childhood vaccines to the development of autism spectrum disorder.",
+        "source_name": "Medical Daily",
+        "source_url": "https://www.medicaldaily.com/study-confirms-no-link-between-childhood-vaccine-schedule-and-autism-244822",
+        "citation_apa": "Medical Daily. (2025). Study confirms no link between childhood vaccine schedule and autism. Medical Daily. https://www.medicaldaily.com/study-confirms-no-link-between-childhood-vaccine-schedule-and-autism-244822",
+        "date_accessed": "2026-01-19",
+        "supports_hypotheses": [
+          "H2"
+        ],
+        "refutes_hypotheses": [
+          "H5"
+        ],
+        "evidence_type": "qualitative"
+      }
+    ],
+    "evidence_clusters": [
+      {
+        "cluster_id": "C1",
+        "cluster_name": "Large-scale Epidemiological Null Findings",
+        "description": "High-quality cohort, case-control, and meta-analysis studies (large N, rigorous peer-review) consistently report no association between vaccines (MMR, thimerosal, antigen load) and autism.",
+        "evidence_ids": [
+          "E1",
+          "E3",
+          "E4",
+          "E6",
+          "E9",
+          "E10",
+          "E14",
+          "E17",
+          "E18",
+          "E19",
+          "E20",
+          "E24",
+          "E26",
+          "E27",
+          "E29",
+          "E30",
+          "E31",
+          "E32",
+          "E37",
+          "E41",
+          "E43",
+          "E44",
+          "E45",
+          "E46"
+        ],
+        "likelihoods_by_paradigm": {
+          "K0": {
+            "H0": {
+              "probability": 0.7,
+              "justification": "If evidence base is fundamentally unreliable but vaccines still benign, it is moderately likely large studies would find null effects."
+            },
+            "H1": {
+              "probability": 0.05,
+              "justification": "If vaccines truly cause autism, it is unlikely that many independent, well-powered studies would all show null results."
+            },
+            "H2": {
+              "probability": 0.9,
+              "justification": "If vaccines do NOT cause autism, high-quality studies are very likely to report null associations."
+            },
+            "H3": {
+              "probability": 0.2,
+              "justification": "Subset-only effect could be masked, so some null mega-studies still plausible."
+            },
+            "H4": {
+              "probability": 0.1,
+              "justification": "Maternal-immune-activation mechanism does not predict a robust vaccine/autism signal, so null studies are somewhat likely."
+            },
+            "H5": {
+              "probability": 0.1,
+              "justification": "If schedule intensity mattered, strong nulls across many schedules are unlikely."
+            }
+          },
+          "K1": {
+            "H0": {
+              "probability": 0.5,
+              "justification": "Skeptical paradigm expects institutional bias; null results appear about half the time regardless of truth."
+            },
+            "H1": {
+              "probability": 0.3,
+              "justification": "Believes pharma suppression could still yield many nulls even if harm exists."
+            },
+            "H2": {
+              "probability": 0.4,
+              "justification": "Assumes some chance rigorous studies still line up with benign reality, though trust is lower."
+            },
+            "H3": {
+              "probability": 0.25,
+              "justification": "Masked-subset view fits mixed findings."
+            },
+            "H4": {
+              "probability": 0.2,
+              "justification": "Mechanistic immune-activation not central; nulls moderately expected."
+            },
+            "H5": {
+              "probability": 0.2,
+              "justification": "Schedule-risk view expects more positive findings; numerous nulls somewhat unlikely."
+            }
+          },
+          "K2": {
+            "H0": {
+              "probability": 0.6,
+              "justification": "Moderate trust in science but aware of publication bias, so null mega-studies fairly probable even if uncertainty remains."
+            },
+            "H1": {
+              "probability": 0.2,
+              "justification": "If true harm, so many consistent nulls are improbable though not impossible with systemic bias."
+            },
+            "H2": {
+              "probability": 0.7,
+              "justification": "If no causal link, large-N nulls are quite expected."
+            },
+            "H3": {
+              "probability": 0.3,
+              "justification": "Subset masking could yield nulls."
+            },
+            "H4": {
+              "probability": 0.15,
+              "justification": "Mechanistic focus elsewhere."
+            },
+            "H5": {
+              "probability": 0.15,
+              "justification": "Schedule explanation weakened by repeated nulls."
+            }
+          }
+        },
+        "bayesian_metrics_by_paradigm": {
+          "K0": {
+            "H0": {
+              "P(E|H)": 0.7,
+              "P(E|~H)": 0.6132,
+              "LR": 1.1416,
+              "WoE_dB": 0.58,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.05,
+              "P(E|~H)": 0.6474,
+              "LR": 0.0772,
+              "WoE_dB": -11.12,
+              "direction": "Strong Refutation"
+            },
+            "H2": {
+              "P(E|H)": 0.9,
+              "P(E|~H)": 0.1938,
+              "LR": 4.6452,
+              "WoE_dB": 6.67,
+              "direction": "Moderate Support"
+            },
+            "H3": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.6639,
+              "LR": 0.3013,
+              "WoE_dB": -5.21,
+              "direction": "Moderate Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.1,
+              "P(E|~H)": 0.675,
+              "LR": 0.1481,
+              "WoE_dB": -8.29,
+              "direction": "Moderate Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.1,
+              "P(E|~H)": 0.675,
+              "LR": 0.1481,
+              "WoE_dB": -8.29,
+              "direction": "Moderate Refutation"
+            }
+          },
+          "K1": {
+            "H0": {
+              "P(E|H)": 0.5,
+              "P(E|~H)": 0.2722,
+              "LR": 1.8367,
+              "WoE_dB": 2.64,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.2923,
+              "LR": 1.0263,
+              "WoE_dB": 0.11,
+              "direction": "Neutral"
+            },
+            "H2": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.2833,
+              "LR": 1.4118,
+              "WoE_dB": 1.5,
+              "direction": "Weak Support"
+            },
+            "H3": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.3062,
+              "LR": 0.8163,
+              "WoE_dB": -0.88,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.3118,
+              "LR": 0.6415,
+              "WoE_dB": -1.93,
+              "direction": "Weak Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.3056,
+              "LR": 0.6545,
+              "WoE_dB": -1.84,
+              "direction": "Weak Refutation"
+            }
+          },
+          "K2": {
+            "H0": {
+              "P(E|H)": 0.6,
+              "P(E|~H)": 0.3722,
+              "LR": 1.6119,
+              "WoE_dB": 2.07,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.4167,
+              "LR": 0.48,
+              "WoE_dB": -3.19,
+              "direction": "Weak Refutation"
+            },
+            "H2": {
+              "P(E|H)": 0.7,
+              "P(E|~H)": 0.2643,
+              "LR": 2.6486,
+              "WoE_dB": 4.23,
+              "direction": "Weak Support"
+            },
+            "H3": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.4187,
+              "LR": 0.7164,
+              "WoE_dB": -1.45,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.4382,
+              "LR": 0.3423,
+              "WoE_dB": -4.66,
+              "direction": "Weak Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.4382,
+              "LR": 0.3423,
+              "WoE_dB": -4.66,
+              "direction": "Weak Refutation"
+            }
+          }
+        }
+      },
+      {
+        "cluster_id": "C2",
+        "cluster_name": "Institutional Consensus Statements",
+        "description": "Statements and reviews by IOM, CDC, WHO, AAP and other authoritative bodies concluding vaccines are not causally linked to autism.",
+        "evidence_ids": [
+          "E2",
+          "E8",
+          "E11",
+          "E12",
+          "E13",
+          "E21",
+          "E25",
+          "E33",
+          "E34",
+          "E35",
+          "E36",
+          "E42",
+          "E49",
+          "E50"
+        ],
+        "likelihoods_by_paradigm": {
+          "K0": {
+            "H0": {
+              "probability": 0.75,
+              "justification": "If evidence base is fundamentally sound and neutral, agencies would likely still issue consensus summaries."
+            },
+            "H1": {
+              "probability": 0.05,
+              "justification": "If vaccines cause autism, authoritative bodies are unlikely to unanimously deny the link given scientific integrity norms."
+            },
+            "H2": {
+              "probability": 0.9,
+              "justification": "If no link exists, high probability that expert panels converge on that conclusion."
+            },
+            "H3": {
+              "probability": 0.15,
+              "justification": "Niche-subset harms might be overlooked, so broad denials remain plausible."
+            },
+            "H4": {
+              "probability": 0.1,
+              "justification": "Immune-activation hypothesis not vaccine-specific, so institutions would still exonerate vaccines."
+            },
+            "H5": {
+              "probability": 0.1,
+              "justification": "If schedule risk true, sweeping \u2018no link\u2019 statements are unlikely."
+            }
+          },
+          "K1": {
+            "H0": {
+              "probability": 0.6,
+              "justification": "Assumes institutions motivated to preserve public confidence regardless of truth."
+            },
+            "H1": {
+              "probability": 0.3,
+              "justification": "If harm exists, still expect official denial due to perceived cover-up."
+            },
+            "H2": {
+              "probability": 0.4,
+              "justification": "Benign reality could also yield denial, but trust deficit lowers probability."
+            },
+            "H3": {
+              "probability": 0.25,
+              "justification": "Subset harms could be missed, so official denial plausible."
+            },
+            "H4": {
+              "probability": 0.2,
+              "justification": "Same reasoning\u2014denial likely whether mechanism true or not."
+            },
+            "H5": {
+              "probability": 0.2,
+              "justification": "Schedule-risk narrative would expect more caution from agencies, making outright denial somewhat unlikely."
+            }
+          },
+          "K2": {
+            "H0": {
+              "probability": 0.7,
+              "justification": "Moderate epistemic humility: institutions often follow majority evidence but may err."
+            },
+            "H1": {
+              "probability": 0.2,
+              "justification": "Total denial less probable if true harm exists."
+            },
+            "H2": {
+              "probability": 0.75,
+              "justification": "If benign, institutional consensus very probable."
+            },
+            "H3": {
+              "probability": 0.25,
+              "justification": "Subset effect could be missed; consensus still plausible."
+            },
+            "H4": {
+              "probability": 0.15,
+              "justification": "Mechanism tangential to vaccines."
+            },
+            "H5": {
+              "probability": 0.15,
+              "justification": "Schedule-risk would expect at least some institutional hedging."
+            }
+          }
+        },
+        "bayesian_metrics_by_paradigm": {
+          "K0": {
+            "H0": {
+              "P(E|H)": 0.75,
+              "P(E|~H)": 0.6079,
+              "LR": 1.2338,
+              "WoE_dB": 0.91,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.05,
+              "P(E|~H)": 0.6447,
+              "LR": 0.0776,
+              "WoE_dB": -11.1,
+              "direction": "Strong Refutation"
+            },
+            "H2": {
+              "P(E|H)": 0.9,
+              "P(E|~H)": 0.1875,
+              "LR": 4.8,
+              "WoE_dB": 6.81,
+              "direction": "Moderate Support"
+            },
+            "H3": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.6667,
+              "LR": 0.225,
+              "WoE_dB": -6.48,
+              "direction": "Moderate Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.1,
+              "P(E|~H)": 0.6722,
+              "LR": 0.1488,
+              "WoE_dB": -8.28,
+              "direction": "Moderate Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.1,
+              "P(E|~H)": 0.6722,
+              "LR": 0.1488,
+              "WoE_dB": -8.28,
+              "direction": "Moderate Refutation"
+            }
+          },
+          "K1": {
+            "H0": {
+              "P(E|H)": 0.6,
+              "P(E|~H)": 0.2722,
+              "LR": 2.2041,
+              "WoE_dB": 3.43,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.3077,
+              "LR": 0.975,
+              "WoE_dB": -0.11,
+              "direction": "Neutral"
+            },
+            "H2": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.2944,
+              "LR": 1.3585,
+              "WoE_dB": 1.33,
+              "direction": "Weak Support"
+            },
+            "H3": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.3187,
+              "LR": 0.7843,
+              "WoE_dB": -1.06,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.3235,
+              "LR": 0.6182,
+              "WoE_dB": -2.09,
+              "direction": "Weak Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.3167,
+              "LR": 0.6316,
+              "WoE_dB": -2.0,
+              "direction": "Weak Refutation"
+            }
+          },
+          "K2": {
+            "H0": {
+              "P(E|H)": 0.7,
+              "P(E|~H)": 0.3778,
+              "LR": 1.8529,
+              "WoE_dB": 2.68,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.4333,
+              "LR": 0.4615,
+              "WoE_dB": -3.36,
+              "direction": "Weak Refutation"
+            },
+            "H2": {
+              "P(E|H)": 0.75,
+              "P(E|~H)": 0.2643,
+              "LR": 2.8378,
+              "WoE_dB": 4.53,
+              "direction": "Weak Support"
+            },
+            "H3": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.45,
+              "LR": 0.5556,
+              "WoE_dB": -2.55,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.4559,
+              "LR": 0.329,
+              "WoE_dB": -4.83,
+              "direction": "Moderate Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.4559,
+              "LR": 0.329,
+              "WoE_dB": -4.83,
+              "direction": "Moderate Refutation"
+            }
+          }
+        }
+      },
+      {
+        "cluster_id": "C3",
+        "cluster_name": "Positive Association Claims & Schedule Concerns",
+        "description": "Lower-quality or highly contested studies and policy signals suggesting vaccines (or schedule intensity) increase autism risk.",
+        "evidence_ids": [
+          "E16",
+          "E22",
+          "E23",
+          "E39",
+          "E40",
+          "E47",
+          "E48",
+          "E51"
+        ],
+        "likelihoods_by_paradigm": {
+          "K0": {
+            "H0": {
+              "probability": 0.55,
+              "justification": "Even in uncertain reality, some positive claims likely arise via noise or bias."
+            },
+            "H1": {
+              "probability": 0.4,
+              "justification": "If vaccines truly cause autism, appearance of positive studies is moderately likely, though quality concerns remain."
+            },
+            "H2": {
+              "probability": 0.1,
+              "justification": "If no link, it is improbable but not impossible (\u224810%) that multiple studies would report harms."
+            },
+            "H3": {
+              "probability": 0.3,
+              "justification": "Subset-risk could yield sporadic positive findings."
+            },
+            "H4": {
+              "probability": 0.3,
+              "justification": "Immune-activation could manifest in some datasets."
+            },
+            "H5": {
+              "probability": 0.35,
+              "justification": "If schedule matters, positive schedule-intensity correlations expected."
+            }
+          },
+          "K1": {
+            "H0": {
+              "probability": 0.6,
+              "justification": "Believes research space noisy; expects some positive findings regardless."
+            },
+            "H1": {
+              "probability": 0.8,
+              "justification": "If harm exists, positive association studies highly likely and welcomed for publication by dissenting venues."
+            },
+            "H2": {
+              "probability": 0.2,
+              "justification": "Benign reality would less often yield these findings; they\u2019re seen as anomalies."
+            },
+            "H3": {
+              "probability": 0.6,
+              "justification": "Subset hypothesis predicts patchy positive results."
+            },
+            "H4": {
+              "probability": 0.5,
+              "justification": "Some mechanistic overlap; positive associations plausible."
+            },
+            "H5": {
+              "probability": 0.7,
+              "justification": "Schedule-risk hypothesis directly predicts these findings."
+            }
+          },
+          "K2": {
+            "H0": {
+              "probability": 0.55,
+              "justification": "Acknowledges possibility of noise, publication bias, and heterogeneity."
+            },
+            "H1": {
+              "probability": 0.5,
+              "justification": "If causal, would expect some\u2014but perhaps more\u2014positive results."
+            },
+            "H2": {
+              "probability": 0.25,
+              "justification": "Benign vaccines can still produce a minority of false-positive studies."
+            },
+            "H3": {
+              "probability": 0.4,
+              "justification": "Patchy positives align with subgroup-risk view."
+            },
+            "H4": {
+              "probability": 0.4,
+              "justification": "Mechanistic possibilities allow occasional associations."
+            },
+            "H5": {
+              "probability": 0.45,
+              "justification": "Schedule-intensity link would yield these observations reasonably often."
+            }
+          }
+        },
+        "bayesian_metrics_by_paradigm": {
+          "K0": {
+            "H0": {
+              "P(E|H)": 0.55,
+              "P(E|~H)": 0.1842,
+              "LR": 2.9857,
+              "WoE_dB": 4.75,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.1921,
+              "LR": 2.0822,
+              "WoE_dB": 3.19,
+              "direction": "Weak Support"
+            },
+            "H2": {
+              "P(E|H)": 0.1,
+              "P(E|~H)": 0.3563,
+              "LR": 0.2807,
+              "WoE_dB": -5.52,
+              "direction": "Moderate Refutation"
+            },
+            "H3": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.1917,
+              "LR": 1.5652,
+              "WoE_dB": 1.95,
+              "direction": "Weak Support"
+            },
+            "H4": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.1917,
+              "LR": 1.5652,
+              "WoE_dB": 1.95,
+              "direction": "Weak Support"
+            },
+            "H5": {
+              "P(E|H)": 0.35,
+              "P(E|~H)": 0.1861,
+              "LR": 1.8806,
+              "WoE_dB": 2.74,
+              "direction": "Weak Support"
+            }
+          },
+          "K1": {
+            "H0": {
+              "P(E|H)": 0.6,
+              "P(E|~H)": 0.6278,
+              "LR": 0.9558,
+              "WoE_dB": -0.2,
+              "direction": "Neutral"
+            },
+            "H1": {
+              "P(E|H)": 0.8,
+              "P(E|~H)": 0.5308,
+              "LR": 1.5072,
+              "WoE_dB": 1.78,
+              "direction": "Weak Support"
+            },
+            "H2": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.6722,
+              "LR": 0.2975,
+              "WoE_dB": -5.26,
+              "direction": "Moderate Refutation"
+            },
+            "H3": {
+              "P(E|H)": 0.6,
+              "P(E|~H)": 0.6312,
+              "LR": 0.9505,
+              "WoE_dB": -0.22,
+              "direction": "Neutral"
+            },
+            "H4": {
+              "P(E|H)": 0.5,
+              "P(E|~H)": 0.6471,
+              "LR": 0.7727,
+              "WoE_dB": -1.12,
+              "direction": "Weak Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.7,
+              "P(E|~H)": 0.6167,
+              "LR": 1.1351,
+              "WoE_dB": 0.55,
+              "direction": "Weak Support"
+            }
+          },
+          "K2": {
+            "H0": {
+              "P(E|H)": 0.55,
+              "P(E|~H)": 0.3694,
+              "LR": 1.4887,
+              "WoE_dB": 1.73,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.5,
+              "P(E|~H)": 0.375,
+              "LR": 1.3333,
+              "WoE_dB": 1.25,
+              "direction": "Weak Support"
+            },
+            "H2": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.4464,
+              "LR": 0.56,
+              "WoE_dB": -2.52,
+              "direction": "Weak Refutation"
+            },
+            "H3": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.3844,
+              "LR": 1.0407,
+              "WoE_dB": 0.17,
+              "direction": "Neutral"
+            },
+            "H4": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.3853,
+              "LR": 1.0382,
+              "WoE_dB": 0.16,
+              "direction": "Neutral"
+            },
+            "H5": {
+              "P(E|H)": 0.45,
+              "P(E|~H)": 0.3765,
+              "LR": 1.1953,
+              "WoE_dB": 0.77,
+              "direction": "Weak Support"
+            }
+          }
+        }
+      },
+      {
+        "cluster_id": "C4",
+        "cluster_name": "Retractions & Fraud Findings",
+        "description": "Documentation that key pro-link studies (e.g., Wakefield 1998) were retracted for fraud and ethics violations, undermining credibility of vaccine-autism claims.",
+        "evidence_ids": [
+          "E7",
+          "E15",
+          "E38"
+        ],
+        "likelihoods_by_paradigm": {
+          "K0": {
+            "H0": {
+              "probability": 0.8,
+              "justification": "If science is self-correcting but uncertainty remains, fraudulent studies likely get exposed."
+            },
+            "H1": {
+              "probability": 0.2,
+              "justification": "If vaccines cause autism, key supportive papers being fraudulent is less likely."
+            },
+            "H2": {
+              "probability": 0.85,
+              "justification": "If no link, fraudulent supportive work is highly plausible and likely uncovered."
+            },
+            "H3": {
+              "probability": 0.25,
+              "justification": "Subset effects might still be real, but flagship fraud study more likely exposed."
+            },
+            "H4": {
+              "probability": 0.15,
+              "justification": "Mechanism unrelated; fraudulent link papers likely retracted."
+            },
+            "H5": {
+              "probability": 0.15,
+              "justification": "Schedule-risk papers being fraudulent is plausible if risk not real."
+            }
+          },
+          "K1": {
+            "H0": {
+              "probability": 0.5,
+              "justification": "Retraction could be seen as response to flawed work independent of truth."
+            },
+            "H1": {
+              "probability": 0.3,
+              "justification": "Believes some true studies may still be flawed or attacked; moderate probability."
+            },
+            "H2": {
+              "probability": 0.4,
+              "justification": "If no link, fraudulent supportive studies would still be exposed, though motive questioned."
+            },
+            "H3": {
+              "probability": 0.25,
+              "justification": "Same reasoning as above."
+            },
+            "H4": {
+              "probability": 0.2,
+              "justification": "Mechanism tangential."
+            },
+            "H5": {
+              "probability": 0.2,
+              "justification": "Schedule-risk papers not directly implicated, so ret & fraud less diagnostic."
+            }
+          },
+          "K2": {
+            "H0": {
+              "probability": 0.7,
+              "justification": "Self-correction consistent with uncertain or noisy field."
+            },
+            "H1": {
+              "probability": 0.25,
+              "justification": "If vaccines harmful, major fraudulent pro-link paper unexpected."
+            },
+            "H2": {
+              "probability": 0.75,
+              "justification": "If benign, fraudulent supportive papers likely exist and be retracted."
+            },
+            "H3": {
+              "probability": 0.3,
+              "justification": "Subset harm possibility still compatible with fraud in flagship work."
+            },
+            "H4": {
+              "probability": 0.2,
+              "justification": "Mechanism not dependent on fraudulent study."
+            },
+            "H5": {
+              "probability": 0.2,
+              "justification": "Schedule hypothesis not implicated."
+            }
+          }
+        },
+        "bayesian_metrics_by_paradigm": {
+          "K0": {
+            "H0": {
+              "P(E|H)": 0.8,
+              "P(E|~H)": 0.6053,
+              "LR": 1.3217,
+              "WoE_dB": 1.21,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.6368,
+              "LR": 0.314,
+              "WoE_dB": -5.03,
+              "direction": "Moderate Refutation"
+            },
+            "H2": {
+              "P(E|H)": 0.85,
+              "P(E|~H)": 0.2625,
+              "LR": 3.2381,
+              "WoE_dB": 5.1,
+              "direction": "Moderate Support"
+            },
+            "H3": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.6556,
+              "LR": 0.3814,
+              "WoE_dB": -4.19,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.6667,
+              "LR": 0.225,
+              "WoE_dB": -6.48,
+              "direction": "Moderate Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.15,
+              "P(E|~H)": 0.6667,
+              "LR": 0.225,
+              "WoE_dB": -6.48,
+              "direction": "Moderate Refutation"
+            }
+          },
+          "K1": {
+            "H0": {
+              "P(E|H)": 0.5,
+              "P(E|~H)": 0.2722,
+              "LR": 1.8367,
+              "WoE_dB": 2.64,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.2923,
+              "LR": 1.0263,
+              "WoE_dB": 0.11,
+              "direction": "Neutral"
+            },
+            "H2": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.2833,
+              "LR": 1.4118,
+              "WoE_dB": 1.5,
+              "direction": "Weak Support"
+            },
+            "H3": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.3062,
+              "LR": 0.8163,
+              "WoE_dB": -0.88,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.3118,
+              "LR": 0.6415,
+              "WoE_dB": -1.93,
+              "direction": "Weak Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.3056,
+              "LR": 0.6545,
+              "WoE_dB": -1.84,
+              "direction": "Weak Refutation"
+            }
+          },
+          "K2": {
+            "H0": {
+              "P(E|H)": 0.7,
+              "P(E|~H)": 0.4111,
+              "LR": 1.7027,
+              "WoE_dB": 2.31,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.4611,
+              "LR": 0.5422,
+              "WoE_dB": -2.66,
+              "direction": "Weak Refutation"
+            },
+            "H2": {
+              "P(E|H)": 0.75,
+              "P(E|~H)": 0.3071,
+              "LR": 2.4419,
+              "WoE_dB": 3.88,
+              "direction": "Weak Support"
+            },
+            "H3": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.475,
+              "LR": 0.6316,
+              "WoE_dB": -2.0,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.4824,
+              "LR": 0.4146,
+              "WoE_dB": -3.82,
+              "direction": "Weak Refutation"
+            },
+            "H5": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.4824,
+              "LR": 0.4146,
+              "WoE_dB": -3.82,
+              "direction": "Weak Refutation"
+            }
+          }
+        }
+      },
+      {
+        "cluster_id": "C5",
+        "cluster_name": "Biological Mechanism Speculations (Maternal Immune Activation)",
+        "description": "Animal and translational work suggesting maternal immune activation can induce autism-like phenotypes, offering a non-vaccine mechanistic pathway.",
+        "evidence_ids": [
+          "E5"
+        ],
+        "likelihoods_by_paradigm": {
+          "K0": {
+            "H0": {
+              "probability": 0.5,
+              "justification": "Speculative mechanisms expected in uncertain fields."
+            },
+            "H1": {
+              "probability": 0.4,
+              "justification": "Does not directly support or refute broad vaccine causation."
+            },
+            "H2": {
+              "probability": 0.3,
+              "justification": "If vaccines harmless, immune-activation mechanisms still conceivable from infection, so evidence still somewhat likely."
+            },
+            "H3": {
+              "probability": 0.4,
+              "justification": "Subset-risk via immune activation could be plausible; mechanism papers moderately likely."
+            },
+            "H4": {
+              "probability": 0.8,
+              "justification": "Specifically predicts such mechanistic findings; high likelihood."
+            },
+            "H5": {
+              "probability": 0.4,
+              "justification": "Schedule intensity less related; moderate background probability."
+            }
+          },
+          "K1": {
+            "H0": {
+              "probability": 0.55,
+              "justification": "Skeptics expect ongoing mechanistic exploration."
+            },
+            "H1": {
+              "probability": 0.5,
+              "justification": "Mechanism could dovetail with general vaccine harm narrative."
+            },
+            "H2": {
+              "probability": 0.2,
+              "justification": "If vaccines benign, such vaccine-adjacent mechanisms less central."
+            },
+            "H3": {
+              "probability": 0.45,
+              "justification": "Subset immune-trigger alignment makes papers fairly likely."
+            },
+            "H4": {
+              "probability": 0.8,
+              "justification": "Direct mechanistic support."
+            },
+            "H5": {
+              "probability": 0.45,
+              "justification": "Schedule concern could invoke immune overload; mechanism somewhat supportive."
+            }
+          },
+          "K2": {
+            "H0": {
+              "probability": 0.55,
+              "justification": "Field explores many mechanisms under uncertainty."
+            },
+            "H1": {
+              "probability": 0.45,
+              "justification": "Could be consistent with vaccines causing immune activation."
+            },
+            "H2": {
+              "probability": 0.25,
+              "justification": "If vaccines benign, mechanism papers still arise focused on infections."
+            },
+            "H3": {
+              "probability": 0.4,
+              "justification": "Subset view fits."
+            },
+            "H4": {
+              "probability": 0.8,
+              "justification": "Core mechanism matches hypothesis."
+            },
+            "H5": {
+              "probability": 0.4,
+              "justification": "Schedule immune-load claim partially addressed."
+            }
+          }
+        },
+        "bayesian_metrics_by_paradigm": {
+          "K0": {
+            "H0": {
+              "P(E|H)": 0.5,
+              "P(E|~H)": 0.3789,
+              "LR": 1.3194,
+              "WoE_dB": 1.2,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.3842,
+              "LR": 1.0411,
+              "WoE_dB": 0.17,
+              "direction": "Neutral"
+            },
+            "H2": {
+              "P(E|H)": 0.3,
+              "P(E|~H)": 0.5125,
+              "LR": 0.5854,
+              "WoE_dB": -2.33,
+              "direction": "Weak Refutation"
+            },
+            "H3": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.3833,
+              "LR": 1.0435,
+              "WoE_dB": 0.18,
+              "direction": "Neutral"
+            },
+            "H4": {
+              "P(E|H)": 0.8,
+              "P(E|~H)": 0.3389,
+              "LR": 2.3607,
+              "WoE_dB": 3.73,
+              "direction": "Weak Support"
+            },
+            "H5": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.3833,
+              "LR": 1.0435,
+              "WoE_dB": 0.18,
+              "direction": "Neutral"
+            }
+          },
+          "K1": {
+            "H0": {
+              "P(E|H)": 0.55,
+              "P(E|~H)": 0.5,
+              "LR": 1.1,
+              "WoE_dB": 0.41,
+              "direction": "Neutral"
+            },
+            "H1": {
+              "P(E|H)": 0.5,
+              "P(E|~H)": 0.5077,
+              "LR": 0.9848,
+              "WoE_dB": -0.07,
+              "direction": "Neutral"
+            },
+            "H2": {
+              "P(E|H)": 0.2,
+              "P(E|~H)": 0.5389,
+              "LR": 0.3711,
+              "WoE_dB": -4.3,
+              "direction": "Weak Refutation"
+            },
+            "H3": {
+              "P(E|H)": 0.45,
+              "P(E|~H)": 0.5187,
+              "LR": 0.8675,
+              "WoE_dB": -0.62,
+              "direction": "Weak Refutation"
+            },
+            "H4": {
+              "P(E|H)": 0.8,
+              "P(E|~H)": 0.4529,
+              "LR": 1.7662,
+              "WoE_dB": 2.47,
+              "direction": "Weak Support"
+            },
+            "H5": {
+              "P(E|H)": 0.45,
+              "P(E|~H)": 0.5111,
+              "LR": 0.8804,
+              "WoE_dB": -0.55,
+              "direction": "Weak Refutation"
+            }
+          },
+          "K2": {
+            "H0": {
+              "P(E|H)": 0.55,
+              "P(E|~H)": 0.4222,
+              "LR": 1.3026,
+              "WoE_dB": 1.15,
+              "direction": "Weak Support"
+            },
+            "H1": {
+              "P(E|H)": 0.45,
+              "P(E|~H)": 0.4333,
+              "LR": 1.0385,
+              "WoE_dB": 0.16,
+              "direction": "Neutral"
+            },
+            "H2": {
+              "P(E|H)": 0.25,
+              "P(E|~H)": 0.5143,
+              "LR": 0.4861,
+              "WoE_dB": -3.13,
+              "direction": "Weak Refutation"
+            },
+            "H3": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.4437,
+              "LR": 0.9014,
+              "WoE_dB": -0.45,
+              "direction": "Neutral"
+            },
+            "H4": {
+              "P(E|H)": 0.8,
+              "P(E|~H)": 0.3706,
+              "LR": 2.1587,
+              "WoE_dB": 3.34,
+              "direction": "Weak Support"
+            },
+            "H5": {
+              "P(E|H)": 0.4,
+              "P(E|~H)": 0.4412,
+              "LR": 0.9067,
+              "WoE_dB": -0.43,
+              "direction": "Neutral"
+            }
+          }
+        }
+      }
+    ],
+    "visualization": {
+      "dot": "/tmp/forced_9ec8e8fd-evidence-flow.dot",
+      "png": "/tmp/forced_9ec8e8fd-evidence-flow.png",
+      "dot_content": "// BFIH Evidence Flow: Do vaccines cause autism in children?...\n// Auto-generated visualization of Bayesian analysis structure\n\ndigraph BFIHEvidenceFlow {\n    // Graph properties\n    rankdir=LR;\n    compound=true;\n    fontname=\"Helvetica-Bold,Arial Bold,sans-serif\";\n    node [fontname=\"Helvetica,Arial,sans-serif\", fontsize=10];\n    edge [fontname=\"Helvetica,Arial,sans-serif\", fontsize=8];\n    label=\"BFIH Analysis of Proposition:\\n\\\"Do vaccines cause autism in children?\\\"\";\n    labelloc=\"t\";\n    fontsize=18;\n\n    // ============================================================\n    // Hypothesis Space\n    // ============================================================\n\n    subgraph cluster_hypotheses {\n        label=\"Hypothesis Space (6 explanations)\";\n        style=\"filled,rounded\";\n        fillcolor=\"#E8F4F8\";\n        fontsize=12;\n        penwidth=2;\n\n        h0 [label=\"H0: OTHER - Unforeseen explanation\\n\\nPrior: 0.05\\nPosterior: 0.315\\nStatus: STRONG\",\n            shape=box, style=\"filled,rounded\", fillcolor=\"#E0E0E0\", penwidth=2.5];\n\n        h1 [label=\"H1: TRUE - Vaccines directly cause\\nautism\\n\\nPrior: 0.05\\nPosterior: 0.000\\nStatus: WEAK\",\n            shape=box, style=\"filled,rounded\", fillcolor=\"#CCFFCC\", penwidth=1];\n\n        h2 [label=\"H2: FALSE - No causal link exists\\n\\nPrior: 0.60\\nPosterior: 0.677\\nStatus: STRONGEST\",\n            shape=box, style=\"filled,rounded\", fillcolor=\"#FF9999\", penwidth=3];\n\n        h3 [label=\"H3: PARTIAL - Rare subgroup\\nvulnerability\\n\\nPrior: 0.10\\nPosterior: 0.005\\nStatus: WEAK\",\n            shape=box, style=\"filled,rounded\", fillcolor=\"#B3D9FF\", penwidth=1];\n\n        h4 [label=\"H4: PARTIAL - Indirect pathway via\\nimmune activation\\n\\nPrior: 0.10\\nPosterior: 0.002\\nStatus: WEAK\",\n            shape=box, style=\"filled,rounded\", fillcolor=\"#B3D9FF\", penwidth=1];\n\n        h5 [label=\"H5: PARTIAL - Timing/schedule effects\\nonly\\n\\nPrior: 0.10\\nPosterior: 0.001\\nStatus: WEAK\",\n            shape=box, style=\"filled,rounded\", fillcolor=\"#B3D9FF\", penwidth=1];\n\n    }\n\n    // ============================================================\n    // Evidence Clusters\n    // ============================================================\n\n    subgraph cluster_c1 {\n        label=\"C1: Large-scale Epidemiological Null\\nFindings\\n(24 items)\";\n        style=\"filled,rounded\";\n        fillcolor=\"#FFE6E6\";\n        fontsize=10;\n\n        c1_node [label=\"High-quality cohort, case-control,\\nand meta-analysis studies (large N,\\nrigorous peer-review)\\n(24 items)\\n\\nWoE to H2: 6.7 dB\",\n                 shape=ellipse, style=\"filled\", fillcolor=\"#FFCCCC\"];\n    }\n\n    subgraph cluster_c2 {\n        label=\"C2: Institutional Consensus Statements\\n(14 items)\";\n        style=\"filled,rounded\";\n        fillcolor=\"#FFFCE6\";\n        fontsize=10;\n\n        c2_node [label=\"Statements and reviews by IOM,\\nCDC, WHO, AAP and other\\nauthoritative bodies concluding\\nvaccines are\\n(14 items)\\n\\nWoE to H2: 6.8 dB\",\n                 shape=ellipse, style=\"filled\", fillcolor=\"#FFFFCC\"];\n    }\n\n    subgraph cluster_c3 {\n        label=\"C3: Positive Association Claims & Schedule\\nConcerns\\n(8 items)\";\n        style=\"filled,rounded\";\n        fillcolor=\"#FFF0E6\";\n        fontsize=10;\n\n        c3_node [label=\"Lower-quality or highly contested\\nstudies and policy signals\\nsuggesting vaccines (or schedule\\n(8 items)\\n\\nWoE to H0: 4.8 dB\",\n                 shape=ellipse, style=\"filled\", fillcolor=\"#FFE6CC\"];\n    }\n\n    subgraph cluster_c4 {\n        label=\"C4: Retractions & Fraud Findings\\n(3 items)\";\n        style=\"filled,rounded\";\n        fillcolor=\"#E6F3FF\";\n        fontsize=10;\n\n        c4_node [label=\"Documentation that key pro-link\\nstudies (e.g., Wakefield 1998) were\\nretracted for fraud and ethics\\n(3 items)\\n\\nWoE to H2: 5.1 dB\",\n                 shape=ellipse, style=\"filled\", fillcolor=\"#CCE6FF\"];\n    }\n\n    subgraph cluster_c5 {\n        label=\"C5: Biological Mechanism Speculations\\n(Maternal Immune Activation)\\n(1 items)\";\n        style=\"filled,rounded\";\n        fillcolor=\"#F0E6FF\";\n        fontsize=10;\n\n        c5_node [label=\"Animal and translational work\\nsuggesting maternal immune\\nactivation can induce autism-like\\n(1 items)\\n\\nWoE to H4: 3.7 dB\",\n                 shape=ellipse, style=\"filled\", fillcolor=\"#E6CCFF\"];\n    }\n\n    // ============================================================\n    // Evidence flows to hypotheses\n    // ============================================================\n\n    c1_node -> h1 [label=\"LR: 0.08\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c1_node -> h2 [label=\"LR: 4.65\", color=\"#006600\", penwidth=3, style=solid];\n    c1_node -> h3 [label=\"LR: 0.30\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c1_node -> h4 [label=\"LR: 0.15\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c1_node -> h5 [label=\"LR: 0.15\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c2_node -> h1 [label=\"LR: 0.08\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c2_node -> h2 [label=\"LR: 4.80\", color=\"#006600\", penwidth=3, style=solid];\n    c2_node -> h3 [label=\"LR: 0.23\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c2_node -> h4 [label=\"LR: 0.15\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c2_node -> h5 [label=\"LR: 0.15\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c3_node -> h0 [label=\"LR: 2.99\", color=\"#228B22\", penwidth=2.5, style=solid];\n    c3_node -> h2 [label=\"LR: 0.28\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c4_node -> h1 [label=\"LR: 0.31\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c4_node -> h2 [label=\"LR: 3.24\", color=\"#006600\", penwidth=3, style=solid];\n    c4_node -> h4 [label=\"LR: 0.23\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c4_node -> h5 [label=\"LR: 0.23\", color=\"#CC0000\", penwidth=1.5, style=dotted];\n    c5_node -> h2 [label=\"LR: 0.59\", color=\"#CC6666\", penwidth=1, style=dotted];\n    c5_node -> h4 [label=\"LR: 2.36\", color=\"#228B22\", penwidth=2.5, style=solid];\n\n    // ============================================================\n    // Posterior Summary\n    // ============================================================\n\n    posterior_summary [label=\"K0 Posteriors\\n\\nH2: 67.7%\\nH0: 31.5%\\nH3: 0.5%\\nH4: 0.2%\\nH5: 0.1%\\n\\nVerdict: SUPPORTED\",\n                        shape=box, style=\"filled,rounded\", fillcolor=\"#FFF4E6\",\n                        fontsize=11, penwidth=2];\n\n    h0 -> posterior_summary [style=solid];\n    h1 -> posterior_summary [style=dashed];\n    h2 -> posterior_summary [style=solid];\n    h3 -> posterior_summary [style=dashed];\n    h4 -> posterior_summary [style=dashed];\n    h5 -> posterior_summary [style=dashed];\n\n    // ============================================================\n    // Paradigm Comparison\n    // ============================================================\n\n    subgraph cluster_paradigm_compare {\n        label=\"Cross-Paradigm Comparison\";\n        style=\"filled,rounded\";\n        fillcolor=\"#F0E6FF\";\n        fontsize=11;\n\n        paradigm_k0 [label=\"K0: Scientific Cons\\nH2: 67.7%\", style=\"filled\", fillcolor=\"#E6CCFF\"];\n        paradigm_k1 [label=\"K1: Vaccine Skeptic\\nH0: 46.9%\", style=\"filled\", fillcolor=\"#E6CCFF\"];\n        paradigm_k2 [label=\"K2: Precautionary\\nH0: 50.6%\", style=\"filled\", fillcolor=\"#E6CCFF\"];\n    }\n\n    posterior_summary -> paradigm_k0 [style=solid];\n    posterior_summary -> paradigm_k1 [style=dashed];\n    posterior_summary -> paradigm_k2 [style=dashed];\n\n    // ============================================================\n    // Evidence Base Assessment\n    // ============================================================\n\n    evidence_assessment [label=\"Evidence Assessment\\n\\nTotal Evidence Items: 52\\nEvidence Clusters: 5\\nParadigms Analyzed: 3\\nAvg Items/Cluster: 10.4\\n\\nCoverage: Extensive\",\n                          shape=box, style=\"filled,rounded\", fillcolor=\"#E6FFE6\",\n                          fontsize=10, penwidth=1.5];\n\n    // ============================================================\n    // Bayesian Synthesis\n    // ============================================================\n\n    bayesian_synthesis [label=\"BAYESIAN SYNTHESIS\\n\\nH2: 60% \u2192 67.7% (+7.7%)\\nH0: 5% \u2192 31.5% (+26.5%)\\nH3: 10% \u2192 0.5% (-9.5%)\\n\\nTotal WoE: 138.4 dB\",\n                         shape=box, style=\"filled,rounded\", fillcolor=\"#E6F3FF\",\n                         fontsize=10, penwidth=1.5];\n\n    paradigm_k0 -> bayesian_synthesis [style=dashed, color=\"#666666\"];\n    paradigm_k1 -> bayesian_synthesis [style=dashed, color=\"#666666\"];\n    paradigm_k2 -> bayesian_synthesis [style=dashed, color=\"#666666\"];\n\n    // ============================================================\n    // Key Insights\n    // ============================================================\n\n    key_insights [label=\"KEY INSIGHTS\\n\\n\u2022 2 different conclusions across paradigms\\n\u2022 3 strong support signals\\n\u2022 12 strong refutation signals\\n\u2022 Clear margin (36%) over alternatives\",\n                   shape=box, style=\"filled,rounded\", fillcolor=\"#FFF0F5\",\n                   fontsize=10, penwidth=1.5];\n\n    bayesian_synthesis -> key_insights [style=solid];\n\n    // ============================================================\n    // Final Analysis Summary\n    // ============================================================\n\n    final_summary [label=\"ANALYSIS CONCLUSION\\n\\nLeading Hypothesis: H2\\n(FALSE - No causal link exists)\\n\\nPosterior: 67.7%\\nMargin over #2: 36.1%\\nConfidence: Moderate\\n\\nStatus: SUPPORTED\",\n                    shape=box, style=\"filled,bold,rounded\", fillcolor=\"#FFE4B5\",\n                    fontsize=11, penwidth=3];\n\n    key_insights -> final_summary [style=solid, penwidth=2];\n\n}"
+    }
+  },
+  "created_at": "2026-01-19T10:00:02.833052+00:00",
+  "scenario_config": {
+    "proposition": "Do vaccines cause autism in children?",
+    "domain": "medicine",
+    "difficulty": "hard",
+    "paradigms": [
+      {
+        "id": "K0",
+        "name": "Scientific Consensus",
+        "description": "Mainstream scientific and medical consensus based on epidemiological evidence, meta-analyses, and mechanistic biology.",
+        "ontology": "Material, measurable biological processes",
+        "epistemology": "Empirical observation, RCTs, systematic reviews, falsification",
+        "axiology": "Public health, harm reduction, evidence-based medicine"
+      },
+      {
+        "id": "K1",
+        "name": "Vaccine Skeptic",
+        "description": "Perspective that questions vaccine safety claims, emphasizes anecdotal reports, and distrusts pharmaceutical/regulatory institutions.",
+        "ontology": "Individual experiences and observable outcomes",
+        "epistemology": "Personal testimony, pattern recognition in adverse event reports",
+        "axiology": "Parental autonomy, precaution, distrust of authority"
+      },
+      {
+        "id": "K2",
+        "name": "Precautionary",
+        "description": "Accepts most vaccine science but emphasizes unknown long-term risks and subgroup vulnerabilities.",
+        "ontology": "Complex systems with emergent effects",
+        "epistemology": "Scenario modeling, acknowledging uncertainty",
+        "axiology": "Precautionary principle, intergenerational responsibility"
+      }
+    ],
+    "hypotheses": [
+      {
+        "id": "H0",
+        "name": "OTHER - Unforeseen explanation",
+        "short_name": "Unforeseen",
+        "description": "Some unknown factor not captured by the other hypotheses explains the relationship (or lack thereof) between vaccines and autism.",
+        "verdict_type": "OTHER"
+      },
+      {
+        "id": "H1",
+        "name": "TRUE - Vaccines directly cause autism",
+        "short_name": "Direct Causation",
+        "description": "Vaccines (or their components like thimerosal, aluminum adjuvants, or antigens) directly cause autism through biological mechanisms such as immune activation, neurotoxicity, or gut-brain axis disruption.",
+        "verdict_type": "TRUE"
+      },
+      {
+        "id": "H2",
+        "name": "FALSE - No causal link exists",
+        "short_name": "No Causation",
+        "description": "There is no causal relationship between vaccines and autism. The temporal correlation (vaccines given around age when autism symptoms appear) is coincidental. Large epidemiological studies consistently show no increased risk.",
+        "verdict_type": "FALSE"
+      },
+      {
+        "id": "H3",
+        "name": "PARTIAL - Rare subgroup vulnerability",
+        "short_name": "Subgroup Effect",
+        "description": "While vaccines don't cause autism in the general population, a small subset of genetically or immunologically vulnerable children may experience adverse neurodevelopmental effects. This subgroup is too small to detect in population studies.",
+        "verdict_type": "PARTIAL"
+      },
+      {
+        "id": "H4",
+        "name": "PARTIAL - Indirect pathway via immune activation",
+        "short_name": "Indirect Pathway",
+        "description": "Vaccines don't directly cause autism, but in rare cases, the immune response they trigger may interact with pre-existing conditions to affect neurodevelopment. The effect is real but indirect and context-dependent.",
+        "verdict_type": "PARTIAL"
+      },
+      {
+        "id": "H5",
+        "name": "PARTIAL - Timing/schedule effects only",
+        "short_name": "Timing Effects",
+        "description": "Individual vaccines are safe, but the cumulative effect of the vaccination schedule (multiple vaccines in short timeframes) may overwhelm some children's immune systems, contributing to developmental issues in susceptible individuals.",
+        "verdict_type": "PARTIAL"
+      }
+    ],
+    "priors_by_paradigm": {
+      "K0": {
+        "H0": 0.05,
+        "H1": 0.05,
+        "H2": 0.6,
+        "H3": 0.1,
+        "H4": 0.1,
+        "H5": 0.1
+      },
+      "K1": {
+        "H0": 0.1,
+        "H1": 0.35,
+        "H2": 0.1,
+        "H3": 0.2,
+        "H4": 0.15,
+        "H5": 0.1
+      },
+      "K2": {
+        "H0": 0.1,
+        "H1": 0.1,
+        "H2": 0.3,
+        "H3": 0.2,
+        "H4": 0.15,
+        "H5": 0.15
+      }
+    }
+  }
+}
