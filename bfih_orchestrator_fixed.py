@@ -3924,7 +3924,8 @@ IMPORTANT MARKDOWN FORMATTING:
                 for c_id in group_cluster_ids:
                     cluster = cluster_data_lookup.get(c_id, {})
                     cluster_name = cluster.get('cluster_name', c_id)
-                    ct = cluster_table_lookup.get(cluster_name, {})
+                    # Look up by cluster_id first (matches how tables are keyed at line 849-850)
+                    ct = cluster_table_lookup.get(c_id) or cluster_table_lookup.get(cluster_name, {})
 
                     # Include mechanistic source and calibration info
                     mech_source = cluster.get('mechanistic_source', 'unspecified')
