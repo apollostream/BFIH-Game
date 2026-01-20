@@ -3103,16 +3103,34 @@ If BOTH a simple and a complex hypothesis are compatible with evidence E:
 A "PARTIAL" or "nuanced" hypothesis that could explain almost ANY outcome should get P(E|H) ≈ P(E).
 Only hypotheses that would be FALSIFIED by ¬E deserve P(E|H) significantly above P(E).
 
-### Step A: Identify Discriminating Hypotheses
+### Step A: Identify Discriminating Hypotheses (with Required Rationales)
 
 Which hypothesis would MOST expect this evidence (H_max)?
 Which hypothesis would LEAST expect this evidence (H_min)?
+
+**CRITICAL: Focus on the most reliable evidence pieces.** An evidence cluster should be judged by
+its most methodologically rigorous and statistically significant pieces. Do NOT let one weak study
+or unreliable observation dilute the impact of multiple strong, reliable experiments. Identify the
+2-3 strongest evidence items in the cluster and let those drive your discrimination assessment.
+
+**REQUIRED RATIONALES:**
+You MUST provide a 1-sentence rationale for EACH choice:
+- **H_max rationale**: Cite SPECIFIC aspects of the evidence (study findings, experimental results,
+  observed phenomena) and explain HOW those aspects align with H_max's predictions.
+- **H_min rationale**: Cite SPECIFIC aspects of the evidence and explain HOW those aspects
+  contradict or fail to support H_min's predictions.
+
+These rationales must be LOGICALLY COHERENT with your likelihood assignments. If your rationale
+contradicts your H_max/H_min choice (e.g., you say "H3 predicts mixed findings" but H3 doesn't
+actually predict that more sharply than simpler hypotheses), you must REASSESS and choose differently.
 
 Think carefully:
 - Does this evidence actually discriminate between hypotheses?
 - Is the apparent "winner" a simple hypothesis making a sharp prediction, or a complex hypothesis
   that could explain almost anything?
 - Apply Occam's Razor: prefer simpler hypotheses that make riskier predictions
+- **Coherence check**: Re-read your rationales. Would a neutral observer agree that your cited
+  evidence aspects logically support your H_max/H_min assignments?
 
 ### Step B: Choose Discrimination Strength (LR_range)
 
@@ -3155,12 +3173,15 @@ Return JSON with this exact structure:
 {{
   "cluster_id": "{c_id}",
   "base_rate": {c_base_rate:.3f},
+  "key_evidence": ["<ID of strongest evidence item>", "<ID of 2nd strongest>"],
   "calibration": {{
     "h_max": "<hypothesis ID that most expects this evidence>",
+    "h_max_rationale": "<1 sentence citing SPECIFIC evidence aspects and HOW they support H_max>",
     "h_min": "<hypothesis ID that least expects this evidence>",
+    "h_min_rationale": "<1 sentence citing SPECIFIC evidence aspects and HOW they contradict H_min>",
     "lr_range_category": "<none|weak|moderate|strong|very_strong|decisive>",
     "lr_range_value": <numeric LR value: 1, 3, 6, 10, 18, or 30>,
-    "reasoning": "<brief explanation of why this evidence discriminates (or doesn't)>"
+    "coherence_verified": <true if rationales logically support H_max/H_min choices, false if reassessment was needed>
   }},
   "hypothesis_likelihoods": [
     {{"hypothesis_id": "H0", "probability": <float 0.02-0.98>, "position": "<h_min|below_base|at_base|above_base|h_max>"}},
@@ -3185,20 +3206,28 @@ IMPORTANT:
                 # Extract calibration info
                 calibration = result.get("calibration", {})
                 h_max = calibration.get("h_max", "")
+                h_max_rationale = calibration.get("h_max_rationale", "")
                 h_min = calibration.get("h_min", "")
+                h_min_rationale = calibration.get("h_min_rationale", "")
                 lr_category = calibration.get("lr_range_category", "moderate")
                 lr_value = calibration.get("lr_range_value", 6)
-                reasoning = calibration.get("reasoning", "")
+                coherence_verified = calibration.get("coherence_verified", True)
+                key_evidence = result.get("key_evidence", [])
 
                 cluster["calibration_info"] = {
                     "h_max": h_max,
+                    "h_max_rationale": h_max_rationale,
                     "h_min": h_min,
+                    "h_min_rationale": h_min_rationale,
                     "lr_range_category": lr_category,
                     "lr_range_value": lr_value,
-                    "reasoning": reasoning
+                    "coherence_verified": coherence_verified,
+                    "key_evidence": key_evidence
                 }
 
                 logger.info(f"  {c_id} calibration: H_max={h_max}, H_min={h_min}, LR={lr_value}x ({lr_category})")
+                logger.info(f"  {c_id} H_max rationale: {h_max_rationale[:100]}..." if len(h_max_rationale) > 100 else f"  {c_id} H_max rationale: {h_max_rationale}")
+                logger.info(f"  {c_id} H_min rationale: {h_min_rationale[:100]}..." if len(h_min_rationale) > 100 else f"  {c_id} H_min rationale: {h_min_rationale}")
 
                 # Extract likelihoods
                 hypothesis_likelihoods = result.get("hypothesis_likelihoods", [])
