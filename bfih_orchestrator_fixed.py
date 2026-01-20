@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import uuid
 from dataclasses import dataclass, asdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from openai import OpenAI, AuthenticationError, APIError, BadRequestError
 from dotenv import load_dotenv
@@ -2160,31 +2161,54 @@ Each item needs:
         # Step 2: Generate domain-specific search categories
         search_categories = self._generate_search_categories(proposition, topic_type, hypotheses)
 
-        logger.info(f"Starting multi-search evidence gathering: {len(search_categories)} focused searches")
-        print(f"\n[Starting {len(search_categories)} focused evidence searches]")
+        logger.info(f"Starting multi-search evidence gathering: {len(search_categories)} focused searches (PARALLEL)")
+        print(f"\n[Starting {len(search_categories)} focused evidence searches in PARALLEL]")
 
         all_evidence = []
         all_citations = []
 
-        for i, category in enumerate(search_categories, 1):
-            # Report search progress to frontend
-            self._report_status(f"phase:evidence:{i}/{len(search_categories)}")
-            logger.info(f"Search {i}/{len(search_categories)}: {category[:60]}...")
-            print(f"[Search {i}/{len(search_categories)}: {category[:50]}...]")
-
+        # Define search function for parallel execution
+        def run_search(search_idx: int, category: str) -> Tuple[int, str, List[Dict], List[Dict]]:
+            """Run a single search and return (index, category, items, citations)"""
+            logger.info(f"Search {search_idx + 1}/{len(search_categories)}: {category[:60]}...")
             items, citations = self._run_single_search(category, proposition, hyp_names)
+            logger.info(f"  Search {search_idx + 1} complete: {len(items)} items, {len(citations)} citations")
+            return (search_idx, category, items, citations)
 
-            # Renumber evidence IDs to avoid collisions
+        # Execute searches in PARALLEL
+        max_parallel = min(8, len(search_categories))  # Limit parallel requests
+        with ThreadPoolExecutor(max_workers=max_parallel) as executor:
+            # Submit all searches
+            futures = {
+                executor.submit(run_search, i, cat): i
+                for i, cat in enumerate(search_categories)
+            }
+
+            # Collect results as they complete, maintaining order
+            results = [None] * len(search_categories)
+            completed = 0
+            for future in as_completed(futures):
+                idx = futures[future]
+                try:
+                    results[idx] = future.result()
+                    completed += 1
+                    self._report_status(f"phase:evidence:{completed}/{len(search_categories)}")
+                    print(f"[Search {completed}/{len(search_categories)} complete]")
+                except Exception as e:
+                    logger.error(f"Search {idx} failed: {e}")
+                    results[idx] = (idx, search_categories[idx], [], [])
+
+        # Process results in order and assign evidence IDs
+        for search_idx, category, items, citations in results:
             base_id = len(all_evidence) + 1
             for j, item in enumerate(items):
                 item["evidence_id"] = f"E{base_id + j}"
 
             all_evidence.extend(items)
             all_citations.extend(citations)
-            logger.info(f"  -> {len(items)} items, {len(citations)} citations")
 
         logger.info(f"Multi-search complete: {len(all_evidence)} evidence items, {len(all_citations)} citations")
-        print(f"[Multi-search complete: {len(all_evidence)} evidence items from {len(search_categories)} searches]")
+        print(f"[Multi-search complete: {len(all_evidence)} evidence items from {len(search_categories)} parallel searches]")
 
         # Now process the combined evidence
         evidence_items = all_evidence
@@ -2978,7 +3002,7 @@ Return JSON with cluster likelihoods for this paradigm only:
             hyp_summary.append(f"- {h_id}: {h_name} [{h_stance}]")
         hyp_summary_text = "\n".join(hyp_summary)
 
-        # STEP 1: Get cluster structure (same as batched approach)
+        # STEP 1: Get cluster structure based on MECHANISTIC INDEPENDENCE
         bfih_context = get_bfih_system_context("Calibrated Likelihood Elicitation", "3b-calibrated")
         cluster_prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
@@ -2986,43 +3010,111 @@ PROPOSITION: "{request.proposition}"
 EVIDENCE ITEMS (with pre-computed base rates P(E)):
 {evidence_summary}
 
-## STEP 1: CLUSTER FORMATION
+## STEP 1: MECHANISTIC CLUSTER FORMATION
 
-Group the evidence items into 3-5 thematic clusters based on what aspect of the proposition they address.
+Group evidence items by their **mechanistic source** - the generative process that produced the evidence.
+This is NOT about topic or theme, but about CONDITIONAL INDEPENDENCE.
+
+### The Conditional Independence Principle
+
+Two evidence items E1 and E2 should be in SEPARATE clusters if they are conditionally independent
+given the hypotheses. Ask: "Given hypothesis H, does knowing E1 tell me anything about E2 beyond
+what H already tells me?"
+
+**Examples of DIFFERENT mechanistic sources (should be separate clusters):**
+- Clinical case studies (from medical/neurological observation)
+- Experimental philosophy surveys (from psychological studies of folk intuitions)
+- Philosophical arguments (from conceptual/logical analysis)
+- Legal precedents (from institutional/juridical practice)
+- Historical practices (from anthropological/historical records)
+- Neuroscientific findings (from brain imaging/lesion studies)
+
+**Examples of SAME mechanistic source (should be same cluster):**
+- Two different amnesia case studies (both from clinical observation)
+- Two surveys of folk intuitions about identity (both from experimental psychology)
+- Two philosophical thought experiments by different authors (both from conceptual analysis)
+
+### Why This Matters
+
+If we incorrectly lump conditionally independent evidence together:
+- Complex "PARTIAL" hypotheses get unearned credit for "explaining mixed evidence"
+- Simple hypotheses get unfairly penalized for not predicting unrelated evidence
+- Occam's Razor fails because accommodation is confused with prediction
+
+### Instructions
+
+1. For each evidence item, identify its mechanistic source
+2. Group items that share the SAME generative process
+3. Create at most **8 clusters** (if more sources exist, merge the most similar ones)
+4. Justify why items in each cluster are conditionally DEPENDENT (share a source)
+5. Assign clusters to higher-level categories for reporting hierarchy
 
 For each cluster provide:
 - cluster_id: C1, C2, etc.
-- cluster_name: Short descriptive name
-- description: What this evidence cluster addresses
+- cluster_name: Short descriptive name (e.g., "Clinical Amnesia Cases")
+- mechanistic_source: The generative process (e.g., "medical/neurological observation")
+- dependence_justification: Why these items are conditionally dependent given hypotheses
+- hierarchy_group: Higher-level category for reporting (e.g., "Empirical Studies", "Theoretical Arguments", "Institutional Practices")
 - evidence_ids: List of evidence IDs in this cluster
 - cluster_base_rate: Average P(E) for evidence in this cluster
 
-Return JSON with a "clusters" array. Do NOT include likelihoods yet.
+Return JSON with this structure:
+{{
+  "clusters": [
+    {{
+      "cluster_id": "C1",
+      "cluster_name": "Clinical Amnesia Cases",
+      "mechanistic_source": "medical/neurological case observation",
+      "dependence_justification": "All items arise from clinical documentation of patients with memory disorders; knowing one case outcome informs expectations about similar cases",
+      "hierarchy_group": "Empirical Studies",
+      "evidence_ids": ["E1", "E3", "E7"],
+      "cluster_base_rate": 0.65
+    }},
+    ...
+  ],
+  "hierarchy": [
+    {{
+      "group_name": "Empirical Studies",
+      "description": "Evidence from scientific observation and experimentation",
+      "cluster_ids": ["C1", "C2"]
+    }},
+    ...
+  ]
+}}
 
-Example format:
-{{"clusters": [
-  {{"cluster_id": "C1", "cluster_name": "Name", "description": "...", "evidence_ids": ["E1", "E2"], "cluster_base_rate": 0.65}},
-  ...
-]}}
+IMPORTANT:
+- Maximum 8 clusters
+- Each evidence item must appear in exactly one cluster
+- Prioritize MECHANISTIC INDEPENDENCE over thematic similarity
+- If unsure whether items are independent, default to SEPARATE clusters
 """
         try:
-            self._log_progress("Phase 3b Step 1: Forming evidence clusters...")
+            self._log_progress("Phase 3b Step 1: Forming mechanistic evidence clusters...")
             result = self._run_reasoning_phase(
-                cluster_prompt, "Phase 3b Step 1: Cluster Formation",
-                schema_name="clusters_simple"
+                cluster_prompt, "Phase 3b Step 1: Mechanistic Cluster Formation",
+                schema_name=None  # Free-form JSON for complex structure
             )
             raw_clusters = result.get("clusters", [])
+            cluster_hierarchy = result.get("hierarchy", [])
         except Exception as e:
             logger.warning(f"Cluster formation failed: {e}, using default single cluster")
             raw_clusters = [{
                 "cluster_id": "C1",
                 "cluster_name": "All Evidence",
-                "description": "All gathered evidence items",
+                "mechanistic_source": "mixed sources",
+                "dependence_justification": "Fallback: all evidence grouped together",
+                "hierarchy_group": "All Evidence",
                 "evidence_ids": [e.get("evidence_id") for e in evidence_items],
                 "cluster_base_rate": sum(base_rates.values()) / len(base_rates) if base_rates else 0.5
             }]
+            cluster_hierarchy = [{"group_name": "All Evidence", "description": "All gathered evidence", "cluster_ids": ["C1"]}]
 
-        # Initialize clusters
+        # Sanity check: max 8 clusters
+        if len(raw_clusters) > 8:
+            logger.warning(f"Cluster formation returned {len(raw_clusters)} clusters, limiting to 8")
+            raw_clusters = raw_clusters[:8]
+
+        # Initialize clusters with new mechanistic fields
         clusters = []
         for c in raw_clusters:
             cluster_evidence_ids = c.get("evidence_ids", [])
@@ -3031,25 +3123,39 @@ Example format:
                 rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
                 cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
 
-            clusters.append({
+            cluster_data = {
                 "cluster_id": c.get("cluster_id"),
                 "cluster_name": c.get("cluster_name"),
-                "description": c.get("description"),
+                "mechanistic_source": c.get("mechanistic_source", "unspecified"),
+                "dependence_justification": c.get("dependence_justification", ""),
+                "hierarchy_group": c.get("hierarchy_group", "Uncategorized"),
+                "description": c.get("description", c.get("mechanistic_source", "")),
                 "evidence_ids": cluster_evidence_ids,
                 "cluster_base_rate": cluster_base_rate,
                 "likelihoods_by_paradigm": {},
                 "calibration_info": {}  # Store calibration metadata
-            })
+            }
+            clusters.append(cluster_data)
 
-        logger.info(f"Phase 3b Step 1: Created {len(clusters)} evidence clusters")
+            # Log cluster info including mechanistic source
+            item_count = len(cluster_evidence_ids)
+            logger.info(f"  {cluster_data['cluster_id']}: {cluster_data['cluster_name']} ({item_count} items) - Source: {cluster_data['mechanistic_source']}")
+            if item_count == 1:
+                logger.warning(f"  WARNING: Cluster {cluster_data['cluster_id']} has only 1 item - consider if this is appropriate")
 
-        # STEP 2-6: Calibrated likelihood elicitation for each cluster
+        # Store hierarchy for reporting
+        self._cluster_hierarchy = cluster_hierarchy
+
+        logger.info(f"Phase 3b Step 1: Created {len(clusters)} mechanistic evidence clusters")
+
+        # STEP 2-6: Calibrated likelihood elicitation for each cluster (PARALLELIZED)
         lr_scale_text = "\n".join([
             f"- {name}: LR={info['lr']}x - {info['description']}"
             for name, info in self.LR_SCALE.items()
         ])
 
-        for cluster_idx, cluster in enumerate(clusters):
+        # Define calibration function for a single cluster (to be run in parallel)
+        def calibrate_cluster(cluster_idx: int, cluster: dict) -> dict:
             c_id = cluster["cluster_id"]
             c_name = cluster["cluster_name"]
             c_desc = cluster["description"]
@@ -3284,6 +3390,31 @@ IMPORTANT:
                     f"Phase 3b ABORTED: Calibrated elicitation failed for cluster {c_id}. "
                     f"Error: {e}. Refusing to continue with meaningless fallback values."
                 )
+
+            return cluster  # Return the updated cluster
+
+        # Execute calibrations in PARALLEL using ThreadPoolExecutor
+        self._log_progress(f"Phase 3b: Calibrating {len(clusters)} clusters in parallel...")
+
+        with ThreadPoolExecutor(max_workers=min(8, len(clusters))) as executor:
+            # Submit all calibration tasks
+            future_to_idx = {
+                executor.submit(calibrate_cluster, idx, cluster): idx
+                for idx, cluster in enumerate(clusters)
+            }
+
+            # Collect results as they complete
+            calibrated_clusters = [None] * len(clusters)
+            for future in as_completed(future_to_idx):
+                idx = future_to_idx[future]
+                try:
+                    calibrated_clusters[idx] = future.result()
+                except Exception as e:
+                    logger.error(f"Cluster calibration {idx} failed: {e}")
+                    raise
+
+        # Replace clusters with calibrated results
+        clusters = calibrated_clusters
 
         # STEP 7: Apply calibrated likelihoods to all paradigms
         # For now, use the same calibrated likelihoods for all paradigms
@@ -3757,16 +3888,84 @@ IMPORTANT MARKDOWN FORMATTING:
     def _run_phase_5b1_clusters(self, request: BFIHAnalysisRequest,
                                  evidence_clusters: List[Dict],
                                  hypotheses: List[Dict],
-                                 precomputed_cluster_tables: List[Dict] = None) -> str:
-        """Phase 5b1: Generate Evidence Clusters section with pre-computed Bayesian tables."""
-        precomputed_cluster_tables = precomputed_cluster_tables or []
+                                 precomputed_cluster_tables: List[Dict] = None,
+                                 cluster_hierarchy: List[Dict] = None) -> str:
+        """Phase 5b1: Generate Evidence Clusters section with pre-computed Bayesian tables.
 
-        # Build pre-computed cluster sections
-        cluster_sections = []
+        Now includes hierarchical organization and mechanistic source information.
+        """
+        precomputed_cluster_tables = precomputed_cluster_tables or []
+        cluster_hierarchy = cluster_hierarchy or getattr(self, '_cluster_hierarchy', [])
+
+        # Build lookup from cluster_id to cluster data
+        cluster_data_lookup = {}
+        for cluster in evidence_clusters:
+            c_id = cluster.get('cluster_id')
+            if c_id:
+                cluster_data_lookup[c_id] = cluster
+
+        # Build lookup from cluster name to precomputed table
+        cluster_table_lookup = {}
         for ct in precomputed_cluster_tables:
-            cluster_section = f"""
+            cluster_table_lookup[ct.get('name', '')] = ct
+
+        # Build pre-computed cluster sections organized by hierarchy
+        hierarchy_sections = []
+
+        if cluster_hierarchy:
+            # Organize clusters by hierarchy groups
+            for group in cluster_hierarchy:
+                group_name = group.get('group_name', 'Uncategorized')
+                group_desc = group.get('description', '')
+                group_cluster_ids = group.get('cluster_ids', [])
+
+                group_content = [f"### {group_name}\n\n*{group_desc}*\n"]
+
+                for c_id in group_cluster_ids:
+                    cluster = cluster_data_lookup.get(c_id, {})
+                    cluster_name = cluster.get('cluster_name', c_id)
+                    ct = cluster_table_lookup.get(cluster_name, {})
+
+                    # Include mechanistic source and calibration info
+                    mech_source = cluster.get('mechanistic_source', 'unspecified')
+                    dep_just = cluster.get('dependence_justification', '')
+                    cal_info = cluster.get('calibration_info', {})
+                    h_max = cal_info.get('h_max', '?')
+                    h_min = cal_info.get('h_min', '?')
+                    h_max_rationale = cal_info.get('h_max_rationale', '')
+                    h_min_rationale = cal_info.get('h_min_rationale', '')
+                    lr_value = cal_info.get('lr_range_value', '?')
+
+                    cluster_section = f"""
+#### {cluster_name} ({c_id})
+
+**Mechanistic Source:** {mech_source}
+**Conditional Dependence:** {dep_just}
+**Evidence Items:** {', '.join(cluster.get('evidence_ids', [])) or 'See items below'}
+
+**Calibration Results:**
+- **H_max:** {h_max} — {h_max_rationale}
+- **H_min:** {h_min} — {h_min_rationale}
+- **Likelihood Ratio:** {lr_value}x
+
+**Bayesian Metrics (computed mathematically):**
+
+{ct.get('table', '(No metrics available)')}
+"""
+                    group_content.append(cluster_section)
+
+                hierarchy_sections.append("\n".join(group_content))
+        else:
+            # Fallback: no hierarchy, just list clusters
+            for ct in precomputed_cluster_tables:
+                cluster = cluster_data_lookup.get(ct.get('name'), {})
+                mech_source = cluster.get('mechanistic_source', 'unspecified')
+                cal_info = cluster.get('calibration_info', {})
+
+                cluster_section = f"""
 ### Cluster: {ct['name']}
 
+**Mechanistic Source:** {mech_source}
 **Description:** {ct.get('description', 'Evidence cluster')}
 **Evidence Items:** {', '.join(ct.get('evidence_ids', [])) or 'See items below'}
 
@@ -3774,9 +3973,9 @@ IMPORTANT MARKDOWN FORMATTING:
 
 {ct['table']}
 """
-            cluster_sections.append(cluster_section)
+                hierarchy_sections.append(cluster_section)
 
-        precomputed_clusters_text = "\n---\n".join(cluster_sections) if cluster_sections else "(No cluster metrics available)"
+        precomputed_clusters_text = "\n---\n".join(hierarchy_sections) if hierarchy_sections else "(No cluster metrics available)"
 
         bfih_context = get_bfih_system_context("Report Generation - Evidence Clusters", "5b1")
         prompt = f"""{bfih_context}
