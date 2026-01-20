@@ -5560,7 +5560,19 @@ Paradigm IDs: {paradigm_ids}
 
 5. **H0 (catch-all)** should generally receive 5-20% prior (room for unforeseen alternatives)
 
-6. **Justifications** should reference paradigm assumptions AND base rate reasoning, NOT external evidence
+6. **OCCAM'S RAZOR - COMPLEXITY PENALTY** (especially for K0):
+   - Simpler hypotheses (single mechanism, fewer conditions) deserve HIGHER priors
+   - Complex hypotheses (multiple independent mechanisms, many conditions) deserve LOWER priors
+   - A hypothesis invoking 2 independent mechanisms should have roughly HALF the prior of one invoking 1
+   - PARTIAL hypotheses that combine conditions from multiple simpler hypotheses inherit the
+     complexity of that conjunction and should have correspondingly lower priors
+   - Example: If H1="mechanism A alone" and H2="mechanism B alone", then
+     H3="mechanism A AND mechanism B under different conditions" is more complex
+     and should have lower prior than either H1 or H2 individually
+   - This prevents complex "accommodation" hypotheses from getting unearned prior boosts
+   - K0 (privileged paradigm) should especially enforce this principle to maintain intellectual honesty
+
+7. **Justifications** should reference paradigm assumptions AND base rate reasoning, NOT external evidence
 
 ## OUTPUT FORMAT
 
@@ -5570,8 +5582,10 @@ Return as a JSON object with "paradigm_priors" array containing:
 
 Example justification (GOOD): "Given the base rate that ~90% of startups fail, K0 assigns only 0.15 prior to H1 (TRUE) and spreads mass across H2-H4"
 Example justification (GOOD): "K1's economic focus assigns slightly higher prior (0.25) to market-based explanations, though still respecting low base rates"
+Example justification (GOOD): "H3 combines mechanisms from H1 and H2, making it more complex. K0 applies Occam's penalty: prior 0.08 vs 0.15 for simpler alternatives"
 Example justification (BAD): "Studies show that economic factors account for 60% of such outcomes" (uses evidence!)
 Example justification (BAD): "The proposition sounds reasonable so H1 gets 0.40" (ignores base rates!)
+Example justification (BAD): "H3 covers more cases so it gets higher prior" (rewards complexity instead of penalizing it!)
 
 IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
