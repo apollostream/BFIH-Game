@@ -2615,11 +2615,21 @@ Return a JSON object with "clusters" array. Each cluster needs:
 
 IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON object.
 """
-        # Check schema complexity - if too large, use batched paradigm approach
+        # Check schema complexity
         schema_complexity = len(paradigms) * len(hypotheses)
-        use_batched = schema_complexity > 24  # More than ~24 entries per cluster = batch
 
-        if use_batched:
+        # DEFAULT: Use calibrated likelihood elicitation to combat hedging bias
+        # This forces the LLM to commit to discrimination strength (LR_range) before
+        # assigning probabilities, preventing the 0.4-0.6 hedging that makes posteriors meaningless.
+        use_calibrated = True  # Set to False to revert to old batched/direct approach
+
+        if use_calibrated:
+            logger.info(f"Using CALIBRATED likelihood elicitation (schema complexity: {schema_complexity})")
+            clusters = self._run_phase_3b_calibrated(
+                request, evidence_items, base_rates, hypotheses, paradigms, hyp_text, evidence_summary
+            )
+            markdown_summary = self._generate_clusters_markdown(clusters, base_rates)
+        elif schema_complexity > 24:
             logger.info(f"Schema complexity {schema_complexity} > 24, using batched paradigm approach")
             clusters = self._run_phase_3b_batched(
                 request, evidence_items, base_rates, hypotheses, paradigms, hyp_text, evidence_summary
@@ -2874,6 +2884,372 @@ Return JSON with cluster likelihoods for this paradigm only:
                     )
 
         logger.info(f"Phase 3b batched complete: {len(clusters)} clusters with {len(paradigms)} paradigms each (all validated)")
+        return clusters
+
+    # ============================================================================
+    # LR_RANGE QUALITATIVE SCALE - Calibration anchors for likelihood ratios
+    # ============================================================================
+    LR_SCALE = {
+        "weak": {"lr": 3, "description": "Weak discrimination - evidence slightly favors one hypothesis over another"},
+        "moderate": {"lr": 6, "description": "Moderate discrimination - noticeable but not conclusive preference"},
+        "strong": {"lr": 10, "description": "Strong discrimination - clear preference, ~10dB weight of evidence"},
+        "very_strong": {"lr": 18, "description": "Very strong discrimination - compelling preference"},
+        "decisive": {"lr": 30, "description": "Decisive discrimination - near-conclusive preference, ~15dB WoE"},
+    }
+
+    def _compute_likelihood_bounds(self, base_rate: float, lr_range: float) -> Tuple[float, float]:
+        """
+        Compute P(E|H_min) and P(E|H_max) given base rate and LR range.
+
+        Uses the constraint that if H_min and H_max had equal priors, their
+        weighted average would equal the base rate:
+            P(E) ≈ (P(E|H_min) + P(E|H_max)) / 2
+        Combined with:
+            LR_range = P(E|H_max) / P(E|H_min)
+
+        Solving: P(E|H_min) = 2 * P(E) / (1 + LR_range)
+                 P(E|H_max) = P(E|H_min) * LR_range
+
+        With bounds clamping to [0.02, 0.98].
+        """
+        # Compute unclamped values
+        p_min = 2 * base_rate / (1 + lr_range)
+        p_max = p_min * lr_range
+
+        # Clamp to valid probability range
+        p_min = max(0.02, min(0.98, p_min))
+        p_max = max(0.02, min(0.98, p_max))
+
+        # If clamping broke the ratio, adjust
+        if p_max / p_min < lr_range * 0.5:  # More than 50% off
+            # Spread from base_rate using log-odds
+            log_spread = math.log(lr_range) / 2
+            logit_base = math.log(base_rate / (1 - base_rate)) if 0 < base_rate < 1 else 0
+
+            logit_max = logit_base + log_spread
+            logit_min = logit_base - log_spread
+
+            p_max = 1 / (1 + math.exp(-logit_max))
+            p_min = 1 / (1 + math.exp(-logit_min))
+
+            # Final clamp
+            p_min = max(0.02, min(0.98, p_min))
+            p_max = max(0.02, min(0.98, p_max))
+
+        return p_min, p_max
+
+    def _run_phase_3b_calibrated(
+        self,
+        request: BFIHAnalysisRequest,
+        evidence_items: List[Dict],
+        base_rates: Dict[str, float],
+        hypotheses: List[Dict],
+        paradigms: List[Dict],
+        hyp_text: str,
+        evidence_summary: str
+    ) -> List[Dict]:
+        """Phase 3b with CALIBRATED likelihood elicitation to combat hedging bias.
+
+        Instead of asking for raw P(E|H) values (which LLMs hedge to 0.4-0.6),
+        this method uses a structured elicitation process:
+
+        For each evidence cluster:
+        1. Confirm base rate P(E)
+        2. Identify H_max (most favored) and H_min (least favored) hypotheses
+        3. Choose LR_range from calibrated scale (3, 6, 10, 18, 30)
+        4. Compute P(E|H_max) and P(E|H_min) programmatically
+        5. Place remaining hypotheses relative to these anchors
+        6. Sanity check the full likelihood set
+
+        This forces the LLM to commit to discrimination strength FIRST,
+        then derive consistent probabilities from that commitment.
+        """
+        self._log_progress("Phase 3b: Using CALIBRATED likelihood elicitation...")
+
+        paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
+        hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
+
+        # Build hypothesis summary for prompts
+        hyp_summary = []
+        for h in hypotheses:
+            h_id = h.get("id", "H?")
+            h_name = h.get("name", "Unknown")
+            h_stance = h.get("proposition_stance", "")
+            hyp_summary.append(f"- {h_id}: {h_name} [{h_stance}]")
+        hyp_summary_text = "\n".join(hyp_summary)
+
+        # STEP 1: Get cluster structure (same as batched approach)
+        bfih_context = get_bfih_system_context("Calibrated Likelihood Elicitation", "3b-calibrated")
+        cluster_prompt = f"""{bfih_context}
+PROPOSITION: "{request.proposition}"
+
+EVIDENCE ITEMS (with pre-computed base rates P(E)):
+{evidence_summary}
+
+## STEP 1: CLUSTER FORMATION
+
+Group the evidence items into 3-5 thematic clusters based on what aspect of the proposition they address.
+
+For each cluster provide:
+- cluster_id: C1, C2, etc.
+- cluster_name: Short descriptive name
+- description: What this evidence cluster addresses
+- evidence_ids: List of evidence IDs in this cluster
+- cluster_base_rate: Average P(E) for evidence in this cluster
+
+Return JSON with a "clusters" array. Do NOT include likelihoods yet.
+
+Example format:
+{{"clusters": [
+  {{"cluster_id": "C1", "cluster_name": "Name", "description": "...", "evidence_ids": ["E1", "E2"], "cluster_base_rate": 0.65}},
+  ...
+]}}
+"""
+        try:
+            self._log_progress("Phase 3b Step 1: Forming evidence clusters...")
+            result = self._run_reasoning_phase(
+                cluster_prompt, "Phase 3b Step 1: Cluster Formation",
+                schema_name="clusters_simple"
+            )
+            raw_clusters = result.get("clusters", [])
+        except Exception as e:
+            logger.warning(f"Cluster formation failed: {e}, using default single cluster")
+            raw_clusters = [{
+                "cluster_id": "C1",
+                "cluster_name": "All Evidence",
+                "description": "All gathered evidence items",
+                "evidence_ids": [e.get("evidence_id") for e in evidence_items],
+                "cluster_base_rate": sum(base_rates.values()) / len(base_rates) if base_rates else 0.5
+            }]
+
+        # Initialize clusters
+        clusters = []
+        for c in raw_clusters:
+            cluster_evidence_ids = c.get("evidence_ids", [])
+            cluster_base_rate = c.get("cluster_base_rate")
+            if cluster_base_rate is None and cluster_evidence_ids:
+                rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
+                cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
+
+            clusters.append({
+                "cluster_id": c.get("cluster_id"),
+                "cluster_name": c.get("cluster_name"),
+                "description": c.get("description"),
+                "evidence_ids": cluster_evidence_ids,
+                "cluster_base_rate": cluster_base_rate,
+                "likelihoods_by_paradigm": {},
+                "calibration_info": {}  # Store calibration metadata
+            })
+
+        logger.info(f"Phase 3b Step 1: Created {len(clusters)} evidence clusters")
+
+        # STEP 2-6: Calibrated likelihood elicitation for each cluster
+        lr_scale_text = "\n".join([
+            f"- {name}: LR={info['lr']}x - {info['description']}"
+            for name, info in self.LR_SCALE.items()
+        ])
+
+        for cluster_idx, cluster in enumerate(clusters):
+            c_id = cluster["cluster_id"]
+            c_name = cluster["cluster_name"]
+            c_desc = cluster["description"]
+            c_base_rate = cluster["cluster_base_rate"]
+            c_evidence = cluster["evidence_ids"]
+
+            self._log_progress(f"Phase 3b Cluster {cluster_idx + 1}/{len(clusters)}: Calibrating likelihoods for {c_id}...")
+
+            # Combined calibration prompt - asks for all calibration info at once
+            calibration_prompt = f"""{bfih_context}
+PROPOSITION: "{request.proposition}"
+
+HYPOTHESES:
+{hyp_summary_text}
+
+EVIDENCE CLUSTER: {c_id} - {c_name}
+Description: {c_desc}
+Evidence IDs: {', '.join(c_evidence)}
+Base Rate P(E): {c_base_rate:.3f}
+
+## CALIBRATED LIKELIHOOD ELICITATION
+
+You must assign likelihoods P(E|H) for this evidence cluster. To avoid hedging bias,
+follow this structured process:
+
+### Step A: Identify Discriminating Hypotheses
+
+Which hypothesis would MOST expect this evidence (H_max)?
+Which hypothesis would LEAST expect this evidence (H_min)?
+
+Think carefully: Does this evidence actually discriminate between hypotheses, or
+is it equally compatible with all of them?
+
+### Step B: Choose Discrimination Strength (LR_range)
+
+How diagnostic is this evidence? The Likelihood Ratio range LR_range = P(E|H_max)/P(E|H_min)
+indicates how strongly this evidence discriminates:
+
+{lr_scale_text}
+
+If the evidence doesn't discriminate (all hypotheses equally compatible), choose "none" (LR=1).
+
+### Step C: Assign Likelihood Values
+
+Given your chosen LR_range, assign P(E|H) for ALL hypotheses following these rules:
+
+1. P(E|H_max) should be ABOVE the base rate P(E)={c_base_rate:.3f}
+2. P(E|H_min) should be BELOW the base rate
+3. The ratio P(E|H_max)/P(E|H_min) should approximately equal your chosen LR_range
+4. Other hypotheses should be placed relative to these anchors:
+   - If similar to H_max: closer to P(E|H_max)
+   - If similar to H_min: closer to P(E|H_min)
+   - If non-predictive (no specific prediction): P(E|H) = P(E) = {c_base_rate:.3f}
+
+### Step D: Sanity Check
+
+Verify your assignments make sense:
+- Does P(E|H_max)/P(E|H_min) ≈ LR_range?
+- Are non-predictive hypotheses at the base rate?
+- Do the relative positions match the hypotheses' predictions?
+
+Return JSON with this exact structure:
+{{
+  "cluster_id": "{c_id}",
+  "base_rate": {c_base_rate:.3f},
+  "calibration": {{
+    "h_max": "<hypothesis ID that most expects this evidence>",
+    "h_min": "<hypothesis ID that least expects this evidence>",
+    "lr_range_category": "<none|weak|moderate|strong|very_strong|decisive>",
+    "lr_range_value": <numeric LR value: 1, 3, 6, 10, 18, or 30>,
+    "reasoning": "<brief explanation of why this evidence discriminates (or doesn't)>"
+  }},
+  "hypothesis_likelihoods": [
+    {{"hypothesis_id": "H0", "probability": <float 0.02-0.98>, "position": "<h_min|below_base|at_base|above_base|h_max>"}},
+    {{"hypothesis_id": "H1", "probability": <float>, "position": "<position>"}},
+    ...
+  ]
+}}
+
+IMPORTANT:
+- Use actual probability values, not placeholders
+- Probability values must be between 0.02 and 0.98
+- If LR_range > 1, H_max and H_min MUST have different probabilities
+- Position "at_base" means P(E|H) ≈ {c_base_rate:.3f} (non-predictive hypothesis)
+"""
+
+            try:
+                result = self._run_reasoning_phase(
+                    calibration_prompt, f"Phase 3b: {c_id} Calibration",
+                    schema_name=None
+                )
+
+                # Extract calibration info
+                calibration = result.get("calibration", {})
+                h_max = calibration.get("h_max", "")
+                h_min = calibration.get("h_min", "")
+                lr_category = calibration.get("lr_range_category", "moderate")
+                lr_value = calibration.get("lr_range_value", 6)
+                reasoning = calibration.get("reasoning", "")
+
+                cluster["calibration_info"] = {
+                    "h_max": h_max,
+                    "h_min": h_min,
+                    "lr_range_category": lr_category,
+                    "lr_range_value": lr_value,
+                    "reasoning": reasoning
+                }
+
+                logger.info(f"  {c_id} calibration: H_max={h_max}, H_min={h_min}, LR={lr_value}x ({lr_category})")
+
+                # Extract likelihoods
+                hypothesis_likelihoods = result.get("hypothesis_likelihoods", [])
+
+                # Validate and log the likelihoods
+                likelihoods_dict = {}
+                p_max_actual = 0
+                p_min_actual = 1
+
+                for hl in hypothesis_likelihoods:
+                    h_id = hl.get("hypothesis_id")
+                    prob = hl.get("probability", c_base_rate)
+                    position = hl.get("position", "at_base")
+
+                    if h_id:
+                        # Clamp to valid range
+                        prob = max(0.02, min(0.98, float(prob)))
+                        likelihoods_dict[h_id] = {
+                            "probability": prob,
+                            "position": position,
+                            "relative_to_base_rate": "above" if prob > c_base_rate + 0.02 else ("below" if prob < c_base_rate - 0.02 else "equal")
+                        }
+
+                        if h_id == h_max:
+                            p_max_actual = prob
+                        if h_id == h_min:
+                            p_min_actual = prob
+
+                # Validate LR ratio
+                if lr_value > 1 and p_min_actual > 0:
+                    actual_lr = p_max_actual / p_min_actual
+                    if actual_lr < lr_value * 0.3:  # More than 70% off target
+                        logger.warning(f"  {c_id}: Actual LR={actual_lr:.1f} much lower than target LR={lr_value}. Calibration may have failed.")
+                    else:
+                        logger.info(f"  {c_id}: Actual LR={actual_lr:.1f} (target: {lr_value})")
+
+                # Fill in any missing hypotheses with base rate
+                for h_id in hyp_ids:
+                    if h_id not in likelihoods_dict:
+                        logger.warning(f"  {c_id}: Missing likelihood for {h_id}, using base rate")
+                        likelihoods_dict[h_id] = {
+                            "probability": c_base_rate,
+                            "position": "at_base",
+                            "relative_to_base_rate": "equal"
+                        }
+
+                # Store as single paradigm "K0" (calibrated baseline)
+                # For multi-paradigm, we'll apply this to all paradigms with optional adjustments
+                cluster["likelihoods_by_paradigm"]["K0"] = likelihoods_dict
+
+            except Exception as e:
+                logger.error(f"FATAL: Calibration failed for cluster {c_id}: {e}")
+                raise RuntimeError(
+                    f"Phase 3b ABORTED: Calibrated elicitation failed for cluster {c_id}. "
+                    f"Error: {e}. Refusing to continue with meaningless fallback values."
+                )
+
+        # STEP 7: Apply calibrated likelihoods to all paradigms
+        # For now, use the same calibrated likelihoods for all paradigms
+        # (paradigm effects are captured in priors, not likelihoods)
+        self._log_progress("Phase 3b: Applying calibrated likelihoods to all paradigms...")
+
+        for cluster in clusters:
+            k0_likelihoods = cluster["likelihoods_by_paradigm"].get("K0", {})
+            for paradigm_id in paradigm_ids:
+                if paradigm_id != "K0":
+                    # Copy K0 likelihoods to other paradigms
+                    cluster["likelihoods_by_paradigm"][paradigm_id] = k0_likelihoods.copy()
+
+        # Validation
+        for cluster in clusters:
+            for paradigm_id in paradigm_ids:
+                if paradigm_id not in cluster.get("likelihoods_by_paradigm", {}):
+                    raise RuntimeError(
+                        f"Phase 3b ABORTED: Missing likelihoods for paradigm {paradigm_id} in cluster {cluster.get('cluster_id')}."
+                    )
+
+        # Log calibration summary
+        logger.info("=" * 60)
+        logger.info("CALIBRATED LIKELIHOOD SUMMARY:")
+        for cluster in clusters:
+            c_id = cluster["cluster_id"]
+            cal = cluster.get("calibration_info", {})
+            logger.info(f"  {c_id}: LR={cal.get('lr_range_value', '?')}x, H_max={cal.get('h_max', '?')}, H_min={cal.get('h_min', '?')}")
+            k0_lh = cluster["likelihoods_by_paradigm"].get("K0", {})
+            probs = [lh.get("probability", 0.5) for lh in k0_lh.values() if isinstance(lh, dict)]
+            if probs:
+                logger.info(f"       P(E|H) range: [{min(probs):.3f}, {max(probs):.3f}], spread={max(probs)-min(probs):.3f}")
+        logger.info("=" * 60)
+
+        logger.info(f"Phase 3b calibrated complete: {len(clusters)} clusters with {len(paradigms)} paradigms each")
         return clusters
 
     def _generate_clusters_markdown(self, clusters: List[Dict], base_rates: Dict[str, float] = None) -> str:
