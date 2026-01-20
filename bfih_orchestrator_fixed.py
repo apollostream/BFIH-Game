@@ -3075,13 +3075,44 @@ Base Rate P(E): {c_base_rate:.3f}
 You must assign likelihoods P(E|H) for this evidence cluster. To avoid hedging bias,
 follow this structured process:
 
+### CRITICAL: Occam's Razor Principle
+
+Before assigning likelihoods, understand this fundamental principle:
+
+**"Compatible with E" is NOT the same as "predicts E"**
+
+- A hypothesis that makes a SHARP, SPECIFIC prediction that E will occur deserves HIGH P(E|H)
+- A hypothesis that is merely COMPATIBLE with E (but also compatible with many other outcomes)
+  deserves P(E|H) close to base rate P(E), because E is just one of many outcomes it allows
+
+**Complexity Penalty:**
+
+Compare hypotheses by their complexity (number of conditions, qualifications, or degrees of freedom):
+- SIMPLE hypothesis: "X requires Y" (sharp prediction, easily falsified)
+- COMPLEX/PARTIAL hypothesis: "X requires Y under conditions Z1, Z2, Z3..." (fuzzy prediction, hard to falsify)
+
+If BOTH a simple and a complex hypothesis are compatible with evidence E:
+- The SIMPLER hypothesis gets HIGHER P(E|H) because it made a riskier, sharper prediction
+- The COMPLEX hypothesis gets LOWER P(E|H) because its probability mass is spread across many possible outcomes
+
+**Example:**
+- H_simple: "LLMs cannot be conscious" → If we see mixed evidence, this is surprising → LOW P(E|H)
+- H_complex: "LLMs are conscious under specific architectural conditions" → Mixed evidence fits → but so would
+  full consciousness AND no consciousness, so P(E|H) should be MODERATE, not HIGH
+
+A "PARTIAL" or "nuanced" hypothesis that could explain almost ANY outcome should get P(E|H) ≈ P(E).
+Only hypotheses that would be FALSIFIED by ¬E deserve P(E|H) significantly above P(E).
+
 ### Step A: Identify Discriminating Hypotheses
 
 Which hypothesis would MOST expect this evidence (H_max)?
 Which hypothesis would LEAST expect this evidence (H_min)?
 
-Think carefully: Does this evidence actually discriminate between hypotheses, or
-is it equally compatible with all of them?
+Think carefully:
+- Does this evidence actually discriminate between hypotheses?
+- Is the apparent "winner" a simple hypothesis making a sharp prediction, or a complex hypothesis
+  that could explain almost anything?
+- Apply Occam's Razor: prefer simpler hypotheses that make riskier predictions
 
 ### Step B: Choose Discrimination Strength (LR_range)
 
@@ -3104,12 +3135,21 @@ Given your chosen LR_range, assign P(E|H) for ALL hypotheses following these rul
    - If similar to H_min: closer to P(E|H_min)
    - If non-predictive (no specific prediction): P(E|H) = P(E) = {c_base_rate:.3f}
 
+5. **COMPLEXITY ADJUSTMENT (Occam's Razor):**
+   - If two hypotheses are equally compatible with E, the SIMPLER one gets HIGHER P(E|H)
+   - PARTIAL/conditional hypotheses (e.g., "X under conditions Y and Z") should be penalized
+     relative to simpler hypotheses that make the same prediction
+   - A hypothesis with many qualifications that could "explain" almost any outcome
+     should get P(E|H) ≈ P(E), NOT P(E|H) > P(E)
+
 ### Step D: Sanity Check
 
 Verify your assignments make sense:
 - Does P(E|H_max)/P(E|H_min) ≈ LR_range?
 - Are non-predictive hypotheses at the base rate?
 - Do the relative positions match the hypotheses' predictions?
+- **Occam check:** Is a PARTIAL/complex hypothesis getting higher P(E|H) than a simpler hypothesis
+  that makes the same prediction? If so, reduce the complex hypothesis's likelihood.
 
 Return JSON with this exact structure:
 {{
