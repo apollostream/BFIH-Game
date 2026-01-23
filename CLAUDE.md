@@ -88,3 +88,69 @@ Use `load_dotenv(override=True)` to ensure `.env` takes precedence over shell en
 - **Forcing Functions**: Methodology checks (Ontological Scan, Ancestral Check, Paradigm Inversion)
 - **Posteriors**: P(H|E,K) - probability of hypothesis given evidence under paradigm
 - **WoE**: Weight of Evidence in decibans (10 * log10(LR))
+
+## GCS Storage & Local Report Generation
+
+Completed analyses are stored in Google Cloud Storage and can be accessed for local processing.
+
+### GCS Bucket Structure
+
+```
+gs://bfih-scenarios/bfih/
+├── analyses/{scenario_id}.json     # Full analysis results with report
+├── scenarios/{scenario_id}.json    # Scenario configs (paradigms, hypotheses, priors)
+└── status/{analysis_id}.txt        # Analysis status files
+```
+
+Public URL pattern: `https://storage.googleapis.com/bfih-scenarios/bfih/analyses/{scenario_id}.json`
+
+### Fetching Analysis Data from GCS
+
+```python
+import requests
+
+def fetch_gcs_analysis(scenario_id: str) -> dict:
+    url = f"https://storage.googleapis.com/bfih-scenarios/bfih/analyses/{scenario_id}.json"
+    response = requests.get(url)
+    response.raise_for_status()
+    return response.json()
+
+# The returned dict contains:
+# - analysis_id, scenario_id, proposition
+# - report (full markdown BFIH report)
+# - evidence_items, evidence_clusters
+# - paradigms, hypotheses, priors, posteriors
+```
+
+### Generating Reports/Synopses Locally
+
+When an analysis completes but you need to regenerate reports or generate synopses:
+
+```python
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
+from bfih_orchestrator_fixed import BFIHOrchestrator
+
+# Fetch completed analysis from GCS
+analysis_data = fetch_gcs_analysis("auto_9f9320e9")
+report = analysis_data['report']
+
+# Initialize orchestrator (requires OPENAI_API_KEY)
+orchestrator = BFIHOrchestrator()
+
+# Generate magazine-style synopsis (uses GPT-5.2, takes ~2 minutes)
+synopsis = orchestrator.generate_magazine_synopsis(
+    report=report,
+    scenario_id="auto_9f9320e9",
+    style="gawande"  # or "atlantic" for corrective K0-primacy style
+)
+# Saves to: {scenario_id}_magazine_synopsis.md
+```
+
+### Key Orchestrator Functions for Post-Processing
+
+- `generate_magazine_synopsis(report, scenario_id, style)` - Convert BFIH report to magazine article
+- `cleanup_bibliography(report)` - Deduplicate and renumber citations
+- `generate_evidence_flow_dot(result)` - Create Graphviz visualization
+- `_run_phase_5_report(...)` - Regenerate full report from raw data (requires evidence_items, clusters, posteriors)

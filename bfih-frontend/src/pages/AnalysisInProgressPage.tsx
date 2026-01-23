@@ -133,7 +133,7 @@ export function AnalysisInProgressPage() {
         if (statusResponse.is_stale && statusResponse.status?.startsWith('processing')) {
           console.log('Stale status detected');
           setStatus('failed');
-          setError('Analysis appears stuck. Backend has not updated status in 5+ minutes.');
+          setError('Analysis appears stuck. Backend has not updated status in 10+ minutes.');
           eventSource.close();
           return;
         }

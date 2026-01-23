@@ -20,18 +20,44 @@ export function clampProbability(p: number): number {
   return p;
 }
 
-// Format number as percentage
-export function formatPercent(value: number, decimals: number = 1): string {
-  return `${(value * 100).toFixed(decimals)}%`;
+// Format number as percentage with at most 2 significant figures
+// This reflects the inherent precision of subjective probability estimates
+export function formatPercent(value: number, maxSigFigs: number = 2): string {
+  const pct = value * 100;
+
+  // Handle edge cases
+  if (pct === 0) return '0%';
+  if (pct === 100) return '100%';
+
+  // For 2 sig figs:
+  // >= 10%: show as whole number (e.g., 30%, 47%)
+  // >= 1% and < 10%: show one decimal (e.g., 5.3%, 9.8%)
+  // < 1%: show two decimals (e.g., 0.42%, 0.93%)
+  if (maxSigFigs === 2) {
+    if (pct >= 10) return `${Math.round(pct)}%`;
+    if (pct >= 1) return `${pct.toFixed(1)}%`;
+    return `${pct.toFixed(2)}%`;
+  }
+
+  // For 1 sig fig (comparative contexts):
+  // Round to nearest 10% for values >= 10, nearest 1% for values >= 1
+  if (maxSigFigs === 1) {
+    if (pct >= 10) return `${Math.round(pct / 10) * 10}%`;
+    if (pct >= 1) return `${Math.round(pct)}%`;
+    return `<1%`;
+  }
+
+  // Default: round to whole percentage
+  return `${Math.round(pct)}%`;
 }
 
-// Format probability (0-1) as display string
+// Format probability (0-1) as display string with 2 sig figs
 export function formatProbability(value: number): string {
   if (value === 0) return '0%';
   if (value === 1) return '100%';
-  if (value < 0.01) return '<1%';
-  if (value > 0.99) return '>99%';
-  return `${(value * 100).toFixed(1)}%`;
+  if (value < 0.005) return '<1%';
+  if (value > 0.995) return '>99%';
+  return formatPercent(value, 2);
 }
 
 // Format Weight of Evidence in decibans

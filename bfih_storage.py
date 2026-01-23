@@ -195,14 +195,14 @@ class FileStorageBackend(StorageBackend):
                     updated = datetime.fromisoformat(timestamp)
                     status_age_seconds = (datetime.utcnow() - updated).total_seconds()
 
-                    if status_age_seconds > 300:  # Status is old, check progress log
+                    if status_age_seconds > 600:  # Status is old (10 min), check progress log
                         # Check if progress log has recent entries
                         progress_log = self.get_progress_log(analysis_id)
                         if progress_log:
                             last_log = progress_log[-1]
                             last_log_time = datetime.fromisoformat(last_log.get('timestamp', ''))
                             log_age_seconds = (datetime.utcnow() - last_log_time).total_seconds()
-                            is_stale = log_age_seconds > 300  # Only stale if log is also old
+                            is_stale = log_age_seconds > 600  # Only stale if log is also old (10 min to match GPT-5.x timeout)
                         else:
                             is_stale = True  # No progress log, use status staleness
                 except ValueError:
@@ -590,14 +590,14 @@ class GCSStorageBackend(StorageBackend):
                 updated = datetime.fromisoformat(timestamp)
                 status_age_seconds = (datetime.utcnow() - updated).total_seconds()
 
-                if status_age_seconds > 300:  # Status is old, check progress log
+                if status_age_seconds > 600:  # Status is old (10 min), check progress log
                     # Check if progress log has recent entries
                     progress_log = self.get_progress_log(analysis_id)
                     if progress_log:
                         last_log = progress_log[-1]
                         last_log_time = datetime.fromisoformat(last_log.get('timestamp', ''))
                         log_age_seconds = (datetime.utcnow() - last_log_time).total_seconds()
-                        is_stale = log_age_seconds > 300  # Only stale if log is also old
+                        is_stale = log_age_seconds > 600  # Only stale if log is also old (10 min to match GPT-5.x timeout)
                     else:
                         is_stale = True  # No progress log, use status staleness
             except ValueError:
