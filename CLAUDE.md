@@ -21,6 +21,13 @@ uvicorn bfih_api_server:app --reload
 # Run tests
 pytest test_bfih_backend.py -v
 
+# Run single test class or function
+pytest test_bfih_backend.py::TestBFIHOrchestrator -v
+pytest test_bfih_backend.py::test_function_name -v
+
+# Run calibration tests
+pytest test_calibrated_likelihoods.py -v
+
 # Initialize vector store (one-time setup)
 python setup_vector_store.py
 ```
@@ -39,29 +46,59 @@ analyze_topic(proposition)
 │   ├── Ancestral Check (historical solutions)
 │   ├── Paradigm Inversion (inverse hypotheses)
 │   └── MECE Synthesis (unified hypothesis set)
-├── Phase 0c: Assign Priors (per paradigm)
+├── Phase 0c: Assign Priors (per paradigm) + Occam's complexity penalty
 ├── Build & save scenario_config JSON
 │
 └── conduct_analysis(request)
     ├── Phase 1: Retrieve Methodology (file_search → vector store)
     ├── Phase 2: Gather Evidence (web_search → structured JSON)
-    ├── Phase 3: Assign Likelihoods (reasoning → clusters)
+    ├── Phase 3: Assign Likelihoods (calibrated elicitation → clusters)
     ├── Phase 4: Bayesian Computation (code_interpreter)
-    └── Phase 5: Generate Report (markdown)
+    └── Phase 5: Generate Report (markdown, parallelized sections)
 ```
 
 ### Key Files
 
-- **`bfih_orchestrator_fixed.py`** - Main orchestrator with `BFIHOrchestrator` class. This is the primary file for analysis logic.
-- **`bfih_api_server.py`** - FastAPI REST endpoints
-- **`bfih_storage.py`** - Storage abstraction (file/PostgreSQL/Redis)
+- **`bfih_orchestrator_fixed.py`** - Main orchestrator (~350KB). Contains `BFIHOrchestrator` class with all analysis phases, cost tracking, and report generation.
+- **`bfih_api_server.py`** - FastAPI REST endpoints for `/api/bfih-analysis`, `/api/scenario`, `/api/health`
+- **`bfih_storage.py`** - Storage abstraction (FileStorageBackend, GCSStorageBackend, PostgreSQL optional)
+- **`bfih_schemas.py`** - Pydantic models for OpenAI structured outputs (Paradigm, Hypothesis, Evidence, etc.)
 - **`bfih_client.py`** - Python SDK for API integration
+
+### Hermeneutic Multi-Analysis System
+
+For complex philosophical investigations spanning multiple analyses:
+
+```
+bfih_hermeneutic.py --project project.yaml
+├── Phase 1: Component Analyses (via HermeneuticRunner)
+├── Phase 2: Cross-Analysis Integration (tensions/reinforcements)
+├── Phase 3: Meta-Analysis (treat conclusions as evidence)
+└── Phase 4: Narrative Synthesis (unified philosophical work)
+```
+
+Related files:
+- **`bfih_hermeneutic.py`** - CLI orchestrator for multi-analysis projects
+- **`bfih_hermeneutic_runner.py`** - Runs component analyses in dependency order
+- **`bfih_cross_analysis.py`** - Extracts UnifiedFindings, identifies tensions/reinforcements
+- **`bfih_meta_analysis.py`** - Meta-level BFIH treating component conclusions as evidence
+- **`bfih_narrative_synthesis.py`** - Generates SynthesisDocument from all analyses
+- **`hermeneutic_config_schema.py`** - YAML schema for project configs
+
+### Calibrated Likelihood Elicitation (Phase 3b)
+
+The system uses calibrated elicitation to combat hedging bias (`_run_phase_3b_calibrated`):
+1. Mechanistic clustering groups evidence by causal pathway
+2. For each cluster: identify H_max (highest likelihood hypothesis) and H_min (lowest)
+3. Choose LR_range from calibrated scale (3, 6, 10, 18, 30)
+4. Apply Occam's Razor complexity penalty for compound hypotheses
+5. Parallel execution via ThreadPoolExecutor
 
 ### Output Files
 
 Each analysis produces:
 - `analysis_result.json` - Full result with report, posteriors, metadata
-- `scenario_config_{scenario_id}.json` - Generated config with paradigms, hypotheses, priors, evidence
+- `scenario_config_{scenario_id}.json` - Generated config with paradigms, hypotheses, priors, evidence, calibration_info
 
 ### Structured Data Extraction
 
@@ -78,16 +115,24 @@ OPENAI_API_KEY=sk-proj-...
 TREATISE_VECTOR_STORE_ID=vs_...
 ```
 
+Optional:
+```
+BFIH_REASONING_MODEL=gpt-5.2  # Default reasoning model (options: o3-mini, o3, o4-mini, gpt-5, gpt-5.2)
+BFIH_LOG_FILE=bfih_analysis.log
+```
+
 Use `load_dotenv(override=True)` to ensure `.env` takes precedence over shell environment.
 
 ## Domain Concepts
 
-- **Paradigm (K)**: Epistemic stance/worldview (e.g., K1=Technocratic, K2=Cultural)
-- **Hypothesis (H)**: Possible explanation (H0 is catch-all)
+- **Paradigm (K)**: Epistemic stance/worldview. K0 is privileged (empirical baseline), K1-Kn are biased stances
+- **Hypothesis (H)**: Possible explanation. H0 is catch-all ("none of the above")
 - **MECE**: Mutually Exclusive, Collectively Exhaustive hypothesis set
 - **Forcing Functions**: Methodology checks (Ontological Scan, Ancestral Check, Paradigm Inversion)
 - **Posteriors**: P(H|E,K) - probability of hypothesis given evidence under paradigm
+- **LR (Likelihood Ratio)**: P(E|H)/P(E|¬H) - how much evidence supports hypothesis
 - **WoE**: Weight of Evidence in decibans (10 * log10(LR))
+- **Calibration anchors**: LR=3 (weak), LR=6 (moderate), LR=10 (strong), LR=18 (very strong), LR=30 (overwhelming)
 
 ## GCS Storage & Local Report Generation
 
@@ -118,7 +163,7 @@ def fetch_gcs_analysis(scenario_id: str) -> dict:
 # The returned dict contains:
 # - analysis_id, scenario_id, proposition
 # - report (full markdown BFIH report)
-# - evidence_items, evidence_clusters
+# - evidence_items, evidence_clusters (with calibration_info)
 # - paradigms, hypotheses, priors, posteriors
 ```
 
@@ -139,7 +184,7 @@ report = analysis_data['report']
 # Initialize orchestrator (requires OPENAI_API_KEY)
 orchestrator = BFIHOrchestrator()
 
-# Generate magazine-style synopsis (uses GPT-5.2, takes ~2 minutes)
+# Generate magazine-style synopsis (uses GPT-5.2)
 synopsis = orchestrator.generate_magazine_synopsis(
     report=report,
     scenario_id="auto_9f9320e9",
@@ -153,4 +198,12 @@ synopsis = orchestrator.generate_magazine_synopsis(
 - `generate_magazine_synopsis(report, scenario_id, style)` - Convert BFIH report to magazine article
 - `cleanup_bibliography(report)` - Deduplicate and renumber citations
 - `generate_evidence_flow_dot(result)` - Create Graphviz visualization
-- `_run_phase_5_report(...)` - Regenerate full report from raw data (requires evidence_items, clusters, posteriors)
+- `_run_phase_5_report(...)` - Regenerate full report from raw data
+
+## Probability Bounds
+
+The system enforces Cromwell's Rule - probabilities are clamped to [0.001, 0.999] to prevent mathematical errors (log(0), division by zero) and ensure Bayesian updating remains valid. See `clamp_probability()` and `PROB_EPSILON` in orchestrator.
+
+## Cost Tracking
+
+`CostTracker` class monitors API costs per phase. Pricing defined in `MODEL_PRICING` dict. Budget limits can halt analysis if exceeded.
