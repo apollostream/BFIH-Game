@@ -46,6 +46,7 @@ export function usePhaseNavigation() {
       hypotheses: `/game/${scenarioId}/hypotheses`,
       priors: `/game/${scenarioId}/priors`,
       betting: `/game/${scenarioId}/betting`,
+      prediction: `/game/${scenarioId}/prediction`,
       evidence: `/game/${scenarioId}/evidence/0`,
       resolution: `/game/${scenarioId}/resolution`,
       report: `/game/${scenarioId}/report`,
