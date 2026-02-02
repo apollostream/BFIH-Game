@@ -224,7 +224,7 @@ class TestBFIHOrchestrator:
         """Test orchestrator initialization"""
         orchestrator = BFIHOrchestrator(vector_store_id="vs_test_001")
         
-        assert orchestrator.model == "gpt-4o"
+        assert orchestrator.model == "o4-mini"
         assert orchestrator.vector_store_id == "vs_test_001"
     
     @patch('bfih_orchestrator_fixed.client')
