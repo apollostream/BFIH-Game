@@ -88,11 +88,16 @@ Related files:
 ### Calibrated Likelihood Elicitation (Phase 3b)
 
 The system uses calibrated elicitation to combat hedging bias (`_run_phase_3b_calibrated`):
-1. Mechanistic clustering groups evidence by causal pathway
+1. **Causal clustering** groups evidence by root causal source (not source type)
 2. For each cluster: identify H_max (highest likelihood hypothesis) and H_min (lowest)
 3. Choose LR_range from calibrated scale (3, 6, 10, 18, 30)
 4. Apply Occam's Razor complexity penalty for compound hypotheses
 5. Parallel execution via ThreadPoolExecutor
+
+**Causal Independence Principle:** Evidence clustering is based on the actual real-world generative process, not source type (media, academic, government). Derivative evidence (e.g., news article citing a study, think tank report using government data) is clustered with its root source and contributes only ONCE to the likelihood assessment. Key fields:
+- `root_causal_source`: The actual measurement/study/dataset that generated the data
+- `derivative_chain`: Citation relationships showing which items derive from others
+- `effective_weight`: Usually 1.0; >1 only for genuinely independent replications
 
 ### Output Files
 

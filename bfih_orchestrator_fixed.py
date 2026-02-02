@@ -3002,7 +3002,7 @@ Return JSON with cluster likelihoods for this paradigm only:
             hyp_summary.append(f"- {h_id}: {h_name} [{h_stance}]")
         hyp_summary_text = "\n".join(hyp_summary)
 
-        # STEP 1: Get cluster structure based on MECHANISTIC INDEPENDENCE
+        # STEP 1: Get cluster structure based on CAUSAL INDEPENDENCE (root source, not source type)
         bfih_context = get_bfih_system_context("Calibrated Likelihood Elicitation", "3b-calibrated")
         cluster_prompt = f"""{bfih_context}
 PROPOSITION: "{request.proposition}"
@@ -3010,51 +3010,86 @@ PROPOSITION: "{request.proposition}"
 EVIDENCE ITEMS (with pre-computed base rates P(E)):
 {evidence_summary}
 
-## STEP 1: MECHANISTIC CLUSTER FORMATION
+## STEP 1: CAUSAL EVIDENCE CLUSTERING
 
-Group evidence items by their **mechanistic source** - the generative process that produced the evidence.
-This is NOT about topic or theme, but about CONDITIONAL INDEPENDENCE.
+Group evidence items by their **root causal source** - the actual real-world process that
+ORIGINALLY GENERATED the data or observation. This determines conditional independence.
 
-### The Conditional Independence Principle
+### CRITICAL DISTINCTION: Source Type vs. Causal Origin
 
-Two evidence items E1 and E2 should be in SEPARATE clusters if they are conditionally independent
-given the hypotheses. Ask: "Given hypothesis H, does knowing E1 tell me anything about E2 beyond
-what H already tells me?"
+**Source Type** (WRONG basis for clustering):
+- Media outlet, academic journal, government agency, think tank, consultant firm
+- These are CHANNELS that transmit or comment on information
 
-**Examples of DIFFERENT mechanistic sources (should be separate clusters):**
-- Clinical case studies (from medical/neurological observation)
-- Experimental philosophy surveys (from psychological studies of folk intuitions)
-- Philosophical arguments (from conceptual/logical analysis)
-- Legal precedents (from institutional/juridical practice)
-- Historical practices (from anthropological/historical records)
-- Neuroscientific findings (from brain imaging/lesion studies)
+**Causal Origin** (CORRECT basis for clustering):
+- The actual real-world measurement, observation, or reasoning process that created the data
+- The root generative process that would need to occur differently for the evidence to differ
 
-**Examples of SAME mechanistic source (should be same cluster):**
-- Two different amnesia case studies (both from clinical observation)
-- Two surveys of folk intuitions about identity (both from experimental psychology)
-- Two philosophical thought experiments by different authors (both from conceptual analysis)
+### The Derivative Evidence Problem
 
-### Why This Matters
+Evidence items are **causally dependent** (same cluster, contributes ONCE) when:
+1. One directly cites, references, or derives from another
+2. Both derive from the same root measurement/study/dataset
+3. One is a media report OF the other
 
-If we incorrectly lump conditionally independent evidence together:
-- Complex "PARTIAL" hypotheses get unearned credit for "explaining mixed evidence"
-- Simple hypotheses get unfairly penalized for not predicting unrelated evidence
-- Occam's Razor fails because accommodation is confused with prediction
+**Example - These are ALL ONE piece of evidence (same root source):**
+```
+ROOT: Bureau of Labor Statistics monthly employment survey
+  |-- BLS press release announcing unemployment rate
+  |-- NYT article reporting on BLS data
+  |-- Brookings analysis using BLS figures
+  |-- Political pundit citing the NYT article
+  +-- Think tank report incorporating Brookings analysis
+```
+All of these trace back to ONE causal origin: the BLS survey methodology applied to the
+labor market. If the BLS data were different, ALL derivatives would differ. They provide
+ONE unit of evidence, not five.
+
+### The Conditional Independence Test
+
+For items E1 and E2, ask: "If hypothesis H is true, and I learn E1, does this change
+my probability estimate for observing E2?"
+
+- If YES -> They share a causal source -> SAME cluster (dependent)
+- If NO -> They have independent causal origins -> DIFFERENT clusters
+
+### Types of Causal Independence
+
+Evidence items are **causally independent** (separate clusters) when they arise from:
+
+1. **Different measurement processes** applied to the world
+   - A clinical trial vs. an epidemiological survey (different methodologies)
+   - Brain imaging study vs. behavioral experiment (different measurement types)
+
+2. **Different domains of reality being measured**
+   - Economic indicators vs. health outcomes (unless one causes the other)
+   - Legal precedents vs. scientific findings (different generative institutions)
+
+3. **Genuinely separate observations** of similar phenomena
+   - Two independent replications of an experiment by different labs
+   - Separate historical events that happen to be analogous
 
 ### Instructions
 
-1. For each evidence item, identify its mechanistic source
-2. Group items that share the SAME generative process
-3. Create at most **8 clusters** (if more sources exist, merge the most similar ones)
-4. Justify why items in each cluster are conditionally DEPENDENT (share a source)
-5. Assign clusters to higher-level categories for reporting hierarchy
+For EACH evidence item, determine:
+1. **Root Source**: What is the ORIGINAL measurement, study, dataset, or reasoning process?
+2. **Citation Chain**: Is this item derivative of another item in the list?
+3. **Causal Pathway**: What real-world process would need to change for this evidence to differ?
+
+Then cluster items that share the SAME root causal source.
+
+### Output Schema
 
 For each cluster provide:
 - cluster_id: C1, C2, etc.
-- cluster_name: Short descriptive name (e.g., "Clinical Amnesia Cases")
-- mechanistic_source: The generative process (e.g., "medical/neurological observation")
-- dependence_justification: Why these items are conditionally dependent given hypotheses
-- hierarchy_group: Higher-level category for reporting (e.g., "Empirical Studies", "Theoretical Arguments", "Institutional Practices")
+- cluster_name: Short descriptive name
+- root_causal_source: The actual generative process (NOT source type)
+- causal_pathway: How reality produces this evidence
+- root_evidence_id: Which item is the primary/root source (or null if independent replications)
+- derivative_chain: Map showing citation/derivation relationships
+- independence_justification: Why these items are causally dependent
+- effective_weight: Usually 1.0; only >1 for genuinely independent replications of same methodology
+- hierarchy_group: Higher-level category for reporting
 - evidence_ids: List of evidence IDs in this cluster
 - cluster_base_rate: Average P(E) for evidence in this cluster
 
@@ -3063,58 +3098,93 @@ Return JSON with this structure:
   "clusters": [
     {{
       "cluster_id": "C1",
-      "cluster_name": "Clinical Amnesia Cases",
-      "mechanistic_source": "medical/neurological case observation",
-      "dependence_justification": "All items arise from clinical documentation of patients with memory disorders; knowing one case outcome informs expectations about similar cases",
-      "hierarchy_group": "Empirical Studies",
-      "evidence_ids": ["E1", "E3", "E7"],
+      "cluster_name": "BLS Employment Data and Derivatives",
+      "root_causal_source": "Bureau of Labor Statistics Current Population Survey methodology measuring monthly employment status",
+      "causal_pathway": "Labor market conditions -> BLS survey responses -> Statistical aggregation -> Published figures",
+      "root_evidence_id": "E2",
+      "derivative_chain": {{
+        "E2": "ROOT - BLS primary data release",
+        "E5": "Cites E2 - NYT coverage of BLS release",
+        "E8": "Cites E2 - Brookings analysis using BLS data"
+      }},
+      "independence_justification": "All items causally depend on the same BLS survey; if BLS methodology or labor market differed, all would change together",
+      "effective_weight": 1.0,
+      "hierarchy_group": "Economic Indicators",
+      "evidence_ids": ["E2", "E5", "E8"],
       "cluster_base_rate": 0.65
     }},
     ...
   ],
   "hierarchy": [
     {{
-      "group_name": "Empirical Studies",
-      "description": "Evidence from scientific observation and experimentation",
-      "cluster_ids": ["C1", "C2"]
+      "group_name": "Economic Indicators",
+      "description": "Macroeconomic measurements from institutional sources",
+      "cluster_ids": ["C1"]
     }},
     ...
-  ]
+  ],
+  "citation_graph": {{
+    "nodes": ["E1", "E2", ...],
+    "edges": [
+      {{"from": "E5", "to": "E2", "relation": "cites"}},
+      {{"from": "E8", "to": "E2", "relation": "uses_data_from"}}
+    ]
+  }}
 }}
+
+### Common Errors to Avoid
+
+X WRONG: Clustering by source type (media, academic, government, NGO)
+X WRONG: Treating a news article about a study as independent from the study
+X WRONG: Treating two think tank reports using the same government data as independent
+X WRONG: Assuming different authors = independent evidence
+
+V RIGHT: Clustering by root causal origin
+V RIGHT: Tracing citation chains to find root sources
+V RIGHT: Recognizing that commentary on data is not new data
+V RIGHT: Only treating genuinely separate measurements as independent
 
 IMPORTANT:
 - Maximum 8 clusters
 - Each evidence item must appear in exactly one cluster
-- Prioritize MECHANISTIC INDEPENDENCE over thematic similarity
-- If unsure whether items are independent, default to SEPARATE clusters
+- Prioritize CAUSAL ORIGIN over source type or thematic similarity
+- If unsure whether items share a root source, assume they DO (cluster together) - this avoids overcounting
 """
         try:
-            self._log_progress("Phase 3b Step 1: Forming mechanistic evidence clusters...")
+            self._log_progress("Phase 3b Step 1: Forming causal evidence clusters...")
             result = self._run_reasoning_phase(
-                cluster_prompt, "Phase 3b Step 1: Mechanistic Cluster Formation",
+                cluster_prompt, "Phase 3b Step 1: Causal Cluster Formation",
                 schema_name=None  # Free-form JSON for complex structure
             )
             raw_clusters = result.get("clusters", [])
             cluster_hierarchy = result.get("hierarchy", [])
+            citation_graph = result.get("citation_graph", {"nodes": [], "edges": []})
+            logger.info(f"Citation graph: {len(citation_graph.get('edges', []))} citation relationships identified")
         except Exception as e:
             logger.warning(f"Cluster formation failed: {e}, using default single cluster")
+            all_evidence_ids = [e.get("evidence_id") for e in evidence_items]
             raw_clusters = [{
                 "cluster_id": "C1",
                 "cluster_name": "All Evidence",
-                "mechanistic_source": "mixed sources",
-                "dependence_justification": "Fallback: all evidence grouped together",
+                "root_causal_source": "mixed/unknown sources",
+                "causal_pathway": "Unknown - fallback clustering",
+                "root_evidence_id": None,
+                "derivative_chain": {e_id: "UNKNOWN" for e_id in all_evidence_ids},
+                "independence_justification": "Fallback: all evidence grouped together (conservative)",
+                "effective_weight": 1.0,
                 "hierarchy_group": "All Evidence",
-                "evidence_ids": [e.get("evidence_id") for e in evidence_items],
+                "evidence_ids": all_evidence_ids,
                 "cluster_base_rate": sum(base_rates.values()) / len(base_rates) if base_rates else 0.5
             }]
             cluster_hierarchy = [{"group_name": "All Evidence", "description": "All gathered evidence", "cluster_ids": ["C1"]}]
+            citation_graph = {"nodes": all_evidence_ids, "edges": []}
 
         # Sanity check: max 8 clusters
         if len(raw_clusters) > 8:
             logger.warning(f"Cluster formation returned {len(raw_clusters)} clusters, limiting to 8")
             raw_clusters = raw_clusters[:8]
 
-        # Initialize clusters with new mechanistic fields
+        # Initialize clusters with causal independence fields
         clusters = []
         for c in raw_clusters:
             cluster_evidence_ids = c.get("evidence_ids", [])
@@ -3123,13 +3193,25 @@ IMPORTANT:
                 rates = [base_rates.get(e_id, 0.5) for e_id in cluster_evidence_ids]
                 cluster_base_rate = sum(rates) / len(rates) if rates else 0.5
 
+            # Get effective weight (defaults to 1.0 - one unit of evidence per cluster)
+            effective_weight = c.get("effective_weight", 1.0)
+            if effective_weight > 1.0:
+                logger.info(f"  Cluster {c.get('cluster_id')} has effective_weight={effective_weight} (independent replications)")
+
             cluster_data = {
                 "cluster_id": c.get("cluster_id"),
                 "cluster_name": c.get("cluster_name"),
-                "mechanistic_source": c.get("mechanistic_source", "unspecified"),
-                "dependence_justification": c.get("dependence_justification", ""),
+                # New causal fields
+                "root_causal_source": c.get("root_causal_source", c.get("mechanistic_source", "unspecified")),
+                "causal_pathway": c.get("causal_pathway", ""),
+                "root_evidence_id": c.get("root_evidence_id"),
+                "derivative_chain": c.get("derivative_chain", {}),
+                "effective_weight": effective_weight,
+                # Legacy field for backward compatibility
+                "mechanistic_source": c.get("root_causal_source", c.get("mechanistic_source", "unspecified")),
+                "independence_justification": c.get("independence_justification", c.get("dependence_justification", "")),
                 "hierarchy_group": c.get("hierarchy_group", "Uncategorized"),
-                "description": c.get("description", c.get("mechanistic_source", "")),
+                "description": c.get("description", c.get("root_causal_source", c.get("mechanistic_source", ""))),
                 "evidence_ids": cluster_evidence_ids,
                 "cluster_base_rate": cluster_base_rate,
                 "likelihoods_by_paradigm": {},
@@ -3137,16 +3219,20 @@ IMPORTANT:
             }
             clusters.append(cluster_data)
 
-            # Log cluster info including mechanistic source
+            # Log cluster info including causal source and derivative chain
             item_count = len(cluster_evidence_ids)
-            logger.info(f"  {cluster_data['cluster_id']}: {cluster_data['cluster_name']} ({item_count} items) - Source: {cluster_data['mechanistic_source']}")
+            root_id = cluster_data.get("root_evidence_id", "none")
+            derivative_count = len([k for k, v in cluster_data.get("derivative_chain", {}).items() if "ROOT" not in str(v).upper()])
+            logger.info(f"  {cluster_data['cluster_id']}: {cluster_data['cluster_name']} ({item_count} items, root={root_id}, {derivative_count} derivatives)")
+            logger.info(f"    Causal source: {cluster_data['root_causal_source'][:80]}...")
             if item_count == 1:
-                logger.warning(f"  WARNING: Cluster {cluster_data['cluster_id']} has only 1 item - consider if this is appropriate")
+                logger.debug(f"  Cluster {cluster_data['cluster_id']} has only 1 item (may be appropriate if truly independent)")
 
-        # Store hierarchy for reporting
+        # Store hierarchy and citation graph for reporting
         self._cluster_hierarchy = cluster_hierarchy
+        self._citation_graph = citation_graph
 
-        logger.info(f"Phase 3b Step 1: Created {len(clusters)} mechanistic evidence clusters")
+        logger.info(f"Phase 3b Step 1: Created {len(clusters)} causal evidence clusters")
 
         # STEP 2-6: Calibrated likelihood elicitation for each cluster (PARALLELIZED)
         lr_scale_text = "\n".join([
@@ -3161,8 +3247,23 @@ IMPORTANT:
             c_desc = cluster["description"]
             c_base_rate = cluster["cluster_base_rate"]
             c_evidence = cluster["evidence_ids"]
+            c_causal_source = cluster.get("root_causal_source", c_desc)
+            c_causal_pathway = cluster.get("causal_pathway", "")
+            c_root_id = cluster.get("root_evidence_id", "N/A")
+            c_derivative_chain = cluster.get("derivative_chain", {})
+            c_effective_weight = cluster.get("effective_weight", 1.0)
 
             self._log_progress(f"Phase 3b Cluster {cluster_idx + 1}/{len(clusters)}: Calibrating likelihoods for {c_id}...")
+
+            # Format derivative chain for prompt
+            derivative_info = ""
+            if c_derivative_chain:
+                derivative_lines = [f"  - {k}: {v}" for k, v in c_derivative_chain.items()]
+                derivative_info = f"""
+Derivative Chain (citation relationships):
+{chr(10).join(derivative_lines)}
+Root Evidence ID: {c_root_id}
+"""
 
             # Combined calibration prompt - asks for all calibration info at once
             calibration_prompt = f"""{bfih_context}
@@ -3172,9 +3273,15 @@ HYPOTHESES:
 {hyp_summary_text}
 
 EVIDENCE CLUSTER: {c_id} - {c_name}
-Description: {c_desc}
+Root Causal Source: {c_causal_source}
+Causal Pathway: {c_causal_pathway}
 Evidence IDs: {', '.join(c_evidence)}
+Effective Weight: {c_effective_weight} (number of independent observations)
 Base Rate P(E): {c_base_rate:.3f}
+{derivative_info}
+**IMPORTANT**: All evidence items in this cluster trace to the SAME root causal source.
+They contribute as ONE unit of evidence regardless of how many derivative reports exist.
+Judge the cluster by its ROOT source, not by the number of articles/reports citing it.
 
 ## CALIBRATED LIKELIHOOD ELICITATION
 
