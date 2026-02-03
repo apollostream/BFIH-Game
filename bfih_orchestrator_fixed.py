@@ -6177,10 +6177,11 @@ Every paragraph must advance the reader's understanding. No section should repea
 ## STRUCTURE (4 sections)
 
 **1. Opening** (~400-500 words)
-   - Begin with a concrete scene, example, or striking claim that grounds the reader
+   - Begin with something concrete that grounds the reader: a statistic, a quote, a specific case, a provocative question, or a counterintuitive claim
+   - DO NOT use the "On a [time/weather] morning in [location]..." scene-setting opening—this pattern is overused and clichéd
    - State the core finding clearly and memorably—this is the ONLY full statement
    - Provide just enough context to understand why it matters
-   - End with a pivot toward the evidence: "A recent investigation tested this claim..."
+   - End with a pivot toward the evidence
 
 **2. The Evidence** (~1200-1800 words)
    - Organize thematically with ### subheadings (3-5 subsections)
@@ -6196,10 +6197,13 @@ Every paragraph must advance the reader's understanding. No section should repea
    - Assume the reader remembers the evidence—don't re-summarize it
 
 **4. Closing** (~200-300 words)
-   - Expand scope: connect to a broader pattern, adjacent field, or philosophical insight
-   - "Perhaps the deepest finding isn't about X at all, but about..."
-   - Or: distill a genuine uncertainty that science alone can't resolve
-   - End on a thought that lingers—not a declaration that closes the book
+   - DO NOT use the pattern "Perhaps the deepest finding isn't about X, but about Y"—this is clichéd
+   - The closing should fit what the analysis actually found:
+     * If findings confirm expectations: reflect on why the expected answer is the right one, or what it took to verify it
+     * If findings surprise: note the surprise honestly without forcing profundity
+     * If genuine uncertainty remains: name it directly
+     * If broader implications exist: draw the connection naturally
+   - End on something honest—not a forced profundity or a neat bow
 
 ---
 
@@ -6253,6 +6257,9 @@ Frame honestly: "Here are the real options with their differentiators. 'Best' de
 - "The myth of..."
 - "What everyone gets wrong about..."
 - "It's complicated" / "It depends" (show the complexity, don't announce it)
+- "On a [time/weather] morning in [location]..." openings
+- "Perhaps the deepest finding isn't about X, but about Y" closings
+- Forced profundity when the finding is straightforward
 
 **Structural failures:**
 - Separate "What Remains Uncertain" section (integrate inline)
@@ -6265,7 +6272,7 @@ Frame honestly: "Here are the real options with their differentiators. 'Best' de
 
 1. Count how many times you state the core finding. If more than once, cut the extras.
 2. For each section, write one sentence describing what NEW information it provides. If you can't, revise.
-3. Read your closing. Does it summarize or expand? If summarize, rewrite.
+3. Read your closing. Does it summarize? If so, rewrite. Does it force profundity? If so, make it honest.
 4. Scan for bold text. Is each instance earning its weight? Remove decorative bolding.
 5. Check any bullet lists. Would prose be clearer? If yes, convert to prose.
 
@@ -6329,6 +6336,7 @@ Use this general flow, but invent your own section titles:
    - Set up the question or issue being examined
    - Explain why this matters and what's at stake
    - Provide necessary background for readers unfamiliar with the topic
+   - DO NOT use the "On a [time/weather] morning in [location]..." scene-setting cliché
 
 3. **The Evidence** (~1000-2000 words)
    - Walk through the evidence chronologically or thematically
@@ -6399,7 +6407,8 @@ The intellectually honest framing is: "Here are your real options with their dif
 8. **Closing Reflection** (~300-400 words)
    - Synthesize the key insight from K0
    - Reflect on what this reveals about the topic
-   - End with something thought-provoking but grounded in the analysis
+   - End honestly—if the finding is straightforward, say so; don't force profundity
+   - DO NOT use "Perhaps the deepest finding isn't about X, but about Y" or similar clichés
 
 ### FORMATTING:
 - Use # for title, ## for major sections, ### for subsections
@@ -6419,6 +6428,9 @@ The intellectually honest framing is: "Here are your real options with their dif
 - DO NOT use the template section titles verbatim - create unique titles for this article
 - DO NOT hedge excessively - make clear claims where evidence supports them
 - DO NOT use generic filler - every sentence should add value
+- DO NOT use clichéd openings like "On a [time/weather] morning in [location]..."
+- DO NOT use clichéd closings like "Perhaps the deepest finding isn't about X, but about Y"
+- DO NOT force profundity—if the finding is what you'd expect, say so honestly
 
 ### CRITICAL: NO EXPLICIT FRAMEWORK REFERENCES
 The article should read like professional journalism, NOT a meta-commentary on the analysis.
