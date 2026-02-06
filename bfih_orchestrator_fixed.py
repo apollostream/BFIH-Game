@@ -2892,7 +2892,7 @@ Return JSON with cluster likelihoods for this paradigm only:
                 result = self._run_reasoning_phase(
                     paradigm_prompt, f"Phase 3b: {paradigm_id} Likelihoods",
                     schema_name=None,  # Simpler per-paradigm output doesn't need schema enforcement
-                    instructions=get_bfih_system_context(request.proposition)
+                    instructions=get_bfih_system_context("Paradigm Likelihood Assignment", "3b-paradigm")
                 )
 
                 # Merge results into clusters
@@ -3447,7 +3447,7 @@ IMPORTANT:
                 result = self._run_reasoning_phase(
                     calibration_prompt, f"Phase 3b: {c_id} Calibration",
                     schema_name=None,
-                    instructions=get_bfih_system_context(request.proposition)
+                    instructions=get_bfih_system_context("Calibrated Likelihood Elicitation", "3b-calibrated")
                 )
 
                 # Extract calibration info
