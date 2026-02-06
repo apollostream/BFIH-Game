@@ -2857,8 +2857,7 @@ Example format:
 
             self._log_progress(f"Phase 3b Step 2: Assigning likelihoods for {paradigm_id} ({p_idx + 1}/{len(paradigms)})...")
 
-            paradigm_prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+            paradigm_prompt = f"""PROPOSITION: "{request.proposition}"
 
 HYPOTHESES:
 {hyp_text}
@@ -2892,7 +2891,8 @@ Return JSON with cluster likelihoods for this paradigm only:
                 # Use raw JSON output (no schema) since the structure is simpler per-paradigm
                 result = self._run_reasoning_phase(
                     paradigm_prompt, f"Phase 3b: {paradigm_id} Likelihoods",
-                    schema_name=None  # Simpler per-paradigm output doesn't need schema enforcement
+                    schema_name=None,  # Simpler per-paradigm output doesn't need schema enforcement
+                    instructions=get_bfih_system_context(request.proposition)
                 )
 
                 # Merge results into clusters
@@ -3300,8 +3300,7 @@ Root Evidence ID: {c_root_id}
 """
 
             # Combined calibration prompt - asks for all calibration info at once
-            calibration_prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+            calibration_prompt = f"""PROPOSITION: "{request.proposition}"
 
 HYPOTHESES:
 {hyp_summary_text}
@@ -3447,7 +3446,8 @@ IMPORTANT:
             try:
                 result = self._run_reasoning_phase(
                     calibration_prompt, f"Phase 3b: {c_id} Calibration",
-                    schema_name=None
+                    schema_name=None,
+                    instructions=get_bfih_system_context(request.proposition)
                 )
 
                 # Extract calibration info
