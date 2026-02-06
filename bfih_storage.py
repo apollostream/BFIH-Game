@@ -36,22 +36,46 @@ except ImportError:
 
 class StorageBackend(ABC):
     """Abstract storage backend"""
-    
+
     @abstractmethod
     def store_analysis_result(self, analysis_id: str, result: Dict) -> bool:
         pass
-    
+
     @abstractmethod
     def retrieve_analysis_result(self, analysis_id: str) -> Optional[Dict]:
         pass
-    
+
     @abstractmethod
     def store_scenario_config(self, scenario_id: str, config: Dict) -> bool:
         pass
-    
+
     @abstractmethod
     def retrieve_scenario_config(self, scenario_id: str) -> Optional[Dict]:
         pass
+
+    # ========================================================================
+    # CHECKPOINT METHODS (for per-API-call checkpointing)
+    # ========================================================================
+
+    def store_checkpoint(self, scenario_id: str, data: Dict) -> bool:
+        """Store/overwrite phase checkpoint (atomic write)."""
+        raise NotImplementedError("Subclass must implement store_checkpoint")
+
+    def retrieve_checkpoint(self, scenario_id: str) -> Optional[Dict]:
+        """Retrieve checkpoint for scenario."""
+        raise NotImplementedError("Subclass must implement retrieve_checkpoint")
+
+    def append_api_call_log(self, scenario_id: str, call_record: Dict) -> bool:
+        """Append API call record to JSONLines audit log (thread-safe)."""
+        raise NotImplementedError("Subclass must implement append_api_call_log")
+
+    def get_api_call_log(self, scenario_id: str) -> List[Dict]:
+        """Retrieve all API call records for a scenario."""
+        raise NotImplementedError("Subclass must implement get_api_call_log")
+
+    def list_checkpoints(self, status: Optional[str] = None, limit: int = 50) -> List[Dict]:
+        """List checkpoints with summary info, optionally filtered by status."""
+        raise NotImplementedError("Subclass must implement list_checkpoints")
 
 
 # ============================================================================
@@ -374,6 +398,138 @@ class FileStorageBackend(StorageBackend):
                 return json.load(f)
         except Exception as e:
             logger.error(f"Error reading progress log: {str(e)}")
+            return []
+
+    # ========================================================================
+    # CHECKPOINT METHODS
+    # ========================================================================
+
+    def store_checkpoint(self, scenario_id: str, data: Dict) -> bool:
+        """Store/overwrite phase checkpoint (atomic write via temp file)."""
+        try:
+            checkpoint_dir = self.base_dir / "checkpoints"
+            checkpoint_dir.mkdir(parents=True, exist_ok=True)
+            filepath = checkpoint_dir / f"{scenario_id}_checkpoint.json"
+
+            # Atomic write: write to temp file then rename
+            temp_filepath = filepath.with_suffix('.tmp')
+            with open(temp_filepath, 'w') as f:
+                json.dump(data, f, indent=2)
+            temp_filepath.rename(filepath)
+
+            logger.info(f"Stored checkpoint: {scenario_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error storing checkpoint: {str(e)}")
+            return False
+
+    def retrieve_checkpoint(self, scenario_id: str) -> Optional[Dict]:
+        """Retrieve checkpoint for scenario."""
+        try:
+            checkpoint_dir = self.base_dir / "checkpoints"
+            filepath = checkpoint_dir / f"{scenario_id}_checkpoint.json"
+            if not filepath.exists():
+                return None
+            with open(filepath, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error retrieving checkpoint: {str(e)}")
+            return None
+
+    def append_api_call_log(self, scenario_id: str, call_record: Dict) -> bool:
+        """Append API call record to JSONLines audit log (thread-safe via file locking)."""
+        try:
+            audit_dir = self.base_dir / "audit_logs"
+            audit_dir.mkdir(parents=True, exist_ok=True)
+            filepath = audit_dir / f"{scenario_id}_api_calls.jsonl"
+
+            # Use file locking for thread safety
+            import fcntl
+            with open(filepath, 'a') as f:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                try:
+                    f.write(json.dumps(call_record) + '\n')
+                finally:
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+
+            return True
+        except ImportError:
+            # fcntl not available (Windows), fall back to basic append
+            try:
+                with open(filepath, 'a') as f:
+                    f.write(json.dumps(call_record) + '\n')
+                return True
+            except Exception as e:
+                logger.error(f"Error appending API call log: {str(e)}")
+                return False
+        except Exception as e:
+            logger.error(f"Error appending API call log: {str(e)}")
+            return False
+
+    def get_api_call_log(self, scenario_id: str) -> List[Dict]:
+        """Retrieve all API call records for a scenario."""
+        try:
+            audit_dir = self.base_dir / "audit_logs"
+            filepath = audit_dir / f"{scenario_id}_api_calls.jsonl"
+            if not filepath.exists():
+                return []
+
+            records = []
+            with open(filepath, 'r') as f:
+                for line in f:
+                    line = line.strip()
+                    if line:
+                        try:
+                            records.append(json.loads(line))
+                        except json.JSONDecodeError:
+                            logger.warning(f"Invalid JSON line in audit log: {line[:50]}...")
+            return records
+        except Exception as e:
+            logger.error(f"Error reading API call log: {str(e)}")
+            return []
+
+    def list_checkpoints(self, status: Optional[str] = None, limit: int = 50) -> List[Dict]:
+        """List checkpoints with summary info, optionally filtered by status."""
+        try:
+            checkpoint_dir = self.base_dir / "checkpoints"
+            if not checkpoint_dir.exists():
+                return []
+
+            checkpoints = []
+            files = sorted(checkpoint_dir.glob("*_checkpoint.json"),
+                          key=lambda f: f.stat().st_mtime, reverse=True)
+
+            for filepath in files[:limit * 2]:  # Read extra to allow for filtering
+                try:
+                    with open(filepath, 'r') as f:
+                        data = json.load(f)
+
+                    # Filter by status if specified
+                    if status and data.get("status") != status:
+                        continue
+
+                    summary = {
+                        "checkpoint_id": data.get("checkpoint_id"),
+                        "scenario_id": data.get("scenario_id"),
+                        "proposition": data.get("proposition", "")[:100],
+                        "status": data.get("status"),
+                        "api_call_count": data.get("api_call_count", 0),
+                        "total_cost_usd": data.get("cost_summary", {}).get("total_cost_usd", 0),
+                        "completed_phases": list(data.get("completed_phases", {}).keys()),
+                        "created_at": data.get("created_at"),
+                        "updated_at": data.get("updated_at")
+                    }
+                    checkpoints.append(summary)
+
+                    if len(checkpoints) >= limit:
+                        break
+                except Exception as e:
+                    logger.warning(f"Error reading checkpoint {filepath}: {e}")
+                    continue
+
+            return checkpoints
+        except Exception as e:
+            logger.error(f"Error listing checkpoints: {str(e)}")
             return []
 
 
@@ -820,6 +976,129 @@ class GCSStorageBackend(StorageBackend):
         path = f"{self.status_prefix}/{analysis_id}_progress.json"
         return self._read_json(path) or []
 
+    # ========================================================================
+    # CHECKPOINT METHODS
+    # ========================================================================
+
+    def store_checkpoint(self, scenario_id: str, data: Dict) -> bool:
+        """Store/overwrite phase checkpoint (atomic write)."""
+        try:
+            path = f"{self.prefix}/checkpoints/{scenario_id}_checkpoint.json"
+            success = self._write_json(path, data)
+            if success:
+                logger.info(f"Stored checkpoint to GCS: {scenario_id}")
+            return success
+        except Exception as e:
+            logger.error(f"Error storing checkpoint to GCS: {str(e)}")
+            return False
+
+    def retrieve_checkpoint(self, scenario_id: str) -> Optional[Dict]:
+        """Retrieve checkpoint for scenario from GCS."""
+        try:
+            path = f"{self.prefix}/checkpoints/{scenario_id}_checkpoint.json"
+            return self._read_json(path)
+        except Exception as e:
+            logger.error(f"Error retrieving checkpoint from GCS: {str(e)}")
+            return None
+
+    def append_api_call_log(self, scenario_id: str, call_record: Dict) -> bool:
+        """Append API call record to JSONLines audit log in GCS.
+
+        Uses a per-scenario lock to ensure thread safety during parallel execution.
+        """
+        lock = self._get_append_lock(f"api_call_{scenario_id}")
+
+        with lock:
+            try:
+                path = f"{self.prefix}/audit_logs/{scenario_id}_api_calls.jsonl"
+
+                # Read existing content (if any)
+                existing_content = ""
+                try:
+                    blob = self._get_fresh_blob(path)
+                    existing_content = blob.download_as_text()
+                except Exception:
+                    pass  # File doesn't exist yet
+
+                # Append new record
+                new_line = json.dumps(call_record) + '\n'
+                new_content = existing_content + new_line
+
+                # Write back
+                blob = self._get_blob(path)
+                blob.upload_from_string(new_content, content_type='application/x-ndjson')
+                return True
+            except Exception as e:
+                logger.error(f"Error appending API call log to GCS: {str(e)}")
+                return False
+
+    def get_api_call_log(self, scenario_id: str) -> List[Dict]:
+        """Retrieve all API call records for a scenario from GCS."""
+        try:
+            path = f"{self.prefix}/audit_logs/{scenario_id}_api_calls.jsonl"
+            blob = self._get_fresh_blob(path)
+
+            try:
+                content = blob.download_as_text()
+            except Exception:
+                return []  # File doesn't exist
+
+            records = []
+            for line in content.strip().split('\n'):
+                if line:
+                    try:
+                        records.append(json.loads(line))
+                    except json.JSONDecodeError:
+                        logger.warning(f"Invalid JSON line in audit log: {line[:50]}...")
+            return records
+        except Exception as e:
+            logger.error(f"Error reading API call log from GCS: {str(e)}")
+            return []
+
+    def list_checkpoints(self, status: Optional[str] = None, limit: int = 50) -> List[Dict]:
+        """List checkpoints with summary info from GCS, optionally filtered by status."""
+        try:
+            prefix = f"{self.prefix}/checkpoints/"
+            blobs = list(self.bucket.list_blobs(prefix=prefix))
+
+            # Filter to checkpoint files and sort by updated time
+            checkpoint_blobs = [b for b in blobs if b.name.endswith('_checkpoint.json')]
+            checkpoint_blobs.sort(key=lambda b: b.updated or datetime.min, reverse=True)
+
+            checkpoints = []
+            for blob in checkpoint_blobs[:limit * 2]:  # Read extra to allow for filtering
+                try:
+                    content = blob.download_as_text()
+                    data = json.loads(content)
+
+                    # Filter by status if specified
+                    if status and data.get("status") != status:
+                        continue
+
+                    summary = {
+                        "checkpoint_id": data.get("checkpoint_id"),
+                        "scenario_id": data.get("scenario_id"),
+                        "proposition": data.get("proposition", "")[:100],
+                        "status": data.get("status"),
+                        "api_call_count": data.get("api_call_count", 0),
+                        "total_cost_usd": data.get("cost_summary", {}).get("total_cost_usd", 0),
+                        "completed_phases": list(data.get("completed_phases", {}).keys()),
+                        "created_at": data.get("created_at"),
+                        "updated_at": data.get("updated_at")
+                    }
+                    checkpoints.append(summary)
+
+                    if len(checkpoints) >= limit:
+                        break
+                except Exception as e:
+                    logger.warning(f"Error reading checkpoint {blob.name}: {e}")
+                    continue
+
+            return checkpoints
+        except Exception as e:
+            logger.error(f"Error listing checkpoints from GCS: {str(e)}")
+            return []
+
 
 # ============================================================================
 # MANAGER CLASS (Facade)
@@ -915,6 +1194,30 @@ class StorageManager:
     def get_progress_log(self, analysis_id: str) -> List[Dict]:
         """Get the progress log messages for an analysis."""
         return self.backend.get_progress_log(analysis_id)
+
+    # ========================================================================
+    # CHECKPOINT METHODS
+    # ========================================================================
+
+    def store_checkpoint(self, scenario_id: str, data: Dict) -> bool:
+        """Store/overwrite phase checkpoint."""
+        return self.backend.store_checkpoint(scenario_id, data)
+
+    def retrieve_checkpoint(self, scenario_id: str) -> Optional[Dict]:
+        """Retrieve checkpoint for scenario."""
+        return self.backend.retrieve_checkpoint(scenario_id)
+
+    def append_api_call_log(self, scenario_id: str, call_record: Dict) -> bool:
+        """Append API call record to audit log."""
+        return self.backend.append_api_call_log(scenario_id, call_record)
+
+    def get_api_call_log(self, scenario_id: str) -> List[Dict]:
+        """Retrieve all API call records for a scenario."""
+        return self.backend.get_api_call_log(scenario_id)
+
+    def list_checkpoints(self, status: Optional[str] = None, limit: int = 50) -> List[Dict]:
+        """List checkpoints with summary info."""
+        return self.backend.list_checkpoints(status=status, limit=limit)
 
 
 # ============================================================================

@@ -1247,6 +1247,306 @@ async def generate_synopsis(
 
 
 # ============================================================================
+# CHECKPOINT ENDPOINTS
+# ============================================================================
+
+@app.post("/api/resume-analysis/{scenario_id}")
+async def resume_analysis(
+    scenario_id: str,
+    background_tasks: BackgroundTasks,
+    user_openai_api_key: Optional[str] = Header(None, alias="User-OpenAI-API-Key"),
+    user_vector_store_id: Optional[str] = Header(None, alias="User-Vector-Store-ID")
+):
+    """
+    Resume analysis from last checkpoint.
+
+    This endpoint retrieves the checkpoint for a failed/interrupted analysis
+    and continues from where it left off. Completed work is not repeated.
+
+    Headers (optional - falls back to server env vars if not provided):
+        User-OpenAI-API-Key: Your OpenAI API key
+        User-Vector-Store-ID: Your vector store ID
+
+    Returns:
+    {
+        "analysis_id": "new-uuid",
+        "scenario_id": "auto_8d5aeaf4",
+        "resumed_from": "auto_8d5aeaf4_cp_20260206_182919",
+        "resume_point": {"phase": "phase_3", "description": "Resume from Phase 3"},
+        "status": "processing"
+    }
+    """
+    try:
+        # Retrieve checkpoint
+        checkpoint = storage.retrieve_checkpoint(scenario_id)
+        if not checkpoint:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No checkpoint found for scenario: {scenario_id}"
+            )
+
+        # Check if checkpoint is resumable
+        status = checkpoint.get("status")
+        if status == "completed":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Analysis already completed. No need to resume."
+            )
+
+        # Create new analysis ID for the resumed analysis
+        new_analysis_id = str(uuid.uuid4())
+
+        # Recreate the request from checkpoint
+        analysis_request = BFIHAnalysisRequest(
+            scenario_id=checkpoint["scenario_id"],
+            proposition=checkpoint["proposition"],
+            scenario_config=checkpoint["scenario_config"],
+            user_id="resume",
+            reasoning_model=checkpoint.get("reasoning_model")
+        )
+
+        # Initialize status
+        storage.update_analysis_status(new_analysis_id, "processing:resuming")
+
+        # Run resumed analysis in background
+        background_tasks.add_task(
+            _run_resumed_analysis,
+            analysis_id=new_analysis_id,
+            analysis_request=analysis_request,
+            checkpoint=checkpoint,
+            api_key=user_openai_api_key,
+            vector_store_id=user_vector_store_id
+        )
+
+        logger.info(f"Resumed analysis: {new_analysis_id} from checkpoint {checkpoint.get('checkpoint_id')}")
+
+        return {
+            "analysis_id": new_analysis_id,
+            "scenario_id": scenario_id,
+            "resumed_from": checkpoint.get("checkpoint_id"),
+            "resume_point": checkpoint.get("resume_point"),
+            "status": "processing"
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error resuming analysis: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+def _run_resumed_analysis(
+    analysis_id: str,
+    analysis_request: BFIHAnalysisRequest,
+    checkpoint: Dict,
+    api_key: Optional[str] = None,
+    vector_store_id: Optional[str] = None
+):
+    """Background task to run resumed BFIH analysis."""
+    try:
+        logger.info(f"Starting resumed analysis: {analysis_id}")
+        storage.append_progress_log(analysis_id, f"Resuming analysis from checkpoint...")
+
+        def status_callback(phase: str):
+            storage.update_analysis_status(analysis_id, f"processing:{phase}")
+
+        def progress_callback(message: str):
+            storage.append_progress_log(analysis_id, message)
+
+        # Create orchestrator
+        orchestrator = get_orchestrator_for_request(
+            api_key, vector_store_id, status_callback, progress_callback
+        )
+
+        # Run analysis with checkpoint for resume
+        result = orchestrator.conduct_analysis(
+            analysis_request,
+            checkpoint=checkpoint,
+            storage=storage.backend
+        )
+
+        # Store result
+        storage.store_analysis_result(analysis_id, result)
+        if result.scenario_id and result.scenario_id != analysis_id:
+            storage.store_analysis_result(result.scenario_id, result)
+
+        storage.update_analysis_status(analysis_id, "completed")
+        logger.info(f"Resumed analysis completed: {analysis_id}")
+
+    except Exception as e:
+        error_msg = str(e)
+        logger.error(f"Error in resumed analysis: {error_msg}")
+        storage.update_analysis_status(analysis_id, f"failed: {error_msg}")
+
+
+@app.get("/api/checkpoints")
+async def list_checkpoints(
+    status: Optional[str] = None,
+    limit: int = 50
+):
+    """
+    List available checkpoints.
+
+    Query params:
+        status: Filter by status (optional) - "in_progress", "failed", "completed"
+        limit: Maximum number of checkpoints to return (default 50)
+
+    Returns:
+    {
+        "checkpoints": [
+            {
+                "checkpoint_id": "auto_8d5aeaf4_cp_20260206_182919",
+                "scenario_id": "auto_8d5aeaf4",
+                "proposition": "...",
+                "status": "failed",
+                "api_call_count": 15,
+                "total_cost_usd": 1.234,
+                "completed_phases": ["phase_1", "phase_2"],
+                "created_at": "2026-02-06T18:29:19Z",
+                "updated_at": "2026-02-06T18:35:42Z"
+            },
+            ...
+        ],
+        "count": 10
+    }
+    """
+    try:
+        checkpoints = storage.list_checkpoints(status=status, limit=limit)
+        return {
+            "checkpoints": checkpoints,
+            "count": len(checkpoints)
+        }
+    except Exception as e:
+        logger.error(f"Error listing checkpoints: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/checkpoints/{scenario_id}")
+async def get_checkpoint(scenario_id: str):
+    """
+    Get detailed checkpoint for a scenario.
+
+    Returns the full checkpoint data including completed phases,
+    cost summary, and resume point information.
+    """
+    try:
+        checkpoint = storage.retrieve_checkpoint(scenario_id)
+        if not checkpoint:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No checkpoint found for scenario: {scenario_id}"
+            )
+        return checkpoint
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error retrieving checkpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/checkpoints/{scenario_id}/download")
+async def download_checkpoint(scenario_id: str):
+    """
+    Download checkpoint as JSON file.
+    """
+    from fastapi.responses import Response
+
+    try:
+        checkpoint = storage.retrieve_checkpoint(scenario_id)
+        if not checkpoint:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No checkpoint found for scenario: {scenario_id}"
+            )
+
+        return Response(
+            content=json.dumps(checkpoint, indent=2),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f"attachment; filename={scenario_id}_checkpoint.json"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading checkpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analysis/{scenario_id}/calls")
+async def get_api_calls(scenario_id: str):
+    """
+    Get audit trail of all API calls for an analysis.
+
+    Returns:
+    {
+        "scenario_id": "auto_8d5aeaf4",
+        "total_calls": 15,
+        "total_cost_usd": 1.234,
+        "calls": [
+            {
+                "call_id": "abc123",
+                "timestamp": "2026-02-06T18:29:19Z",
+                "phase_name": "Phase 1: Methodology",
+                "model": "gpt-5.2",
+                "input_tokens": 2500,
+                "output_tokens": 1800,
+                "cost_usd": 0.0097,
+                "duration_ms": 12500,
+                ...
+            },
+            ...
+        ]
+    }
+    """
+    try:
+        calls = storage.get_api_call_log(scenario_id)
+        total_cost = sum(c.get("cost_usd", 0) for c in calls)
+
+        return {
+            "scenario_id": scenario_id,
+            "total_calls": len(calls),
+            "total_cost_usd": round(total_cost, 4),
+            "calls": calls
+        }
+    except Exception as e:
+        logger.error(f"Error retrieving API calls: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/analysis/{scenario_id}/calls/download")
+async def download_api_calls(scenario_id: str):
+    """
+    Download API call audit log as JSONLines file.
+    """
+    from fastapi.responses import Response
+
+    try:
+        calls = storage.get_api_call_log(scenario_id)
+        if not calls:
+            raise HTTPException(
+                status_code=404,
+                detail=f"No API call log found for scenario: {scenario_id}"
+            )
+
+        # Convert to JSONLines format
+        content = "\n".join(json.dumps(c) for c in calls)
+
+        return Response(
+            content=content,
+            media_type="application/x-ndjson",
+            headers={
+                "Content-Disposition": f"attachment; filename={scenario_id}_api_calls.jsonl"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error downloading API calls: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
 # BACKGROUND TASK
 # ============================================================================
 
@@ -1329,11 +1629,15 @@ def _run_analysis(
             result = orchestrator.analyze_topic(
                 proposition=analysis_request.proposition,
                 domain="general",
-                reasoning_model=analysis_request.reasoning_model
+                reasoning_model=analysis_request.reasoning_model,
+                storage=storage.backend  # Enable checkpointing
             )
         else:
             # Standard mode: use provided scenario_config
-            result = orchestrator.conduct_analysis(analysis_request)
+            result = orchestrator.conduct_analysis(
+                analysis_request,
+                storage=storage.backend  # Enable checkpointing
+            )
 
         # Store result FIRST to ensure expensive analysis is saved even if visualization fails
         storage.store_analysis_result(analysis_id, result)
@@ -1445,9 +1749,8 @@ and likelihood ratios indicating strength of support or refutation.*
             logger.critical(f"CRITICAL: Could not persist error status for {analysis_id}: {error_status}")
 
     finally:
-        # Clean up the progress log handler
-        orchestrator_logger = logging.getLogger('bfih_orchestrator_fixed')
-        orchestrator_logger.removeHandler(progress_handler)
+        # Note: progress logging is now handled via progress_callback, no handler cleanup needed
+        pass
 
 
 # ============================================================================

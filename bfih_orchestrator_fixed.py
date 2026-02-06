@@ -37,6 +37,9 @@ from bfih_schemas import (
     EvidenceList, EvidenceClusterList, get_openai_schema
 )
 
+# Import checkpointing system
+from bfih_checkpointer import AnalysisCheckpointer, APICallRecord
+
 
 # ============================================================================
 # CONFIGURATION
@@ -430,7 +433,9 @@ class BFIHOrchestrator:
             except Exception as e:
                 logger.warning(f"Progress callback error: {e}")
 
-    def conduct_analysis(self, request: BFIHAnalysisRequest) -> BFIHAnalysisResult:
+    def conduct_analysis(self, request: BFIHAnalysisRequest,
+                         checkpoint: Optional[Dict] = None,
+                         storage: Optional['StorageBackend'] = None) -> BFIHAnalysisResult:
         """
         Main entry point: Conduct full BFIH analysis using phased approach.
 
@@ -443,6 +448,8 @@ class BFIHOrchestrator:
 
         Args:
             request: BFIHAnalysisRequest with scenario config and proposition
+            checkpoint: Optional checkpoint dict to resume from (from retrieve_checkpoint)
+            storage: Optional storage backend for checkpointing (required for new checkpoints)
 
         Returns:
             BFIHAnalysisResult with report and posteriors
@@ -460,32 +467,102 @@ class BFIHOrchestrator:
             self.reasoning_model = request.reasoning_model
             self._log_progress(f"Using request-specified reasoning model: {self.reasoning_model}")
 
+        # Initialize or restore checkpointer
+        if checkpoint and storage:
+            # Resume from checkpoint
+            self.checkpointer = AnalysisCheckpointer.load(request.scenario_id, storage)
+            if self.checkpointer:
+                self._log_progress(f"Resuming from checkpoint: {self.checkpointer.checkpoint.get('checkpoint_id')}")
+                completed = self.checkpointer.checkpoint.get("completed_phases", {})
+            else:
+                # Checkpoint specified but not found - start fresh
+                self._log_progress("Checkpoint not found, starting fresh analysis")
+                self.checkpointer = AnalysisCheckpointer(
+                    analysis_id=str(uuid.uuid4()),
+                    scenario_id=request.scenario_id,
+                    proposition=request.proposition,
+                    scenario_config=request.scenario_config,
+                    storage=storage,
+                    reasoning_model=self.reasoning_model
+                )
+                completed = {}
+        elif storage:
+            # New analysis with checkpointing
+            self.checkpointer = AnalysisCheckpointer(
+                analysis_id=str(uuid.uuid4()),
+                scenario_id=request.scenario_id,
+                proposition=request.proposition,
+                scenario_config=request.scenario_config,
+                storage=storage,
+                reasoning_model=self.reasoning_model
+            )
+            completed = {}
+        else:
+            # No storage provided - checkpointing disabled
+            self.checkpointer = None
+            completed = {}
+
         self._log_progress(f"Starting BFIH analysis for scenario: {request.scenario_id}")
         self._log_progress(f"Proposition: {request.proposition}")
 
+        current_phase = "phase_1"
         try:
             # Phase 1: Retrieve methodology from vector store (cheap)
-            self._report_status("phase:methodology")
-            self._log_progress("Phase 1: Retrieving methodology...")
-            self.cost_tracker.check_budget("Phase 1: Methodology", estimated_cost=0.10)
-            methodology = self._run_phase_1_methodology(request)
-            self._log_progress("Phase 1 complete: Methodology retrieved")
+            if "phase_1" not in completed:
+                if self.checkpointer:
+                    self.checkpointer.start_phase("phase_1")
+                self._report_status("phase:methodology")
+                self._log_progress("Phase 1: Retrieving methodology...")
+                self.cost_tracker.check_budget("Phase 1: Methodology", estimated_cost=0.10)
+                methodology = self._run_phase_1_methodology(request)
+                self._log_progress("Phase 1 complete: Methodology retrieved")
+                if self.checkpointer:
+                    self.checkpointer.save_phase("phase_1", methodology=methodology)
+            else:
+                methodology = completed["phase_1"].get("data", {}).get("methodology", "")
+                self._log_progress("Phase 1: Restored from checkpoint")
 
             # Phase 2: Gather evidence via web search (most expensive - web search + reasoning)
-            self._report_status("phase:evidence")
-            self._log_progress("Phase 2: Gathering evidence via web search...")
-            self.cost_tracker.check_budget("Phase 2: Evidence", estimated_cost=2.00)
-            evidence_text, evidence_items = self._run_phase_2_evidence(request, methodology)
-            self._log_progress(f"Phase 2 complete: Found {len(evidence_items)} evidence items")
+            current_phase = "phase_2"
+            if "phase_2" not in completed:
+                if self.checkpointer:
+                    self.checkpointer.start_phase("phase_2")
+                self._report_status("phase:evidence")
+                self._log_progress("Phase 2: Gathering evidence via web search...")
+                self.cost_tracker.check_budget("Phase 2: Evidence", estimated_cost=2.00)
+                evidence_text, evidence_items = self._run_phase_2_evidence(request, methodology)
+                self._log_progress(f"Phase 2 complete: Found {len(evidence_items)} evidence items")
+                if self.checkpointer:
+                    self.checkpointer.save_phase("phase_2",
+                                                  evidence_text=evidence_text,
+                                                  evidence_items=evidence_items)
+            else:
+                phase_data = completed["phase_2"].get("data", {})
+                evidence_text = phase_data.get("evidence_text", "")
+                evidence_items = phase_data.get("evidence_items", [])
+                self._log_progress(f"Phase 2: Restored {len(evidence_items)} evidence items from checkpoint")
 
             # Phase 3: Assign likelihoods to evidence (expensive - reasoning model)
-            self._report_status("phase:likelihoods")
-            self._log_progress("Phase 3: Assigning likelihoods...")
-            self.cost_tracker.check_budget("Phase 3: Likelihoods", estimated_cost=1.50)
-            likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
-                request, evidence_text, evidence_items
-            )
-            self._log_progress(f"Phase 3 complete: {len(evidence_clusters)} evidence clusters")
+            current_phase = "phase_3"
+            if "phase_3" not in completed:
+                if self.checkpointer:
+                    self.checkpointer.start_phase("phase_3")
+                self._report_status("phase:likelihoods")
+                self._log_progress("Phase 3: Assigning likelihoods...")
+                self.cost_tracker.check_budget("Phase 3: Likelihoods", estimated_cost=1.50)
+                likelihoods_text, evidence_clusters = self._run_phase_3_likelihoods(
+                    request, evidence_text, evidence_items
+                )
+                self._log_progress(f"Phase 3 complete: {len(evidence_clusters)} evidence clusters")
+                if self.checkpointer:
+                    self.checkpointer.save_phase("phase_3",
+                                                  likelihoods_text=likelihoods_text,
+                                                  evidence_clusters=evidence_clusters)
+            else:
+                phase_data = completed["phase_3"].get("data", {})
+                likelihoods_text = phase_data.get("likelihoods_text", "")
+                evidence_clusters = phase_data.get("evidence_clusters", [])
+                self._log_progress(f"Phase 3: Restored {len(evidence_clusters)} clusters from checkpoint")
 
             # Compute Bayesian metrics (P(E|¬H), LR, WoE) in Python - NOT by LLM
             # Compute metrics for ALL paradigms so frontend can display paradigm-specific values
@@ -548,12 +625,25 @@ class BFIHOrchestrator:
             # Phase 4: Compute paradigm-specific posteriors using Python (authoritative source)
             # NOTE: Phase 4 code_interpreter was removed - it produced inconsistent posteriors
             # that didn't account for paradigm-specific priors and likelihoods
-            self._report_status("phase:computation")
-            self._log_progress("Phase 4: Computing posteriors...")
-            posteriors_by_paradigm = self._compute_paradigm_posteriors(
-                request.scenario_config, evidence_clusters
-            )
-            self._log_progress("Phase 4 complete: Posteriors computed")
+            current_phase = "phase_4"
+            if "phase_4" not in completed:
+                if self.checkpointer:
+                    self.checkpointer.start_phase("phase_4")
+                self._report_status("phase:computation")
+                self._log_progress("Phase 4: Computing posteriors...")
+                posteriors_by_paradigm = self._compute_paradigm_posteriors(
+                    request.scenario_config, evidence_clusters
+                )
+                self._log_progress("Phase 4 complete: Posteriors computed")
+                if self.checkpointer:
+                    self.checkpointer.save_phase("phase_4",
+                                                  posteriors_by_paradigm=posteriors_by_paradigm,
+                                                  enriched_clusters=enriched_clusters)
+            else:
+                phase_data = completed["phase_4"].get("data", {})
+                posteriors_by_paradigm = phase_data.get("posteriors_by_paradigm", {})
+                enriched_clusters = phase_data.get("enriched_clusters", enriched_clusters)
+                self._log_progress("Phase 4: Restored from checkpoint")
 
             # Build paradigm comparison table for Phase 5c
             paradigm_comparison_table = self._format_paradigm_comparison_table(
@@ -561,22 +651,39 @@ class BFIHOrchestrator:
             )
 
             # Phase 5: Generate final report (pass pre-computed Bayesian tables AND paradigm posteriors)
-            self._report_status("phase:report")
-            self._log_progress("Phase 5: Generating report...")
-            self.cost_tracker.check_budget("Phase 5: Report Generation", estimated_cost=1.00)
-            bfih_report = self._run_phase_5_report(
-                request, methodology, evidence_text, likelihoods_text,
-                evidence_items, enriched_clusters,
-                precomputed_cluster_tables, precomputed_joint_table,
-                posteriors_by_paradigm, paradigm_comparison_table
-            )
-            self._log_progress("Phase 5 complete: Report generated")
+            current_phase = "phase_5"
+            if "phase_5" not in completed:
+                if self.checkpointer:
+                    self.checkpointer.start_phase("phase_5")
+                self._report_status("phase:report")
+                self._log_progress("Phase 5: Generating report...")
+                self.cost_tracker.check_budget("Phase 5: Report Generation", estimated_cost=1.00)
+                bfih_report = self._run_phase_5_report(
+                    request, methodology, evidence_text, likelihoods_text,
+                    evidence_items, enriched_clusters,
+                    precomputed_cluster_tables, precomputed_joint_table,
+                    posteriors_by_paradigm, paradigm_comparison_table
+                )
+                self._log_progress("Phase 5 complete: Report generated")
+                if self.checkpointer:
+                    # Don't store full report in checkpoint (too large), just mark complete
+                    self.checkpointer.save_phase("phase_5", report_generated=True)
+            else:
+                # Phase 5 was completed but we don't store the report in checkpoint
+                # This shouldn't happen in normal flow (analysis should have finished)
+                self._log_progress("Phase 5: Checkpoint indicates complete, regenerating report...")
+                bfih_report = self._run_phase_5_report(
+                    request, methodology, evidence_text, likelihoods_text,
+                    evidence_items, enriched_clusters,
+                    precomputed_cluster_tables, precomputed_joint_table,
+                    posteriors_by_paradigm, paradigm_comparison_table
+                )
 
             # Use already-computed posteriors
             posteriors = posteriors_by_paradigm
 
             # Create result object
-            analysis_id = str(uuid.uuid4())
+            analysis_id = self.checkpointer.checkpoint["analysis_id"] if self.checkpointer else str(uuid.uuid4())
             analysis_end = datetime.now(timezone.utc)
             duration_seconds = (analysis_end - analysis_start).total_seconds()
 
@@ -623,33 +730,65 @@ class BFIHOrchestrator:
             except Exception as viz_error:
                 logger.warning(f"Could not generate visualization: {viz_error}")
 
+            # Mark checkpoint as complete
+            if self.checkpointer:
+                self.checkpointer.mark_completed()
+
             self._log_progress(f"BFIH analysis completed successfully: {analysis_id}")
             self._log_progress(f"Duration: {duration_seconds:.1f}s")
             logger.info(f"Evidence: {len(evidence_items)} items in {len(evidence_clusters)} clusters")
             return result
 
         except RuntimeError as e:
-            # Check if this is a budget limit error
-            if "BUDGET LIMIT EXCEEDED" in str(e):
-                # Save checkpoint with all progress so far
-                checkpoint = self._save_budget_checkpoint(
-                    request=request,
-                    analysis_start=analysis_start,
-                    completed_phases=locals()
-                )
-                self._log_progress(f"Budget limit reached. Checkpoint saved: {checkpoint}")
-                # Re-raise with checkpoint info
+            # Determine error type for checkpointing
+            error_msg = str(e)
+            if "BUDGET LIMIT EXCEEDED" in error_msg:
+                error_type = "budget_exceeded"
+            elif "Invalid OpenAI API key" in error_msg or "authentication" in error_msg.lower():
+                error_type = "auth_error"
+            elif "timed out" in error_msg.lower() or "timeout" in error_msg.lower():
+                error_type = "timeout"
+            else:
+                error_type = "api_error"
+
+            # Save error checkpoint with recovery instructions
+            if self.checkpointer:
+                recovery = self.checkpointer.save_error(error_msg, current_phase, error_type)
+                checkpoint_id = self.checkpointer.checkpoint.get("checkpoint_id", "unknown")
+                self._log_progress(f"Error checkpoint saved: {checkpoint_id}")
                 raise RuntimeError(
-                    f"{str(e)}\n\nCheckpoint saved to: {checkpoint}\n"
-                    f"Resume by loading checkpoint and continuing with remaining phases."
+                    f"{error_msg}\n\nCheckpoint: {checkpoint_id}\n{recovery}"
                 ) from e
             else:
-                logger.error(f"Error conducting BFIH analysis: {str(e)}", exc_info=True)
-                raise
+                # Fallback to legacy checkpoint for backwards compatibility
+                if "BUDGET LIMIT EXCEEDED" in error_msg:
+                    checkpoint = self._save_budget_checkpoint(
+                        request=request,
+                        analysis_start=analysis_start,
+                        completed_phases=locals()
+                    )
+                    self._log_progress(f"Budget limit reached. Checkpoint saved: {checkpoint}")
+                    raise RuntimeError(
+                        f"{error_msg}\n\nCheckpoint saved to: {checkpoint}\n"
+                        f"Resume by loading checkpoint and continuing with remaining phases."
+                    ) from e
+                else:
+                    logger.error(f"Error conducting BFIH analysis: {error_msg}", exc_info=True)
+                    raise
 
         except Exception as e:
-            logger.error(f"Error conducting BFIH analysis: {str(e)}", exc_info=True)
-            raise
+            # Catch-all for unexpected errors
+            error_msg = str(e)
+            if self.checkpointer:
+                recovery = self.checkpointer.save_error(error_msg, current_phase, "unknown")
+                checkpoint_id = self.checkpointer.checkpoint.get("checkpoint_id", "unknown")
+                self._log_progress(f"Error checkpoint saved: {checkpoint_id}")
+                raise RuntimeError(
+                    f"Unexpected error: {error_msg}\n\nCheckpoint: {checkpoint_id}\n{recovery}"
+                ) from e
+            else:
+                logger.error(f"Error conducting BFIH analysis: {error_msg}", exc_info=True)
+                raise
 
     def _save_budget_checkpoint(self, request: BFIHAnalysisRequest, analysis_start: datetime,
                                  completed_phases: dict) -> str:
@@ -1376,6 +1515,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         last_error = None
         for attempt in range(max_retries + 1):
+            call_start_time = time.time()
             try:
                 logger.info(f"Starting {phase_name}" + (f" (attempt {attempt + 1})" if attempt > 0 else ""))
                 print(f"\n{'='*60}\n{phase_name}" + (f" (retry {attempt})" if attempt > 0 else "") + f"\n{'='*60}")
@@ -1422,12 +1562,34 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 if response is None:
                     raise RuntimeError(f"No response received for {phase_name}")
 
-                # Track costs if usage data is available
+                # Track costs and record API call
+                input_tokens = 0
+                output_tokens = 0
+                reasoning_tokens = 0
+                cost_usd = 0.0
                 if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
                     input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
                     output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
                     reasoning_tokens = getattr(response.usage, 'reasoning_tokens', 0) or 0
-                    self.cost_tracker.add_cost(self.model, phase_name, input_tokens, output_tokens, reasoning_tokens)
+                    cost_usd = self.cost_tracker.add_cost(self.model, phase_name, input_tokens, output_tokens, reasoning_tokens)
+
+                # Record API call to audit log
+                duration_ms = int((time.time() - call_start_time) * 1000)
+                if hasattr(self, 'checkpointer') and self.checkpointer:
+                    tools_used = [t.get("type", "unknown") for t in tools] if tools else []
+                    self.checkpointer.record_api_call(
+                        phase_name=phase_name,
+                        method="_run_phase",
+                        model=self.model,
+                        prompt=prompt,
+                        status="success",
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        reasoning_tokens=reasoning_tokens,
+                        cost_usd=cost_usd,
+                        duration_ms=duration_ms,
+                        tools_used=tools_used
+                    )
 
                 try:
                     print(f"\n[{phase_name} complete]")
@@ -1503,6 +1665,7 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         model = model or self.model
 
         for attempt in range(max_retries + 1):
+            call_start_time = time.time()
             try:
                 logger.info(f"Starting {phase_name} (structured output, model: {model})" +
                            (f" (attempt {attempt + 1})" if attempt > 0 else ""))
@@ -1563,12 +1726,35 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
                 response = self.client.responses.create(**request_params)
 
-                # Track costs if usage data is available
+                # Track costs and record API call
+                input_tokens = 0
+                output_tokens = 0
+                reasoning_tokens = 0
+                cost_usd = 0.0
                 if hasattr(self, 'cost_tracker') and hasattr(response, 'usage') and response.usage:
                     input_tokens = getattr(response.usage, 'input_tokens', 0) or 0
                     output_tokens = getattr(response.usage, 'output_tokens', 0) or 0
                     reasoning_tokens = getattr(response.usage, 'reasoning_tokens', 0) or 0
-                    self.cost_tracker.add_cost(model, phase_name, input_tokens, output_tokens, reasoning_tokens)
+                    cost_usd = self.cost_tracker.add_cost(model, phase_name, input_tokens, output_tokens, reasoning_tokens)
+
+                # Record API call to audit log
+                duration_ms = int((time.time() - call_start_time) * 1000)
+                if hasattr(self, 'checkpointer') and self.checkpointer:
+                    tools_used = [t.get("type", "unknown") for t in tools] if tools else []
+                    self.checkpointer.record_api_call(
+                        phase_name=phase_name,
+                        method="_run_structured_phase",
+                        model=model,
+                        prompt=prompt,
+                        status="success",
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                        reasoning_tokens=reasoning_tokens,
+                        cost_usd=cost_usd,
+                        duration_ms=duration_ms,
+                        schema_name=schema_name,
+                        tools_used=tools_used
+                    )
 
                 # Extract the output
                 output_text = response.output_text
@@ -4774,7 +4960,8 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
     def analyze_topic(self, proposition: str, domain: str = "business",
                       difficulty: str = "medium",
                       reasoning_model: Optional[str] = None,
-                      budget_limit: Optional[float] = None) -> BFIHAnalysisResult:
+                      budget_limit: Optional[float] = None,
+                      storage: Optional['StorageBackend'] = None) -> BFIHAnalysisResult:
         """
         Autonomous BFIH analysis from topic submission.
 
@@ -4791,6 +4978,7 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
             difficulty: easy (3-4 hyp), medium (5-6 hyp), hard (7+ hyp)
             reasoning_model: Optional reasoning model override (o3-mini, gpt-5.2, etc.)
             budget_limit: Maximum cost in USD. None = unlimited.
+            storage: Optional storage backend for checkpointing (enables resume on failure)
 
         Returns:
             BFIHAnalysisResult with full report and generated config
@@ -4856,7 +5044,7 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
             budget_limit=budget_limit
         )
 
-        result = self.conduct_analysis(request)
+        result = self.conduct_analysis(request, storage=storage)
 
         # Update scenario config with evidence data from analysis
         evidence_items = result.metadata.get("evidence_items", [])
