@@ -1358,10 +1358,19 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
         return posteriors
 
-    def _run_phase(self, prompt: str, tools: List[Dict], phase_name: str, max_retries: int = 2) -> str:
+    def _run_phase(self, prompt: str, tools: List[Dict], phase_name: str,
+                   max_retries: int = 2, instructions: str = None) -> str:
         """
         Run a single phase with streaming output and retry logic.
         Returns the output text from the phase.
+
+        Args:
+            prompt: The task-specific prompt (user message content)
+            tools: List of tools to make available (file_search, web_search, etc.)
+            phase_name: Human-readable name for logging
+            max_retries: Number of retry attempts on failure
+            instructions: Optional system-level instructions that take priority over prompt.
+                         Use this for persistent behavioral guidelines (e.g., BFIH methodology).
         """
         import time
 
@@ -1372,14 +1381,20 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                 print(f"\n{'='*60}\n{phase_name}" + (f" (retry {attempt})" if attempt > 0 else "") + f"\n{'='*60}")
 
                 response = None
-                stream = self.client.responses.create(
-                    model=self.model,
-                    input=prompt,
-                    max_output_tokens=16000,  # Increased for comprehensive reports
-                    tools=tools,
-                    include=["file_search_call.results"] if any(t.get("type") == "file_search" for t in tools) else [],
-                    stream=True
-                )
+                # Build request params
+                request_params = {
+                    "model": self.model,
+                    "input": prompt,
+                    "max_output_tokens": 16000,  # Increased for comprehensive reports
+                    "tools": tools,
+                    "include": ["file_search_call.results"] if any(t.get("type") == "file_search" for t in tools) else [],
+                    "stream": True
+                }
+                # Add instructions if provided (system-level context with priority)
+                if instructions:
+                    request_params["instructions"] = instructions
+
+                stream = self.client.responses.create(**request_params)
 
                 for event in stream:
                     try:
@@ -1459,7 +1474,8 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
 
     def _run_structured_phase(self, prompt: str, schema_name: str, phase_name: str,
                                tools: List[Dict] = None, max_retries: int = 2,
-                               model: str = None, return_citations: bool = False) -> dict:
+                               model: str = None, return_citations: bool = False,
+                               instructions: str = None) -> dict:
         """
         Run a phase with structured output (JSON Schema enforcement).
 
@@ -1467,13 +1483,15 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         valid JSON output matching the specified schema.
 
         Args:
-            prompt: The prompt to send to the model
+            prompt: The task-specific prompt (user message content)
             schema_name: Name of schema from bfih_schemas (paradigms, hypotheses, priors, evidence, clusters)
             phase_name: Human-readable name for logging
             tools: Optional list of tools (file_search, web_search)
             max_retries: Number of retry attempts on connection failure
             model: Optional model override (default: self.model)
             return_citations: If True, return tuple of (result, url_citations) for web_search
+            instructions: Optional system-level instructions that take priority over prompt.
+                         Use this for persistent behavioral guidelines (e.g., BFIH methodology).
 
         Returns:
             Parsed JSON dict matching the schema, or tuple (dict, list) if return_citations=True
@@ -1518,6 +1536,10 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                         }
                     }
                 }
+
+                # Add instructions if provided (system-level context with priority)
+                if instructions:
+                    request_params["instructions"] = instructions
 
                 # Add tools if provided
                 if tools:
@@ -1690,16 +1712,21 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         raise last_error or RuntimeError(f"Failed to complete {phase_name}")
 
     def _run_structured_phase_with_model(self, prompt: str, schema_name: str, phase_name: str,
-                                          model: str, max_retries: int = 2) -> dict:
+                                          model: str, max_retries: int = 2,
+                                          instructions: str = None) -> dict:
         """
         Convenience wrapper for _run_structured_phase with custom model.
         Used when reasoning models support structured output.
+
+        Args:
+            instructions: Optional system-level instructions that take priority over prompt.
         """
         return self._run_structured_phase(prompt, schema_name, phase_name,
-                                          tools=None, max_retries=max_retries, model=model)
+                                          tools=None, max_retries=max_retries, model=model,
+                                          instructions=instructions)
 
     def _run_reasoning_phase(self, prompt: str, phase_name: str, max_retries: int = 2,
-                              schema_name: str = None) -> dict:
+                              schema_name: str = None, instructions: str = None) -> dict:
         """
         Run a phase with a reasoning model (o3-mini, o3, o4-mini, gpt-5, etc.) for deep analytical thinking.
 
@@ -1708,10 +1735,12 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         we use structured output directly. Otherwise, we parse JSON from the response.
 
         Args:
-            prompt: The prompt to send to the reasoning model
+            prompt: The task-specific prompt (user message content)
             phase_name: Human-readable name for logging
             max_retries: Number of retry attempts on connection failure
             schema_name: Schema name for structured output (recommended for reliability)
+            instructions: Optional system-level instructions that take priority over prompt.
+                         Use this for persistent behavioral guidelines (e.g., BFIH methodology).
 
         Returns:
             Parsed JSON dict from the model's output
@@ -1722,7 +1751,8 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
         if REASONING_MODEL_SUPPORTS_STRUCTURED and schema_name:
             logger.info(f"Using reasoning model with structured output: {self.reasoning_model}")
             return self._run_structured_phase_with_model(
-                prompt, schema_name, phase_name, self.reasoning_model, max_retries
+                prompt, schema_name, phase_name, self.reasoning_model, max_retries,
+                instructions=instructions
             )
 
         # Otherwise, fall back to JSON extraction from response
@@ -1740,6 +1770,10 @@ NOW BEGIN YOUR ANALYSIS. Work through each phase systematically.
                     "model": self.reasoning_model,
                     "input": prompt,
                 }
+
+                # Add instructions if provided (system-level context with priority)
+                if instructions:
+                    request_params["instructions"] = instructions
 
                 # GPT-5.x models require explicit reasoning.effort parameter
                 # (default is "none" for GPT-5.1+, unlike o-series which reason by default)
@@ -1916,9 +1950,8 @@ Return ONLY the inverse proposition, nothing else."""
 
     def _run_phase_1_methodology(self, request: BFIHAnalysisRequest) -> str:
         """Phase 1: Retrieve BFIH methodology from vector store"""
-        bfih_context = get_bfih_system_context("Methodology Retrieval", "1")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Methodology Retrieval", "1")
+        prompt = f"""PROPOSITION: "{request.proposition}"
 
 Use file_search to retrieve the following from the BFIH treatise:
 1. "Forcing functions" methodology
@@ -1932,7 +1965,8 @@ Provide a concise summary of the methodology that will guide the analysis.
 Focus on actionable steps for applying each forcing function.
 """
         tools = [{"type": "file_search", "vector_store_ids": [self.vector_store_id]}]
-        return self._run_phase(prompt, tools, "Phase 1: Retrieve Methodology")
+        return self._run_phase(prompt, tools, "Phase 1: Retrieve Methodology",
+                               instructions=instructions)
 
     # =========================================================================
     # TOPIC-ADAPTIVE EVIDENCE SEARCH SYSTEM
@@ -2098,9 +2132,8 @@ For questions about philosophical schools, epistemology, or reasoning frameworks
 
         Makes one API call with structured output for a specific search category.
         """
-        bfih_context = get_bfih_system_context("Evidence Gathering", "2")
-        prompt = f"""{bfih_context}
-SEARCH CATEGORY: {search_category}
+        instructions = get_bfih_system_context("Evidence Gathering", "2")
+        prompt = f"""SEARCH CATEGORY: {search_category}
 PROPOSITION: "{proposition}"
 
 HYPOTHESES:
@@ -2131,7 +2164,8 @@ Each item needs:
             tools = [{"type": "web_search", "search_context_size": "high"}]
             result, url_citations = self._run_structured_phase(
                 prompt, "evidence", f"Search: {search_category[:40]}",
-                tools=tools, return_citations=True, model=self.model
+                tools=tools, return_citations=True, model=self.model,
+                instructions=instructions
             )
             return result.get("evidence_items", []), url_citations
         except Exception as e:
@@ -2441,9 +2475,8 @@ Each item needs:
             "evidence_type": e.get("evidence_type", "unknown")
         } for e in evidence_items], indent=2)
 
-        bfih_context = get_bfih_system_context("Base Rate Estimation", "3a")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Base Rate Estimation", "3a")
+        prompt = f"""PROPOSITION: "{request.proposition}"
 
 HYPOTHESES (with priors):
 {hyp_text}
@@ -2486,7 +2519,8 @@ Example format:
             self._log_progress("Phase 3a: Estimating evidence base rates P(E)...")
             result = self._run_reasoning_phase(
                 prompt, "Phase 3a: Base Rate Estimation",
-                schema_name=None  # Will parse JSON manually
+                schema_name=None,  # Will parse JSON manually
+                instructions=instructions
             )
 
             # Parse base rates from response
@@ -2555,9 +2589,8 @@ Example format:
         } for e in evidence_items]
         evidence_summary = json.dumps(evidence_with_base_rates, indent=2)
 
-        bfih_context = get_bfih_system_context("Likelihood Assignment", "3b")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Likelihood Assignment", "3b")
+        prompt = f"""PROPOSITION: "{request.proposition}"
 
 HYPOTHESES:
 {hyp_text}
@@ -2666,7 +2699,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
                 self._log_progress("Phase 3b: Assigning likelihoods relative to base rates...")
                 result = self._run_reasoning_phase(
                     prompt, "Phase 3b: Likelihood Assignment (reasoning)",
-                    schema_name="clusters"  # Enables structured output fallback
+                    schema_name="clusters",  # Enables structured output fallback
+                    instructions=instructions
                 )
                 raw_clusters = result.get("clusters", [])
                 # Convert array format to dict format for compatibility
@@ -2743,9 +2777,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
 
         # STEP 1: Get cluster structure (no likelihoods yet)
-        bfih_context = get_bfih_system_context("Cluster Formation", "3b-step1")
-        cluster_prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Cluster Formation", "3b-step1")
+        cluster_prompt = f"""PROPOSITION: "{request.proposition}"
 
 EVIDENCE ITEMS (with pre-computed base rates P(E)):
 {evidence_summary}
@@ -2773,7 +2806,8 @@ Example format:
             self._log_progress("Phase 3b Step 1: Forming evidence clusters...")
             result = self._run_reasoning_phase(
                 cluster_prompt, "Phase 3b Step 1: Cluster Formation",
-                schema_name="clusters_simple"
+                schema_name="clusters_simple",
+                instructions=instructions
             )
             raw_clusters = result.get("clusters", [])
         except Exception as e:
@@ -3003,9 +3037,8 @@ Return JSON with cluster likelihoods for this paradigm only:
         hyp_summary_text = "\n".join(hyp_summary)
 
         # STEP 1: Get cluster structure based on CAUSAL INDEPENDENCE (root source, not source type)
-        bfih_context = get_bfih_system_context("Calibrated Likelihood Elicitation", "3b-calibrated")
-        cluster_prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Calibrated Likelihood Elicitation", "3b-calibrated")
+        cluster_prompt = f"""PROPOSITION: "{request.proposition}"
 
 EVIDENCE ITEMS (with pre-computed base rates P(E)):
 {evidence_summary}
@@ -3154,7 +3187,8 @@ IMPORTANT:
             self._log_progress("Phase 3b Step 1: Forming causal evidence clusters...")
             result = self._run_reasoning_phase(
                 cluster_prompt, "Phase 3b Step 1: Causal Cluster Formation",
-                schema_name=None  # Free-form JSON for complex structure
+                schema_name=None,  # Free-form JSON for complex structure
+                instructions=instructions
             )
             raw_clusters = result.get("clusters", [])
             cluster_hierarchy = result.get("hierarchy", [])
@@ -3881,7 +3915,7 @@ IMPORTANT:
                             priors: Dict,
                             posteriors_by_paradigm: Dict = None) -> str:
         """Phase 5a: Generate Executive Summary, Paradigms, and Hypotheses sections."""
-        bfih_context = get_bfih_system_context("Report Generation - Introduction", "5a")
+        instructions = get_bfih_system_context("Report Generation - Introduction", "5a")
 
         # Format paradigm-specific posteriors for Executive Summary
         # This is the AUTHORITATIVE source - use these values, not code_interpreter output
@@ -3900,8 +3934,7 @@ IMPORTANT:
             winning_posterior = k0_posteriors[winning_h]
             posteriors_summary += f"\n**Winning hypothesis under K0: {winning_h} (posterior: {winning_posterior:.4f})**\n"
 
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        prompt = f"""PROPOSITION: "{request.proposition}"
 
 PARADIGMS:
 {paradigm_list}
@@ -3964,7 +3997,8 @@ IMPORTANT MARKDOWN FORMATTING:
 - DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
 - Output raw markdown directly
 """
-        return self._run_phase(prompt, [], "Phase 5a: Introduction Sections")
+        return self._run_phase(prompt, [], "Phase 5a: Introduction Sections",
+                               instructions=instructions)
 
     def _run_phase_5b_evidence(self, request: BFIHAnalysisRequest,
                                evidence_items: List[Dict],
@@ -4085,9 +4119,8 @@ IMPORTANT MARKDOWN FORMATTING:
 
         precomputed_clusters_text = "\n---\n".join(hierarchy_sections) if hierarchy_sections else "(No cluster metrics available)"
 
-        bfih_context = get_bfih_system_context("Report Generation - Evidence Clusters", "5b1")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Report Generation - Evidence Clusters", "5b1")
+        prompt = f"""PROPOSITION: "{request.proposition}"
 
 ## PRE-COMPUTED CLUSTER-LEVEL BAYESIAN METRICS
 The following tables were computed mathematically using:
@@ -4115,7 +4148,8 @@ MARKDOWN FORMATTING:
 - DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
 - Output raw markdown directly
 """
-        return self._run_phase(prompt, [], "Phase 5b1: Evidence Clusters")
+        return self._run_phase(prompt, [], "Phase 5b1: Evidence Clusters",
+                               instructions=instructions)
 
     def _run_phase_5b2_evidence_items(self, request: BFIHAnalysisRequest,
                                        evidence_items: List[Dict],
@@ -4162,9 +4196,8 @@ MARKDOWN FORMATTING:
 
             batch_json = json.dumps(batch_data, indent=2)
 
-            bfih_context = get_bfih_system_context("Report Generation - Evidence Items", "5b2")
-            prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+            instructions = get_bfih_system_context("Report Generation - Evidence Items", "5b2")
+            prompt = f"""PROPOSITION: "{request.proposition}"
 
 EVIDENCE ITEMS BATCH {batch_num}/{total_batches} (items {batch_start + 1}-{batch_end} of {len(evidence_items)}):
 {batch_json}
@@ -4196,7 +4229,8 @@ MARKDOWN FORMATTING:
 - DO NOT wrap your output in code blocks
 - Output raw markdown directly
 """
-            batch_result = self._run_phase(prompt, [], f"Phase 5b2: Evidence Items batch {batch_num}/{total_batches}")
+            batch_result = self._run_phase(prompt, [], f"Phase 5b2: Evidence Items batch {batch_num}/{total_batches}",
+                                           instructions=instructions)
             all_sections.append(batch_result)
 
         return "\n".join(all_sections)
@@ -4218,9 +4252,8 @@ MARKDOWN FORMATTING:
             cluster_summary.append(f"- **{ct['name']}**: {ct.get('description', '')}")
         cluster_summary_text = "\n".join(cluster_summary) if cluster_summary else "(No clusters)"
 
-        bfih_context = get_bfih_system_context("Report Generation - Results & Conclusions", "5c")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{request.proposition}"
+        instructions = get_bfih_system_context("Report Generation - Results & Conclusions", "5c")
+        prompt = f"""PROPOSITION: "{request.proposition}"
 
 PARADIGMS: {json.dumps([p.get('name') for p in paradigms])}
 
@@ -4305,7 +4338,8 @@ MARKDOWN FORMATTING:
 - DO NOT wrap your output in code blocks (no ```markdown or ``` delimiters)
 - Output raw markdown directly - the content will be rendered as markdown
 """
-        return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions")
+        return self._run_phase(prompt, [], "Phase 5c: Results & Conclusions",
+                               instructions=instructions)
 
     def _run_phase_5d_bibliography(self, evidence_items: List[Dict]) -> str:
         """Phase 5d: Generate Bibliography from evidence items."""
@@ -4854,9 +4888,8 @@ this conclusion is robust across paradigms despite {p_id}'s {bias_type or 'diffe
 
         Uses structured output for guaranteed valid JSON.
         """
-        bfih_context = get_bfih_system_context("Paradigm Generation", "0a")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{proposition}"
+        instructions = get_bfih_system_context("Paradigm Generation", "0a")
+        prompt = f"""PROPOSITION: "{proposition}"
 DOMAIN: {domain}
 
 ## EPISTEMIC GUARDRAILS - READ FIRST
@@ -4956,7 +4989,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
             # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 0a: Generate Paradigms (reasoning)",
-                schema_name="paradigms"  # Enables structured output fallback
+                schema_name="paradigms",  # Enables structured output fallback
+                instructions=instructions
             )
             paradigms = result.get("paradigms", [])
         except Exception as e:
@@ -5159,9 +5193,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         num_hypotheses = {"easy": 4, "medium": 6, "hard": 8}.get(difficulty, 6)
         paradigm_json = json.dumps(paradigms, indent=2)
 
-        bfih_context = get_bfih_system_context("Hypothesis Generation with Forcing Functions", "0b")
-        prompt = f"""{bfih_context}
-PROPOSITION TO EVALUATE: "{proposition}"
+        instructions = get_bfih_system_context("Hypothesis Generation with Forcing Functions", "0b")
+        prompt = f"""PROPOSITION TO EVALUATE: "{proposition}"
 
 PARADIGMS (these determine priors and likelihood weighting, NOT the hypotheses):
 {paradigm_json}
@@ -5469,7 +5502,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
             # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 0b: Generate Hypotheses + Forcing Functions (reasoning)",
-                schema_name="hypotheses"  # Enables structured output fallback
+                schema_name="hypotheses",  # Enables structured output fallback
+                instructions=instructions
             )
             hypotheses = result.get("hypotheses", [])
             forcing_functions_log = result.get("forcing_functions_log", {})
@@ -5491,7 +5525,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
             try:
                 fallback_prompt = prompt.replace("Think step by step", "").replace("```json", "").replace("```", "")
                 result = self._run_structured_phase(
-                    fallback_prompt, "hypotheses", "Phase 0b: Generate Hypotheses (fallback)"
+                    fallback_prompt, "hypotheses", "Phase 0b: Generate Hypotheses (fallback)",
+                    instructions=instructions
                 )
                 hypotheses = result.get("hypotheses", [])
                 forcing_functions_log = result.get("forcing_functions_log", {})
@@ -5613,9 +5648,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
         hyp_ids = [h.get("id", f"H{i}") for i, h in enumerate(hypotheses)]
         paradigm_ids = [p.get("id", f"K{i}") for i, p in enumerate(paradigms)]
 
-        bfih_context = get_bfih_system_context("Prior Probability Assignment", "0c")
-        prompt = f"""{bfih_context}
-PROPOSITION: "{proposition}"
+        instructions = get_bfih_system_context("Prior Probability Assignment", "0c")
+        prompt = f"""PROPOSITION: "{proposition}"
 
 ## CRITICAL DISTINCTION: PRIORS vs LIKELIHOODS
 
@@ -5702,7 +5736,8 @@ IMPORTANT: Return ONLY valid JSON. No additional text before or after the JSON o
             # Falls back to structured output (o4-mini) if JSON parsing fails
             result = self._run_reasoning_phase(
                 prompt, "Phase 0c: Assign Priors (reasoning)",
-                schema_name="priors"  # Enables structured output fallback
+                schema_name="priors",  # Enables structured output fallback
+                instructions=instructions
             )
             # Convert array format to dict format for compatibility
             priors_by_paradigm = {}
@@ -6516,9 +6551,28 @@ CRITICAL LENGTH REQUIREMENT: Your response MUST be at least 4000 words. Do not s
             prompt = self._get_gawande_style_prompt(report)
             logger.info("Using Gawande-style (science narrative) prompt")
 
+        # System-level instructions for magazine synopsis generation
+        synopsis_instructions = """You are an expert science and long-form journalist, skilled at transforming
+technical analysis into compelling, accessible magazine-style articles.
+
+Your role:
+- Transform rigorous analytical reports into engaging narratives for intelligent general readers
+- Maintain intellectual honesty while making content accessible
+- Preserve the substance and nuance of findings without using technical jargon
+- Write with clarity, authority, and appropriate epistemic humility
+
+Key principles:
+- Every paragraph must advance the reader's understanding (forward motion)
+- Show complexity through concrete examples rather than announcing it
+- Use calibrated confidence: direct assertions for strong evidence, appropriate hedging for uncertainty
+- Never sacrifice accuracy for readability - both are achievable together
+
+You will receive detailed style guidelines in the user prompt. Follow them precisely."""
+
         try:
             response = self.client.responses.create(
                 model="gpt-5.2",  # Use GPT-5.2 for highest quality long-form writing
+                instructions=synopsis_instructions,
                 input=prompt,
                 max_output_tokens=16000,  # Increased for longer, richer output
                 reasoning={"effort": "medium"},  # GPT-5.x requires explicit reasoning effort
